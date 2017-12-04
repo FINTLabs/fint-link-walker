@@ -1,0 +1,57 @@
+buildscript {
+    apply from: 'https://raw.githubusercontent.com/FINTlibs/fint-buildscripts/v1.1.0/dependencies.gradle'
+    ext {
+        springBootVersion = springBootVersion
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+plugins {
+    id 'com.github.ben-manes.versions' version '0.17.0'
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'maven'
+
+apply from: 'https://raw.githubusercontent.com/FINTlibs/fint-buildscripts/v1.1.0/version.gradle'
+jar {
+    baseName = 'fint-link-walker'
+    version = createVersion()
+}
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    jcenter()
+    maven {
+        url "http://dl.bintray.com/fint/maven"
+    }
+}
+
+dependencies {
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compileOnly('org.projectlombok:lombok')
+
+    testCompile("cglib:cglib-nodep:${cglibVersion}")
+    testCompile("org.spockframework:spock-spring:${spockSpringVersion}")
+    testCompile("org.spockframework:spock-core:${spockSpringVersion}")
+    testCompile('org.springframework.boot:spring-boot-starter-test')
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = gradleVersion
+}
+
+test {
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
