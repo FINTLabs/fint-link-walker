@@ -28,6 +28,16 @@ jar {
 
 sourceCompatibility = 1.8
 
+
+import org.apache.tools.ant.filters.ReplaceTokens
+afterEvaluate {
+    configure(processResources) {
+        filesMatching('**/*.yml') {
+            filter(ReplaceTokens, tokens: [version: jar.version])
+        }
+    }
+}
+
 repositories {
     mavenLocal()
     jcenter()
@@ -37,6 +47,7 @@ repositories {
 }
 
 dependencies {
+    compile('com.github.springfox.loader:springfox-loader:1.2.0')
     compile('org.springframework.boot:spring-boot-starter-web')
     compileOnly('org.projectlombok:lombok')
 
