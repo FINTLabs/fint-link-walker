@@ -57,12 +57,12 @@ public final class RelationFinder {
 
         return allLinkPaths.stream().flatMap(path -> {
             Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>(){});
-            List<Relation> relations = linkObject.keySet().stream().map(rel -> arg(path, linkObject, rel)).collect(Collectors.toList());
+            List<Relation> relations = linkObject.keySet().stream().map(rel -> createRelation(path, linkObject, rel)).collect(Collectors.toList());
             return relations.stream();
         }).collect(Collectors.toList());
     }
 
-    private static Relation arg(String path, Map<String, List<Map<String, String>>> linkObject, String rel) {
+    private static Relation createRelation(String path, Map<String, List<Map<String, String>>> linkObject, String rel) {
         Relation relation = new Relation();
         relation.path = path;
         relation.rel = rel;
