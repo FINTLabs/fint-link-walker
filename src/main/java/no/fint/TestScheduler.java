@@ -8,43 +8,35 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Queue;
 
 @Service
 public class TestScheduler {
 
-    private Map<UUID, TestCase> caseRepo = new HashMap<UUID, TestCase>();
     private Queue<TestCase> queuedTests = new LinkedList<>();
-    private Collection<URL> alreadyTestedURLs = new ArrayList<>();
 
     @Autowired
     private TestRunner runner;
+    @Autowired
+    private TestCaseRepository repository;
 
     private static final Logger LOG = LoggerFactory.getLogger(TestScheduler.class);
 
     /**
      * queue up a test for running
-     * @param testCase
      */
-    public void scheduleTest(TestCase testCase) {
-        LOG.info("Scheduling test " + testCase.getId());
-        if (alreadyTestedURLs.contains(testCase.getTarget())) {
-            LOG.info("... but " + testCase.getTarget() + " is already scheduled and/or tested.");
-        } else {
-            caseRepo.put(testCase.getId(), testCase);
+    public void scheduleTest(URL url) {
+        TestCase testCase = repository.getCaseForURL(url);
+        LOG.info("maybe scheduling {} with status {}", testCase.getTarget(), testCase.getStatus());
+        if (testCase.getStatus() == Status.NOT_QUEUED) {
+            LOG.info("Enqueuing {}", testCase.getTarget());
+            testCase.enqueued();
             queuedTests.add(testCase);
-            alreadyTestedURLs.add(testCase.getTarget());
+        } else {
+            LOG.info(".. not enqueing since status is {}", testCase.getStatus());
         }
-    }
-
-    /**
-     * search for a given test, using its identity
-     * @param uuid
-     * @return
-     */
-    public Optional<TestCase> findTestCase(UUID uuid) {
-        return Optional.ofNullable(caseRepo.get(uuid));
     }
 
     /**
@@ -52,19 +44,21 @@ public class TestScheduler {
      */
     @Scheduled(fixedRate = 1000)
     public void runATest() {
-        if (!queuedTests.isEmpty()) {
+        LOG.info("Emptying queue {} deep", queuedTests.size());
+        while (!queuedTests.isEmpty()) {
             TestCase testCase = queuedTests.poll();
             try {
-                LOG.info("Running test " + testCase.getId());
+                LOG.info("Calling testrunner for test {}", testCase.getTarget());
                 runner.runTest(testCase);
             } catch (IOException e) {
-                LOG.info("Failing test " + testCase.getId() + " with an IOException");
+                LOG.info("Failing test {} with an IOException", testCase.getId());
                 testCase.failed(e);
             }
         }
+        LOG.info("queue empty");
     }
 
     public Collection<TestCase> allTests() {
-        return caseRepo.values();
+        return repository.allTestCases();
     }
 }

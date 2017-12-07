@@ -41,7 +41,7 @@ public final class RelationFinder {
 
     private RelationFinder() {}
 
-    public static Collection<Relation> findLinks(InputStream jsonStream) {
+    public static Collection<DiscoveredRelation> findLinks(InputStream jsonStream) {
         Configuration conf = Configuration.builder()
                 .options(Option.AS_PATH_LIST).build();
 
@@ -57,19 +57,19 @@ public final class RelationFinder {
 
         return allLinkPaths.stream().flatMap(path -> {
             Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>(){});
-            List<Relation> relations = linkObject.keySet().stream().map(rel -> createRelation(path, linkObject, rel)).collect(Collectors.toList());
+            List<DiscoveredRelation> relations = linkObject.keySet().stream().map(rel -> createRelation(path, linkObject, rel)).collect(Collectors.toList());
             return relations.stream();
         }).collect(Collectors.toList());
     }
 
-    private static Relation createRelation(String path, Map<String, List<Map<String, String>>> linkObject, String rel) {
-        Relation relation = new Relation();
-        relation.path = path;
-        relation.rel = rel;
-        relation.links = linkObject.get(rel).stream()
+    private static DiscoveredRelation createRelation(String path, Map<String, List<Map<String, String>>> linkObject, String rel) {
+        DiscoveredRelation relation = new DiscoveredRelation();
+        relation.setPath(path);
+        relation.setRel(rel);
+        relation.setLinks(linkObject.get(rel).stream()
                 .map(map -> map.get("href"))
                 .map(RelationFinder::stringToURL)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet()));
         return relation;
     }
 
@@ -85,21 +85,4 @@ public final class RelationFinder {
         return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining());
     }
 
-    public static class Relation {
-        private String path;
-        private String rel;
-        private Collection<URL> links;
-
-        public String getPath() {
-            return path;
-        }
-
-        public String getRel() {
-            return rel;
-        }
-
-        public Collection<URL> getLinks() {
-            return links;
-        }
-    }
 }

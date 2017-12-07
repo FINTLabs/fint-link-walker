@@ -25,6 +25,9 @@ public class TestController {
     @Autowired
     private TestScheduler testScheduler;
 
+    @Autowired
+    private TestCaseRepository repository;
+
     public TestController() throws MalformedURLException {
     }
 
@@ -39,14 +42,13 @@ public class TestController {
     public UUID startTest(@RequestParam("endpoint") @NotBlank String endpoint, @RequestParam(value = "base", required = false) URL baseURL) throws MalformedURLException {
         UUID id = UUID.randomUUID();
         LOG.info("Registering testcase " + id);
-        TestCase testCase = new TestCase(id, buildUrl(endpoint, baseURL));
-        testScheduler.scheduleTest(testCase);
+        testScheduler.scheduleTest(buildUrl(endpoint, baseURL));
         return id;
     }
 
     @GetMapping("/")
     public Collection<TestCase> getAllTests() {
-        return testScheduler.allTests();
+        return repository.allTestCases();
     }
 
     private URL buildUrl(String endpoint, URL baseURL) throws MalformedURLException {
