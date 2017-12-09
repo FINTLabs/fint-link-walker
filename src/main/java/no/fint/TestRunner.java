@@ -1,7 +1,6 @@
 package no.fint;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
@@ -25,6 +24,9 @@ public class TestRunner {
     @Autowired
     TestCaseRepository repository;
 
+    @Autowired
+    HttpClient httpClient;
+
     @Async
     public void runTest(TestCase testCase) throws IOException {
         if (testCase.getStatus() == Status.RUNNING || testCase.getStatus() == Status.OK || testCase.getStatus() == Status.FAILED) {
@@ -42,50 +44,36 @@ public class TestRunner {
     }
 
     private void runIt(TestCase testCase, CloseableHttpClient client) throws IOException {
-        HttpGet get = new HttpGet(testCase.getTarget().toString());
-
-        client.execute(get, response -> {
-            if (response.getStatusLine().getStatusCode() == 200) {
-                // 200 OK is test succeed, regardless of what the content is, right?
-                testCase.succeed();
-                harvestChildren(testCase, response);
-                testChildren(testCase, client);
-            } else {
-                LOG.info("Failing {}", testCase.getTarget());
-                testCase.failed("Wrong status code. " + response.getStatusLine().getStatusCode() + " is not 200 OK");
-            }
-            return "ok fine, whatever.";
-        });
-    }
-
-    private void testChildren(TestCase testCase, CloseableHttpClient client) {
-        Map<String, Collection<TestedRelation>> allRelations = testCase.getRelations();
-        allRelations.forEach((relationName, relations) -> {
-            relations.forEach(relation -> this.testRelation(relation, client));
-        });
-    }
-
-    private void testRelation(TestedRelation testedRelation, CloseableHttpClient client) {
-        HttpGet get = new HttpGet(testedRelation.getUrl().toString());
-
-        try {
-            client.execute(get, response -> {
-                if (response.getStatusLine().getStatusCode() == 200) {
-                    testedRelation.setStatus(Status.OK);
-                } else {
-                    testedRelation.setStatus(Status.FAILED);
-                    testedRelation.setReason(response.getStatusLine().getStatusCode() + " is not 200.");
-                }
-                return "";
-            });
-        } catch (IOException e) {
-            LOG.warn("Failed to test relation {} => {}:{}", testedRelation.getUrl(), e.getClass().getSimpleName(), e.getMessage());
+        HttpClient.Response testResponse = httpClient.get(testCase.getTarget());
+        if (testResponse.getResponseCode() == 200) {
+            testCase.succeed();
+            harvestChildren(testCase, testResponse.getEntity());
+            testChildren(testCase);
+        } else {
+            LOG.info("Failing {}", testCase.getTarget());
+            testCase.failed("Wrong status code. " + testResponse.getResponseCode() + " is not 200 OK");
         }
     }
 
-    private void harvestChildren(TestCase parentCase, HttpResponse response) throws IOException {
-        InputStream contentStream = response.getEntity().getContent();
-        Collection<DiscoveredRelation> relations = RelationFinder.findLinks(contentStream);
+    private void testChildren(TestCase testCase) {
+        Map<String, Collection<TestedRelation>> allRelations = testCase.getRelations();
+        allRelations.forEach((relationName, relations) -> {
+            relations.forEach(relation -> this.testRelation(relation));
+        });
+    }
+
+    private void testRelation(TestedRelation testedRelation) {
+        HttpClient.Response testResponse = httpClient.get(testedRelation.getUrl());
+        if (testResponse.getResponseCode() == 200) {
+            testedRelation.setStatus(Status.OK);
+        } else {
+            testedRelation.setStatus(Status.FAILED);
+            testedRelation.setReason(testResponse.getResponseCode() + " is not 200.");
+        }
+    }
+
+    private void harvestChildren(TestCase parentCase, String entity) {
+        Collection<DiscoveredRelation> relations = RelationFinder.findLinks(entity);
         relations.stream().forEach(parentCase::addRelation);
     }
 }

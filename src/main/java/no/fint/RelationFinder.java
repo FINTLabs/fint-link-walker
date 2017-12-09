@@ -41,11 +41,10 @@ public final class RelationFinder {
 
     private RelationFinder() {}
 
-    public static Collection<DiscoveredRelation> findLinks(InputStream jsonStream) {
+    public static Collection<DiscoveredRelation> findLinks(String json) {
         Configuration conf = Configuration.builder()
                 .options(Option.AS_PATH_LIST).build();
 
-        String json = read(jsonStream);
         if (json == null || json.length() <= 0) {
             return Collections.emptyList();
         }
@@ -79,10 +78,6 @@ public final class RelationFinder {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);// TODO: our own exceptions? should probably be reported to users if there's something this wrong with the model.
         }
-    }
-
-    private static String read(InputStream stream) {
-        return new BufferedReader(new InputStreamReader(stream)).lines().collect(Collectors.joining());
     }
 
 }

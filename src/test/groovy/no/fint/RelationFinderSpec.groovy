@@ -6,7 +6,7 @@ class RelationFinderSpec extends Specification {
 
     def "person.json contains 31 relations"() {
         when:
-        def relations = RelationFinder.findLinks(RelationFinder.getResourceAsStream("/person.json"))
+        def relations = RelationFinder.findLinks(RelationFinder.getResourceAsStream("/person.json").readLines().join(""))
 
         then:
         relations.size() == 31
@@ -14,7 +14,7 @@ class RelationFinderSpec extends Specification {
 
     def "empty.json should succeed with zero relations"() {
         when:
-        def relations = RelationFinder.findLinks(RelationFinder.getResourceAsStream("/empty.json"))
+        def relations = RelationFinder.findLinks(RelationFinder.getResourceAsStream("/empty.json").readLines().join(""))
 
         then:
         relations.size() == 0
