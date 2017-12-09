@@ -12,11 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class TestRunner {
@@ -50,7 +47,6 @@ public class TestRunner {
         client.execute(get, response -> {
             if (response.getStatusLine().getStatusCode() == 200) {
                 // 200 OK is test succeed, regardless of what the content is, right?
-                LOG.info("{} is a success", testCase.getTarget());
                 testCase.succeed();
                 harvestChildren(testCase, response);
                 testChildren(testCase, client);

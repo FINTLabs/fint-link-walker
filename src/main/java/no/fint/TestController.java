@@ -35,20 +35,24 @@ public class TestController {
      * Kicks off a startTest of an endpoint. All testing is async
      *
      * @param endpoint The endpoint under startTest
-     * @param baseURL  - optional, lets the enduser startTest different environments (so long as they are available)
+     * @param baseURL  - optional, lets the end-user startTest different environments (so long as they are available)
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public UUID startTest(@RequestParam("endpoint") @NotBlank String endpoint, @RequestParam(value = "base", required = false) URL baseURL) throws MalformedURLException {
-        UUID id = UUID.randomUUID();
-        LOG.info("Registering testcase " + id);
-        testScheduler.scheduleTest(buildUrl(endpoint, baseURL));
-        return id;
+    public TestCase startTest(@RequestParam("endpoint") @NotBlank String endpoint, @RequestParam(value = "base", required = false) URL baseURL) throws MalformedURLException {
+        TestCase testCase = testScheduler.scheduleTest(buildUrl(endpoint, baseURL));
+        LOG.info("Registering testcase " + testCase.getId());
+        return testCase;
     }
 
     @GetMapping("/")
     public Collection<TestCase> getAllTests() {
         return repository.allTestCases();
+    }
+
+    @GetMapping("/search")
+    public TestCase getTest(@RequestParam("id") @NotNull UUID id) {
+        return repository.getCaseForId(id);
     }
 
     private URL buildUrl(String endpoint, URL baseURL) throws MalformedURLException {

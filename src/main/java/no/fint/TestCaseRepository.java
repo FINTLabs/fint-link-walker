@@ -1,7 +1,5 @@
 package no.fint;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.net.URL;
@@ -13,25 +11,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @Repository
 public class TestCaseRepository {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestCaseRepository.class);
+    private final Map<UUID, TestCase> cases = new ConcurrentHashMap<>();
 
-    private final Map<URL, TestCase> cases = new ConcurrentHashMap<>();
-
-    /**
-     * Gets existing, or creates new testcase for a particular URL
-     *
-     * @param url
-     * @return
-     */
-    public TestCase getCaseForURL(URL url) {
-        if (!cases.containsKey(url)) {
-            TestCase testCase = new TestCase(UUID.randomUUID(), url);
-            cases.put(url, testCase);
-        }
-        return cases.get(url);
+    public TestCase buildNewCase(URL url) {
+        TestCase testCase = new TestCase(UUID.randomUUID(), url);
+        cases.put(testCase.getId(), testCase);
+        return testCase;
     }
 
     public Collection<TestCase> allTestCases() {
         return cases.values();
+    }
+
+    public TestCase getCaseForId(UUID id) {
+        if (cases.containsKey(id)) {
+            return cases.get(id);
+        } else {
+            throw new NoSuchTestCaseException(id);
+        }
     }
 }

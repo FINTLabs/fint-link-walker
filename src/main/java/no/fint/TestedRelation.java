@@ -10,7 +10,7 @@ public class TestedRelation {
 
     private final URL url;
     /**
-     * OK or FAILED
+     * RUNNING, OK, FAILED
      */
     private Status status;
 
@@ -26,6 +26,7 @@ public class TestedRelation {
     private final String path;
 
     public TestedRelation(URL url, String path) {
+        this.status = Status.RUNNING;
         this.url = url;
         this.path = path;
     }
