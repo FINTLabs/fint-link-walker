@@ -41,9 +41,9 @@ public class HttpClient {
 
         private String entity;
 
-        public Response(int responseCode, String contentStream) {
+        public Response(int responseCode, String entity) {
             this.responseCode = responseCode;
-            this.entity = contentStream;
+            this.entity = entity;
         }
 
         public Response() {
