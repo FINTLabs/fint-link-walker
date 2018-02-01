@@ -1,11 +1,13 @@
 package no.fint;
 
-import javax.annotation.CheckForNull;
+import lombok.Data;
+
 import java.net.URL;
 
 /**
  * TestedRelation is a single link with a named relation that has been or is about to be tested.
  */
+@Data
 public class TestedRelation {
 
     private final URL url;
@@ -17,7 +19,6 @@ public class TestedRelation {
     /**
      * Any reason we could guess that this rel failed
      */
-    @CheckForNull
     private String reason;
 
     /**
@@ -29,25 +30,5 @@ public class TestedRelation {
         this.status = Status.RUNNING;
         this.url = url;
         this.path = path;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public URL getUrl() {
-        return url;
     }
 }

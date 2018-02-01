@@ -11,23 +11,19 @@ class LinkWalkerSpec extends Specification {
     public static final String innerSelfURL = "https://example.com/200OK/andpossiblyADocument"
     public static final String selfURL = "https://example.com/should/return/200OK/and/this/document"
 
-    TestCaseRepository caseRepository = new TestCaseRepository()
-    TestRunner testRunner = new TestRunner()
-    TestController testController = new TestController()
-    TestScheduler testScheduler = new TestScheduler()
     HttpClient httpClient = buildReplacementHttpClient()
-
-    def buildDependencyGraph() {
-        testController.testScheduler = testScheduler
-        testController.repository = caseRepository
-
-        testScheduler.runner = testRunner
-        testScheduler.repository = caseRepository
-
-        testRunner.scheduler = testScheduler
-        testRunner.repository = caseRepository
-        testRunner.httpClient = httpClient
-    }
+    TestCaseRepository caseRepository = new TestCaseRepository()
+    TestRunner testRunner = new TestRunner(
+            httpClient: httpClient
+    )
+    TestScheduler testScheduler = new TestScheduler(
+            runner: testRunner,
+            repository: caseRepository
+    )
+    TestController testController = new TestController(
+            testScheduler: testScheduler,
+            repository: caseRepository
+    )
 
     /**
      * Creates an ersatz http-client that succeeds or fails according to plan
@@ -58,7 +54,6 @@ class LinkWalkerSpec extends Specification {
 
     def "The link walker should test the response codes of the relations defined in the document it is asked to test"() {
         given:
-        buildDependencyGraph()
         def initialTest = testController.startTest("should/return/200OK/and/this/document", new URL("https://example.com"))
         testScheduler.runATest()
 

@@ -6,9 +6,6 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -39,8 +36,6 @@ public final class RelationFinder {
         });
     }
 
-    private RelationFinder() {}
-
     public static Collection<DiscoveredRelation> findLinks(String json) {
         Configuration conf = Configuration.builder()
                 .options(Option.AS_PATH_LIST).build();
@@ -55,7 +50,8 @@ public final class RelationFinder {
         List<String> allLinkPaths = pathDocument.read("$.._links");
 
         return allLinkPaths.stream().flatMap(path -> {
-            Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>(){});
+            Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
+            });
             List<DiscoveredRelation> relations = linkObject.keySet().stream().map(rel -> createRelation(path, linkObject, rel)).collect(Collectors.toList());
             return relations.stream();
         }).collect(Collectors.toList());

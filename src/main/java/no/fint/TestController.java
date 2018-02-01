@@ -1,26 +1,22 @@
 package no.fint;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotBlank;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
-import javax.websocket.server.PathParam;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/")
 public class TestController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestController.class);
-
-    private URL defaultURL = new URL("https://play-with-fint.felleskomponent.no/");
+    private URL defaultURL;
 
     @Autowired
     private TestScheduler testScheduler;
@@ -29,6 +25,7 @@ public class TestController {
     private TestCaseRepository repository;
 
     public TestController() throws MalformedURLException {
+        defaultURL = new URL("https://play-with-fint.felleskomponent.no/");
     }
 
     /**
@@ -41,7 +38,7 @@ public class TestController {
     @PostMapping
     public TestCase startTest(@RequestParam("endpoint") @NotBlank String endpoint, @RequestParam(value = "base", required = false) URL baseURL) throws MalformedURLException {
         TestCase testCase = testScheduler.scheduleTest(buildUrl(endpoint, baseURL));
-        LOG.info("Registering testcase " + testCase.getId());
+        log.info("Registering testcase " + testCase.getId());
         return testCase;
     }
 

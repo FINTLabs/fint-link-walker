@@ -1,7 +1,7 @@
 package no.fint;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.CheckForNull;
 import java.io.IOException;
@@ -13,9 +13,9 @@ import java.util.*;
  * <p>
  * The TestCase is successful if the URL responds with 200 OK and all links contained in the response-object also pass their tests.
  */
+@Slf4j
+@Getter
 public class TestCase {
-
-    private static final Logger LOG = LoggerFactory.getLogger(TestCase.class);
 
     private final UUID id;
     private final URL target;
@@ -38,7 +38,7 @@ public class TestCase {
     }
 
     private void transition(Status newStatus) {
-        LOG.info("{} {} -> {}", target, status, newStatus);
+        log.info("{} {} -> {}", target, status, newStatus);
         this.status = newStatus;
     }
 
@@ -54,10 +54,6 @@ public class TestCase {
         transition(Status.OK);
     }
 
-    public URL getTarget() {
-        return target;
-    }
-
     public void failed(IOException e) {
         transition(Status.FAILED);
         reason = e.getClass() + ": " + e.getMessage();
@@ -66,14 +62,6 @@ public class TestCase {
     public void failed(String reason) {
         transition(Status.FAILED);
         this.reason = reason;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public Status getStatus() {
-        return status;
     }
 
     @CheckForNull
@@ -88,9 +76,7 @@ public class TestCase {
             relations.put(rel, relationSet);
         }
         Collection<TestedRelation> testedRelations = relations.get(rel);
-        discoveredRelation.getLinks().stream().forEach(link -> {
-            testedRelations.add(new TestedRelation(link, discoveredRelation.getPath()));
-        });
+        discoveredRelation.getLinks().forEach(link -> testedRelations.add(new TestedRelation(link, discoveredRelation.getPath())));
     }
 
     public Map<String, Collection<TestedRelation>> getRelations() {

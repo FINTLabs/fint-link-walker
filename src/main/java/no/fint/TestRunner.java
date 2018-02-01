@@ -1,6 +1,5 @@
 package no.fint;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
@@ -10,7 +9,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
 
@@ -19,13 +17,7 @@ public class TestRunner {
     private static final Logger LOG = LoggerFactory.getLogger(TestRunner.class);
 
     @Autowired
-    TestScheduler scheduler;
-
-    @Autowired
-    TestCaseRepository repository;
-
-    @Autowired
-    HttpClient httpClient;
+    private HttpClient httpClient;
 
     @Async
     public void runTest(TestCase testCase) throws IOException {
@@ -43,7 +35,7 @@ public class TestRunner {
         }
     }
 
-    private void runIt(TestCase testCase, CloseableHttpClient client) throws IOException {
+    private void runIt(TestCase testCase, CloseableHttpClient client) {
         HttpClient.Response testResponse = httpClient.get(testCase.getTarget());
         if (testResponse.getResponseCode() == 200) {
             testCase.succeed();
@@ -58,7 +50,7 @@ public class TestRunner {
     private void testChildren(TestCase testCase) {
         Map<String, Collection<TestedRelation>> allRelations = testCase.getRelations();
         allRelations.forEach((relationName, relations) -> {
-            relations.forEach(relation -> this.testRelation(relation));
+            relations.forEach(this::testRelation);
         });
     }
 
@@ -74,6 +66,6 @@ public class TestRunner {
 
     private void harvestChildren(TestCase parentCase, String entity) {
         Collection<DiscoveredRelation> relations = RelationFinder.findLinks(entity);
-        relations.stream().forEach(parentCase::addRelation);
+        relations.forEach(parentCase::addRelation);
     }
 }
