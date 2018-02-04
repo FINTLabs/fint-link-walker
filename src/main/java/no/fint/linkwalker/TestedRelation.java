@@ -1,6 +1,7 @@
-package no.fint;
+package no.fint.linkwalker;
 
 import lombok.Data;
+import no.fint.linkwalker.dto.Status;
 
 import java.net.URL;
 

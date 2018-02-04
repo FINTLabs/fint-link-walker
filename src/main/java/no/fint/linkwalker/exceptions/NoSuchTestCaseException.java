@@ -1,4 +1,4 @@
-package no.fint;
+package no.fint.linkwalker.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

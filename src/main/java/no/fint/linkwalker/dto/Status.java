@@ -1,4 +1,4 @@
-package no.fint;
+package no.fint.linkwalker.dto;
 
 public enum Status {
     NOT_QUEUED, // this test is created, but not even queued

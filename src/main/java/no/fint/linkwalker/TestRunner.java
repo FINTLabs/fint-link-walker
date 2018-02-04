@@ -1,12 +1,14 @@
-package no.fint;
+package no.fint.linkwalker;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import no.fint.linkwalker.dto.Status;
+import no.fint.linkwalker.dto.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -17,10 +19,10 @@ public class TestRunner {
     private static final Logger LOG = LoggerFactory.getLogger(TestRunner.class);
 
     @Autowired
-    private HttpClient httpClient;
+    private RestTemplate restTemplate;
 
     @Async
-    public void runTest(TestCase testCase) throws IOException {
+    public void runTest(TestCase testCase) {
         if (testCase.getStatus() == Status.RUNNING || testCase.getStatus() == Status.OK || testCase.getStatus() == Status.FAILED) {
             LOG.info("{} has status {}, so it will not be run", testCase.getTarget(), testCase.getStatus());
             return;
@@ -29,21 +31,18 @@ public class TestRunner {
         }
 
         testCase.start();
-
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            runIt(testCase, client);
-        }
+        runIt(testCase);
     }
 
-    private void runIt(TestCase testCase, CloseableHttpClient client) {
-        HttpClient.Response testResponse = httpClient.get(testCase.getTarget());
-        if (testResponse.getResponseCode() == 200) {
+    private void runIt(TestCase testCase) {
+        ResponseEntity<String> response = restTemplate.getForEntity(testCase.getTarget(), String.class);
+        if (response.getStatusCode().is2xxSuccessful()) {
             testCase.succeed();
-            harvestChildren(testCase, testResponse.getEntity());
+            harvestChildren(testCase, response.getBody());
             testChildren(testCase);
         } else {
             LOG.info("Failing {}", testCase.getTarget());
-            testCase.failed("Wrong status code. " + testResponse.getResponseCode() + " is not 200 OK");
+            testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
         }
     }
 
@@ -55,12 +54,12 @@ public class TestRunner {
     }
 
     private void testRelation(TestedRelation testedRelation) {
-        HttpClient.Response testResponse = httpClient.get(testedRelation.getUrl());
-        if (testResponse.getResponseCode() == 200) {
+        ResponseEntity<Void> response = restTemplate.getForEntity(testedRelation.getUrl().toString(), Void.class);
+        if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
         } else {
             testedRelation.setStatus(Status.FAILED);
-            testedRelation.setReason(testResponse.getResponseCode() + " is not 200.");
+            testedRelation.setReason(String.format("%s is not 200.", response.getStatusCode().value()));
         }
     }
 

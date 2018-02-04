@@ -1,11 +1,12 @@
-package no.fint;
+package no.fint.linkwalker.dto;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import no.fint.linkwalker.DiscoveredRelation;
+import no.fint.linkwalker.TestedRelation;
 
 import javax.annotation.CheckForNull;
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 
 /**
@@ -18,20 +19,15 @@ import java.util.*;
 public class TestCase {
 
     private final UUID id;
-    private final URL target;
+    private final String target;
     private Status status;
 
     @CheckForNull
     private String reason;
 
-    /*
-        each relation has a name and a set of urls
-
-        key is the relationship's name
-     */
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
 
-    public TestCase(UUID id, URL target) {
+    public TestCase(UUID id, String target) {
         this.id = id;
         this.target = target;
         status = Status.NOT_QUEUED;

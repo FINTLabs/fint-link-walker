@@ -1,5 +1,6 @@
-package no.fint
+package no.fint.linkwalker
 
+import no.fint.linkwalker.RelationFinder
 import spock.lang.Specification
 
 class RelationFinderSpec extends Specification {

@@ -1,11 +1,10 @@
-package no.fint;
+package no.fint.linkwalker;
 
+import no.fint.linkwalker.dto.TestCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -22,7 +21,7 @@ public class TestScheduler {
     /**
      * queue up a test for running
      */
-    public TestCase scheduleTest(URL url) {
+    public TestCase scheduleTest(String url) {
         TestCase testCase = repository.buildNewCase(url);
         testCase.enqueued();
         queuedTests.add(testCase);
@@ -36,11 +35,7 @@ public class TestScheduler {
     public void runATest() {
         while (!queuedTests.isEmpty()) {
             TestCase testCase = queuedTests.poll();
-            try {
-                runner.runTest(testCase);
-            } catch (IOException e) {
-                testCase.failed(e);
-            }
+            runner.runTest(testCase);
         }
     }
 }

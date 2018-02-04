@@ -1,4 +1,4 @@
-package no.fint;
+package no.fint.linkwalker;
 
 import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
