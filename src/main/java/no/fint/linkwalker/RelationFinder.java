@@ -52,14 +52,13 @@ public final class RelationFinder {
         return allLinkPaths.stream().flatMap(path -> {
             Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
             });
-            List<DiscoveredRelation> relations = linkObject.keySet().stream().map(rel -> createRelation(path, linkObject, rel)).collect(Collectors.toList());
+            List<DiscoveredRelation> relations = linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel)).collect(Collectors.toList());
             return relations.stream();
         }).collect(Collectors.toList());
     }
 
-    private static DiscoveredRelation createRelation(String path, Map<String, List<Map<String, String>>> linkObject, String rel) {
+    private static DiscoveredRelation createRelation(Map<String, List<Map<String, String>>> linkObject, String rel) {
         DiscoveredRelation relation = new DiscoveredRelation();
-        relation.setPath(path);
         relation.setRel(rel);
         relation.setLinks(linkObject.get(rel).stream()
                 .map(map -> map.get("href"))

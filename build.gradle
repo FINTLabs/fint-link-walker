@@ -52,7 +52,6 @@ dependencies {
     compileOnly('org.projectlombok:lombok')
 
     compile('com.jayway.jsonpath:json-path:2.3.0')
-    compile('org.apache.httpcomponents:httpclient:4.5.4')
 
     testCompile('no.fint:fint-test-utils:0.0.4')
     testCompile("cglib:cglib-nodep:${cglibVersion}")

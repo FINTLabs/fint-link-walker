@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
 import no.fint.linkwalker.TestedRelation;
 
-import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.util.*;
 
@@ -21,8 +20,6 @@ public class TestCase {
     private final UUID id;
     private final String target;
     private Status status;
-
-    @CheckForNull
     private String reason;
 
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
@@ -60,11 +57,6 @@ public class TestCase {
         this.reason = reason;
     }
 
-    @CheckForNull
-    public String getReason() {
-        return reason;
-    }
-
     public void addRelation(DiscoveredRelation discoveredRelation) {
         String rel = discoveredRelation.getRel();
         if (!relations.containsKey(rel)) {
@@ -72,7 +64,7 @@ public class TestCase {
             relations.put(rel, relationSet);
         }
         Collection<TestedRelation> testedRelations = relations.get(rel);
-        discoveredRelation.getLinks().forEach(link -> testedRelations.add(new TestedRelation(link, discoveredRelation.getPath())));
+        discoveredRelation.getLinks().forEach(link -> testedRelations.add(new TestedRelation(link)));
     }
 
     public Map<String, Collection<TestedRelation>> getRelations() {

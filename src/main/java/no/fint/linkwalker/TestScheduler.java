@@ -18,9 +18,6 @@ public class TestScheduler {
     @Autowired
     private TestCaseRepository repository;
 
-    /**
-     * queue up a test for running
-     */
     public TestCase scheduleTest(String url) {
         TestCase testCase = repository.buildNewCase(url);
         testCase.enqueued();
@@ -28,9 +25,6 @@ public class TestScheduler {
         return testCase;
     }
 
-    /**
-     * Pick out the first test in the queue and run it.
-     */
     @Scheduled(fixedRate = 1000)
     public void runATest() {
         while (!queuedTests.isEmpty()) {
