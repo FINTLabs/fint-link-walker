@@ -47,11 +47,11 @@ repositories {
 }
 
 dependencies {
-    compile("com.github.springfox.loader:springfox-loader:${springfoxLoaderVersion}")
-    compile('org.springframework.boot:spring-boot-starter-web')
     compileOnly('org.projectlombok:lombok')
+    compile('com.jayway.jsonpath:json-path:2.4.0')
 
-    compile('com.jayway.jsonpath:json-path:2.3.0')
+    compile('org.springframework.boot:spring-boot-starter-web')
+    compile("com.github.springfox.loader:springfox-loader:${springfoxLoaderVersion}")
 
     testCompile('no.fint:fint-test-utils:0.0.4')
     testCompile("cglib:cglib-nodep:${cglibVersion}")
