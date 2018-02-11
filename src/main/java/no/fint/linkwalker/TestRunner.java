@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,7 +35,11 @@ public class TestRunner {
     }
 
     private void runIt(TestCase testCase) {
-        ResponseEntity<String> response = restTemplate.getForEntity(testCase.getTarget(), String.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-org-id", "pwf.no");
+        headers.set("x-client", "fint-link-walker");
+
+        ResponseEntity<String> response = restTemplate.exchange(testCase.getTarget(), HttpMethod.GET, new HttpEntity<>("parameters", headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testCase.succeed();
             harvestChildren(testCase, response.getBody());
@@ -49,7 +56,11 @@ public class TestRunner {
     }
 
     private void testRelation(TestedRelation testedRelation) {
-        ResponseEntity<Void> response = restTemplate.getForEntity(testedRelation.getUrl().toString(), Void.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-org-id", "pwf.no");
+        headers.set("x-client", "fint-link-walker");
+
+        ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>("parameters", headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
         } else {
