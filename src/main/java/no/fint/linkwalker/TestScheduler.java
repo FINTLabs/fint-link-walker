@@ -1,6 +1,7 @@
 package no.fint.linkwalker;
 
 import no.fint.linkwalker.dto.TestCase;
+import no.fint.linkwalker.dto.TestRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,8 +13,8 @@ public class TestScheduler {
     @Autowired
     private TestCaseRepository repository;
 
-    public TestCase scheduleTest(String url) {
-        TestCase testCase = repository.buildNewCase(url);
+    public TestCase scheduleTest(TestRequest testRequest) {
+        TestCase testCase = repository.buildNewCase(testRequest);
         testCase.enqueued();
         runner.runTest(testCase);
         return testCase;

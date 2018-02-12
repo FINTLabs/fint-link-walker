@@ -1,10 +1,10 @@
 package no.fint.linkwalker;
 
 import no.fint.linkwalker.dto.TestCase;
+import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.exceptions.NoSuchTestCaseException;
 import org.springframework.stereotype.Repository;
 
-import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -15,8 +15,8 @@ public class TestCaseRepository {
 
     private final Map<UUID, TestCase> cases = new ConcurrentHashMap<>();
 
-    public TestCase buildNewCase(String url) {
-        TestCase testCase = new TestCase(UUID.randomUUID(), url);
+    public TestCase buildNewCase(TestRequest testRequest) {
+        TestCase testCase = new TestCase(testRequest);
         cases.put(testCase.getId(), testCase);
         return testCase;
     }

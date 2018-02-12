@@ -1,5 +1,6 @@
 package no.fint.linkwalker.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
@@ -18,20 +19,22 @@ import java.util.*;
 public class TestCase {
 
     private final UUID id;
-    private final String target;
     private Status status;
     private String reason;
 
+    @JsonIgnore
+    private TestRequest testRequest;
+
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
 
-    public TestCase(UUID id, String target) {
-        this.id = id;
-        this.target = target;
+    public TestCase(TestRequest testRequest) {
+        this.id = UUID.randomUUID();
+        this.testRequest = testRequest;
         status = Status.NOT_QUEUED;
     }
 
     private void transition(Status newStatus) {
-        log.info("{} {} -> {}", target, status, newStatus);
+        log.info("{} {} -> {}", testRequest.getTarget(), status, newStatus);
         this.status = newStatus;
     }
 

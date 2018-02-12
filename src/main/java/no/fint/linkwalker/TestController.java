@@ -31,7 +31,7 @@ public class TestController {
      */
     @PostMapping
     public ResponseEntity<TestCase> startTest(@RequestBody TestRequest testRequest) {
-        TestCase testCase = testScheduler.scheduleTest(testRequest.getTarget());
+        TestCase testCase = testScheduler.scheduleTest(testRequest);
         log.info("Registering testcase " + testCase.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder
                 .fromCurrentRequest()

@@ -3,6 +3,7 @@ package no.fint.linkwalker;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
+import no.fint.linkwalker.dto.TestRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,11 +24,12 @@ public class TestRunner {
 
     @Async
     public void runTest(TestCase testCase) {
+        String target = testCase.getTestRequest().getTarget();
         if (testCase.getStatus() == Status.RUNNING || testCase.getStatus() == Status.OK || testCase.getStatus() == Status.FAILED) {
-            log.info("{} has status {}, so it will not be run", testCase.getTarget(), testCase.getStatus());
+            log.info("{} has status {}, so it will not be run", target, testCase.getStatus());
             return;
         } else {
-            log.info("Running test {}", testCase.getTarget());
+            log.info("Running test {}", target);
         }
 
         testCase.start();
@@ -35,30 +37,32 @@ public class TestRunner {
     }
 
     private void runIt(TestCase testCase) {
+        TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-org-id", "pwf.no");
-        headers.set("x-client", "fint-link-walker");
+        headers.set("x-org-id", testRequest.getOrgId());
+        headers.set("x-client", testRequest.getClient());
 
-        ResponseEntity<String> response = restTemplate.exchange(testCase.getTarget(), HttpMethod.GET, new HttpEntity<>("parameters", headers), String.class);
+        ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>("parameters", headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testCase.succeed();
             harvestChildren(testCase, response.getBody());
             testChildren(testCase);
         } else {
-            log.info("Failing {}", testCase.getTarget());
+            log.info("Failing {}", testRequest.getTarget());
             testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
         }
     }
 
     private void testChildren(TestCase testCase) {
         Map<String, Collection<TestedRelation>> allRelations = testCase.getRelations();
-        allRelations.forEach((relationName, relations) -> relations.forEach(this::testRelation));
+        allRelations.forEach((relationName, relations) -> relations.forEach(relation -> testRelation(testCase, relation)));
     }
 
-    private void testRelation(TestedRelation testedRelation) {
+    private void testRelation(TestCase testCase, TestedRelation testedRelation) {
+        TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-org-id", "pwf.no");
-        headers.set("x-client", "fint-link-walker");
+        headers.set("x-org-id", testRequest.getOrgId());
+        headers.set("x-client", testRequest.getClient());
 
         ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>("parameters", headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {

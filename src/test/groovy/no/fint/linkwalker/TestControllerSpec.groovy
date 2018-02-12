@@ -27,15 +27,17 @@ class TestControllerSpec extends MockMvcSpecification {
     }
 
     def "Start test with TestRequest"() {
-        when:
+        given:
         def request = new TestRequest(endpoint: '/test')
         def body = new ObjectMapper().writeValueAsString(request)
+
+        when:
         def response = mockMvc.perform(post('/tests')
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(body))
 
         then:
-        1 * testScheduler.scheduleTest(_ as String) >> new TestCase(UUID.randomUUID(), '/test')
+        1 * testScheduler.scheduleTest(request) >> new TestCase(request)
         response.andExpect(status().isCreated())
     }
 }
