@@ -47,6 +47,7 @@ repositories {
 }
 
 dependencies {
+    compile('no.fint:fint-oauth-token-service:1.1.0')
     compileOnly('org.projectlombok:lombok')
     compile('com.jayway.jsonpath:json-path:2.4.0')
 

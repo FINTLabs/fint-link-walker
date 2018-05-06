@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
+import no.fint.oauth.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +23,9 @@ public class TestRunner {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired(required = false)
+    private TokenService tokenService;
+
     @Async
     public void runTest(TestCase testCase) {
         String target = testCase.getTestRequest().getTarget();
@@ -38,9 +42,7 @@ public class TestRunner {
 
     private void runIt(TestCase testCase) {
         TestRequest testRequest = testCase.getTestRequest();
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("x-org-id", testRequest.getOrgId());
-        headers.set("x-client", testRequest.getClient());
+        HttpHeaders headers = createHeaders(testRequest);
 
         ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>("parameters", headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -60,9 +62,7 @@ public class TestRunner {
 
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
         TestRequest testRequest = testCase.getTestRequest();
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("x-org-id", testRequest.getOrgId());
-        headers.set("x-client", testRequest.getClient());
+        HttpHeaders headers = createHeaders(testRequest);
 
         ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>("parameters", headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -71,6 +71,17 @@ public class TestRunner {
             testedRelation.setStatus(Status.FAILED);
             testedRelation.setReason(String.format("%s is not 200.", response.getStatusCode().value()));
         }
+    }
+
+    private HttpHeaders createHeaders(TestRequest testRequest) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-org-id", testRequest.getOrgId());
+        headers.set("x-client", testRequest.getClient());
+        if (tokenService != null) {
+            headers.set("Authorization", String.format("Bearer %s", tokenService.getAccessToken()));
+        }
+
+        return headers;
     }
 
     private void harvestChildren(TestCase parentCase, String entity) {
