@@ -52,8 +52,7 @@ public final class RelationFinder {
         return allLinkPaths.stream().flatMap(path -> {
             Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
             });
-            List<DiscoveredRelation> relations = linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel)).collect(Collectors.toList());
-            return relations.stream();
+            return linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel));
         }).collect(Collectors.toList());
     }
 

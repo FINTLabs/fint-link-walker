@@ -8,6 +8,7 @@ import no.fint.linkwalker.TestedRelation;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A TestCase gets the content of a URL, parses it, and follows any and all URLs
@@ -21,6 +22,7 @@ public class TestCase {
     private final UUID id;
     private Status status;
     private String reason;
+    private final AtomicLong remaining = new AtomicLong();
 
     @JsonIgnore
     private TestRequest testRequest;

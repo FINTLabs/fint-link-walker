@@ -44,11 +44,20 @@ public class TestRunner {
         TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = createHeaders(testRequest);
 
-        ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>("parameters", headers), String.class);
+        ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
-            testCase.succeed();
             harvestChildren(testCase, response.getBody());
+            long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
+            testCase.getRemaining().set(count);
+            log.info("Found {} children.", count);
             testChildren(testCase);
+            log.info("Completed testing children.");
+            long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
+            log.info("Found {} errors.", errors);
+            if (errors > 0)
+                testCase.failed("Found " + errors + " errors in children.");
+            else
+                testCase.succeed();
         } else {
             log.info("Failing {}", testRequest.getTarget());
             testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
@@ -57,20 +66,21 @@ public class TestRunner {
 
     private void testChildren(TestCase testCase) {
         Map<String, Collection<TestedRelation>> allRelations = testCase.getRelations();
-        allRelations.forEach((relationName, relations) -> relations.forEach(relation -> testRelation(testCase, relation)));
+        allRelations.values().parallelStream().forEach(relations -> relations.parallelStream().forEach(relation -> testRelation(testCase, relation)));
     }
 
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
         TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = createHeaders(testRequest);
 
-        ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>("parameters", headers), Void.class);
+        ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>(headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
         } else {
             testedRelation.setStatus(Status.FAILED);
             testedRelation.setReason(String.format("%s is not 200.", response.getStatusCode().value()));
         }
+        testCase.getRemaining().decrementAndGet();
     }
 
     private HttpHeaders createHeaders(TestRequest testRequest) {
