@@ -13,8 +13,8 @@ public class TestScheduler {
     @Autowired
     private TestCaseRepository repository;
 
-    public TestCase scheduleTest(TestRequest testRequest) {
-        TestCase testCase = repository.buildNewCase(testRequest);
+    public TestCase scheduleTest(String organisation, TestRequest testRequest) {
+        TestCase testCase = repository.buildNewCase(organisation, testRequest);
         testCase.enqueued();
         runner.runTest(testCase);
         return testCase;

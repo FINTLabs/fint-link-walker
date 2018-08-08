@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/tests")
+@RequestMapping("/tests/{organisation}")
 public class TestController {
 
     @Autowired
@@ -30,8 +30,11 @@ public class TestController {
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public ResponseEntity<TestCase> startTest(@RequestBody TestRequest testRequest) {
-        TestCase testCase = testScheduler.scheduleTest(testRequest);
+    public ResponseEntity<TestCase> startTest(
+            @PathVariable String organisation,
+            @RequestBody TestRequest testRequest
+    ) {
+        TestCase testCase = testScheduler.scheduleTest(organisation, testRequest);
         log.info("Registering testcase " + testCase.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -41,12 +44,17 @@ public class TestController {
     }
 
     @GetMapping
-    public Collection<TestCase> getAllTests() {
-        return repository.allTestCases();
+    public Collection<TestCase> getAllTests(
+            @PathVariable String organisation
+    ) {
+        return repository.allTestCases(organisation);
     }
 
     @GetMapping("/{id}")
-    public TestCase getTest(@PathVariable UUID id) {
-        return repository.getCaseForId(id);
+    public TestCase getTest(
+            @PathVariable String organisation,
+            @PathVariable UUID id
+    ) {
+        return repository.getCaseForId(organisation, id);
     }
 }

@@ -20,7 +20,7 @@ class TestControllerSpec extends MockMvcSpecification {
 
     def "Start test without including TestRequest"() {
         when:
-        def response = mockMvc.perform(post('/tests'))
+        def response = mockMvc.perform(post('/tests/fake'))
 
         then:
         response.andExpect(status().isBadRequest())
@@ -32,12 +32,12 @@ class TestControllerSpec extends MockMvcSpecification {
         def body = new ObjectMapper().writeValueAsString(request)
 
         when:
-        def response = mockMvc.perform(post('/tests')
+        def response = mockMvc.perform(post('/tests/fake')
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(body))
 
         then:
-        1 * testScheduler.scheduleTest(request) >> new TestCase(request)
+        1 * testScheduler.scheduleTest('fake', request) >> new TestCase(request)
         response.andExpect(status().isCreated())
     }
 }
