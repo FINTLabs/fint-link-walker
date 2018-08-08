@@ -55,7 +55,7 @@ public class TestRunner {
             long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
             log.info("Found {} errors.", errors);
             if (errors > 0)
-                testCase.failed("Found " + errors + " errors in children.");
+                testCase.failed(String.format("Found %d errors in children.", errors));
             else
                 testCase.succeed();
         } else {

@@ -12,8 +12,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-
 @Import(OAuthConfig.class)
 @EnableSpringfox
 @EnableAsync
@@ -26,13 +24,12 @@ public class Application {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setErrorHandler(new ResponseErrorHandler() {
             @Override
-            public boolean hasError(ClientHttpResponse response) throws IOException {
+            public boolean hasError(ClientHttpResponse response) {
                 return false;
             }
 
             @Override
-            public void handleError(ClientHttpResponse response) throws IOException {
-
+            public void handleError(ClientHttpResponse response) {
             }
         });
         return restTemplate;
