@@ -52,9 +52,9 @@ public class TestCase {
         transition(Status.OK);
     }
 
-    public void failed(IOException e) {
+    public void failed(Throwable t) {
         transition(Status.FAILED);
-        reason = e.getClass() + ": " + e.getMessage();
+        reason = t.getClass() + ": " + t.getMessage();
     }
 
     public void failed(String reason) {

@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.UUID;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
-public class NoSuchTestCaseException extends RuntimeException {
+public class NoSuchTestCaseException extends FintLinkWalkerException {
     public NoSuchTestCaseException(UUID id) {
-        super("No test case with id " + id + " can be found.");
+        super(String.format("No test case with id %s can be found.", id.toString()));
     }
 }

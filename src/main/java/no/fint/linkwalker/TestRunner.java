@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
+import no.fint.linkwalker.exceptions.FintLinkWalkerException;
 import no.fint.oauth.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -46,18 +47,22 @@ public class TestRunner {
 
         ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
-            harvestChildren(testCase, response.getBody());
-            long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
-            testCase.getRemaining().set(count);
-            log.info("Found {} children.", count);
-            testChildren(testCase);
-            log.info("Completed testing children.");
-            long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
-            log.info("Found {} errors.", errors);
-            if (errors > 0)
-                testCase.failed(String.format("Found %d errors in children.", errors));
-            else
-                testCase.succeed();
+            try {
+                harvestChildren(testCase, response.getBody());
+                long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
+                testCase.getRemaining().set(count);
+                log.info("Found {} children.", count);
+                testChildren(testCase);
+                log.info("Completed testing children.");
+                long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
+                log.info("Found {} errors.", errors);
+                if (errors > 0)
+                    testCase.failed(String.format("Found %d errors in children.", errors));
+                else
+                    testCase.succeed();
+            } catch (FintLinkWalkerException e) {
+                testCase.failed(e);
+            }
         } else {
             log.info("Failing {}", testRequest.getTarget());
             testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));

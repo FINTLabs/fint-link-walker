@@ -5,6 +5,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import no.fint.linkwalker.exceptions.InvalidTestUrlException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,13 +48,16 @@ public final class RelationFinder {
         DocumentContext pathDocument = JsonPath.using(conf).parse(json);
         DocumentContext valueDocument = JsonPath.parse(json);
 
-        List<String> allLinkPaths = pathDocument.read("$.._links");
-
-        return allLinkPaths.stream().flatMap(path -> {
-            Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
-            });
-            return linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel));
-        }).collect(Collectors.toList());
+        try {
+            List<String> allLinkPaths = pathDocument.read("$.._links");
+            return allLinkPaths.stream().flatMap(path -> {
+                Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
+                });
+                return linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel));
+            }).collect(Collectors.toList());
+        } catch (PathNotFoundException e) {
+            throw new InvalidTestUrlException("No _links were found");
+        }
     }
 
     private static DiscoveredRelation createRelation(Map<String, List<Map<String, String>>> linkObject, String rel) {
