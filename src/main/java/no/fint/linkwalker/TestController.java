@@ -14,6 +14,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
+@CrossOrigin
 @RequestMapping("/tests/{organisation}")
 public class TestController {
 
@@ -48,6 +49,14 @@ public class TestController {
             @PathVariable String organisation
     ) {
         return repository.allTestCases(organisation);
+    }
+
+    @PutMapping
+    public ResponseEntity clearAllTests(
+            @PathVariable String organisation
+    ) {
+        repository.clearTests(organisation);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")

@@ -2,6 +2,9 @@ springfox:
  title: Fint Link Walker
  version: '@version@'
 
+server:
+ port: 8082
+
 security:
   basic:
     enabled: false

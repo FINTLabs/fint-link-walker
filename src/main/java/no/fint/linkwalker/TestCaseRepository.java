@@ -26,6 +26,10 @@ public class TestCaseRepository {
         return cases.get(organisation);
     }
 
+    public void clearTests(String organisation) {
+        cases.get(organisation).clear();
+    }
+
     public TestCase getCaseForId(String organisation, UUID id) {
         if (!cases.containsKey(organisation))
             throw new NoSuchTestCaseException(id);
