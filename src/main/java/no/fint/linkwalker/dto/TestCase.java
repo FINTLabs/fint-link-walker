@@ -1,6 +1,6 @@
 package no.fint.linkwalker.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
@@ -20,18 +20,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TestCase {
 
     private final UUID id;
+    private final AtomicLong remaining = new AtomicLong();
+    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
     private Status status;
     private String reason;
-    private final AtomicLong remaining = new AtomicLong();
-
-    @JsonIgnore
     private TestRequest testRequest;
-
-    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
+    @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss")
+    private Date time;
 
     public TestCase(TestRequest testRequest) {
         this.id = UUID.randomUUID();
         this.testRequest = testRequest;
+        this.time = new Date();
         status = Status.NOT_QUEUED;
     }
 
