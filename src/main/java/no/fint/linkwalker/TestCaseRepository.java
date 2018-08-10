@@ -33,6 +33,7 @@ public class TestCaseRepository {
     public TestCase getCaseForId(String organisation, UUID id) {
         if (!cases.containsKey(organisation))
             throw new NoSuchTestCaseException(id);
+
         return cases
                 .get(organisation)
                 .stream()
