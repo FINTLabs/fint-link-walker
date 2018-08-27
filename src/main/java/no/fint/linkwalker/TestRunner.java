@@ -5,27 +5,31 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.exceptions.FintLinkWalkerException;
-import no.fint.oauth.TokenService;
+import no.fint.oauth.OAuthRestTemplateFactory;
+import no.fint.portal.model.client.Client;
+import no.fint.portal.model.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
 public class TestRunner {
-    @Autowired
-    private RestTemplate restTemplate;
 
-    @Autowired(required = false)
-    private TokenService tokenService;
+    @Autowired
+    private OAuthRestTemplateFactory oAuthRestTemplateFactory;
+
+    @Autowired
+    private ClientService clientService;
+
+    private RestTemplate restTemplate;
 
     @Async
     public void runTest(TestCase testCase) {
@@ -37,13 +41,24 @@ public class TestRunner {
             log.info("Running test {}", target);
         }
 
+        if (PwfUtils.isPwf(testCase.getTestRequest().getBaseUrl())) {
+            restTemplate = new RestTemplate();
+        } else {
+            Client client = clientService.getClientByDn(testCase.getTestRequest().getClient()).orElseThrow(SecurityException::new);
+            String password = UUID.randomUUID().toString().toLowerCase();
+            clientService.resetClientPassword(client, password);
+            String clientSecret = clientService.getClientSecret(client);
+
+            restTemplate = oAuthRestTemplateFactory.create(client.getName(), password, client.getClientId(), clientSecret);
+        }
+
         testCase.start();
         runIt(testCase);
     }
 
     private void runIt(TestCase testCase) {
         TestRequest testRequest = testCase.getTestRequest();
-        HttpHeaders headers = createHeaders(testRequest);
+        HttpHeaders headers = createHeaders();
 
         ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -76,7 +91,7 @@ public class TestRunner {
 
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
         TestRequest testRequest = testCase.getTestRequest();
-        HttpHeaders headers = createHeaders(testRequest);
+        HttpHeaders headers = createHeaders();
 
         ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>(headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
@@ -88,13 +103,9 @@ public class TestRunner {
         testCase.getRemaining().decrementAndGet();
     }
 
-    private HttpHeaders createHeaders(TestRequest testRequest) {
+    private HttpHeaders createHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-org-id", testRequest.getOrgId());
-        headers.set("x-client", testRequest.getClient());
-        if (tokenService != null) {
-            headers.set("Authorization", String.format("Bearer %s", tokenService.getAccessToken()));
-        }
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON_UTF8));
 
         return headers;
     }

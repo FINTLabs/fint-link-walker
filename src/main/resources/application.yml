@@ -8,3 +8,9 @@ server:
 security:
   basic:
     enabled: false
+
+fint:
+  oauth:
+    enabled: true
+    access-token-uri: https://idp.felleskomponent.no/nidp/oauth/nam/token
+    scope: fint-client

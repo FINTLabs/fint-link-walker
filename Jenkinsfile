@@ -14,7 +14,7 @@ pipeline {
                     sh "docker push 'dtr.fintlabs.no/beta/linkwalker:latest'"
                 }
                 withDockerServer([credentialsId: "ucp-fintlabs-jenkins-bundle", uri: "tcp://ucp.fintlabs.no:443"]) {
-                     sh "docker service update customer-portal_customer-portal --image dtr.fintlabs.no/beta/kunde-portal:latest --detach=false"
+                     sh "docker service update customer-portal_linkwalker --image dtr.fintlabs.no/beta/linkwalker:latest --detach=false"
                 }
             }
         }
