@@ -10,8 +10,10 @@ import no.fint.portal.model.client.Client;
 import no.fint.portal.model.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
@@ -52,8 +54,22 @@ public class TestRunner {
             restTemplate = oAuthRestTemplateFactory.create(client.getName(), password, client.getClientId(), clientSecret);
         }
 
+        setRestTemplateErrorHandler();
         testCase.start();
         runIt(testCase);
+    }
+
+    private void setRestTemplateErrorHandler() {
+        restTemplate.setErrorHandler(new ResponseErrorHandler() {
+            @Override
+            public boolean hasError(ClientHttpResponse response) {
+                return false;
+            }
+
+            @Override
+            public void handleError(ClientHttpResponse response) {
+            }
+        });
     }
 
     private void runIt(TestCase testCase) {
