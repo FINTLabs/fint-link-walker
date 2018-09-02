@@ -19,20 +19,14 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 public class TestCase {
 
-    @JsonView(TestCaseViews.ResultsOverview.class)
     private final UUID id;
-    @JsonView(TestCaseViews.ResultsOverview.class)
     private Status status;
-    @JsonView(TestCaseViews.ResultsOverview.class)
     private String reason;
-    @JsonView(TestCaseViews.ResultsOverview.class)
     private TestRequest testRequest;
-    @JsonView(TestCaseViews.ResultsOverview.class)
     @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss")
     private Date time;
-
-    @JsonView(TestCaseViews.Details.class)
     private final AtomicLong remaining = new AtomicLong();
+
     @JsonView(TestCaseViews.Details.class)
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
 

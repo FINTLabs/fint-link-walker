@@ -24,7 +24,6 @@ class TestCaseSpec extends Specification {
 
         then:
         assertThat(json, hasJsonPath('$.id'))
-        assertThat(json, hasJsonPath('$.remaining'))
         assertThat(json, hasJsonPath('$.relations'))
     }
 
@@ -34,7 +33,6 @@ class TestCaseSpec extends Specification {
 
         then:
         assertThat(json, hasJsonPath('$.id'))
-        assertThat(json, hasNoJsonPath('$.remaining'))
         assertThat(json, hasNoJsonPath('$.relations'))
     }
 
