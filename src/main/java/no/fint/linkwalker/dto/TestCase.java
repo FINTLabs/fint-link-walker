@@ -1,12 +1,12 @@
 package no.fint.linkwalker.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
 import no.fint.linkwalker.TestedRelation;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,14 +19,22 @@ import java.util.concurrent.atomic.AtomicLong;
 @Getter
 public class TestCase {
 
+    @JsonView(TestCaseViews.ResultsOverview.class)
     private final UUID id;
-    private final AtomicLong remaining = new AtomicLong();
-    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
+    @JsonView(TestCaseViews.ResultsOverview.class)
     private Status status;
+    @JsonView(TestCaseViews.ResultsOverview.class)
     private String reason;
+    @JsonView(TestCaseViews.ResultsOverview.class)
     private TestRequest testRequest;
+    @JsonView(TestCaseViews.ResultsOverview.class)
     @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss")
     private Date time;
+
+    @JsonView(TestCaseViews.Details.class)
+    private final AtomicLong remaining = new AtomicLong();
+    @JsonView(TestCaseViews.Details.class)
+    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
 
     public TestCase(TestRequest testRequest) {
         this.id = UUID.randomUUID();

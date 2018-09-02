@@ -1,7 +1,9 @@
 package no.fint.linkwalker;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.TestCase;
+import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,7 @@ public class TestController {
         return ResponseEntity.created(uriComponents.toUri()).body(testCase);
     }
 
+    @JsonView(TestCaseViews.ResultsOverview.class)
     @GetMapping
     public Collection<TestCase> getAllTests(
             @PathVariable String organisation
@@ -59,6 +62,7 @@ public class TestController {
         return ResponseEntity.ok().build();
     }
 
+    @JsonView(TestCaseViews.Details.class)
     @GetMapping("/{id}")
     public TestCase getTest(
             @PathVariable String organisation,
