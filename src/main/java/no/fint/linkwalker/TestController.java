@@ -33,10 +33,7 @@ public class TestController {
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public ResponseEntity<TestCase> startTest(
-            @PathVariable String organisation,
-            @RequestBody TestRequest testRequest
-    ) {
+    public ResponseEntity<TestCase> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
         TestCase testCase = testScheduler.scheduleTest(organisation, testRequest);
         log.info("Registering testcase " + testCase.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder
@@ -48,26 +45,19 @@ public class TestController {
 
     @JsonView(TestCaseViews.ResultsOverview.class)
     @GetMapping
-    public Collection<TestCase> getAllTests(
-            @PathVariable String organisation
-    ) {
+    public Collection<TestCase> getAllTests(@PathVariable String organisation) {
         return repository.allTestCases(organisation);
     }
 
     @PutMapping
-    public ResponseEntity clearAllTests(
-            @PathVariable String organisation
-    ) {
+    public ResponseEntity clearAllTests(@PathVariable String organisation) {
         repository.clearTests(organisation);
         return ResponseEntity.ok().build();
     }
 
     @JsonView(TestCaseViews.Details.class)
     @GetMapping("/{id}")
-    public TestCase getTest(
-            @PathVariable String organisation,
-            @PathVariable UUID id
-    ) {
+    public TestCase getTest(@PathVariable String organisation, @PathVariable UUID id) {
         return repository.getCaseForId(organisation, id);
     }
 }
