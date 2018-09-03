@@ -2,11 +2,13 @@ package no.fint.linkwalker;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.extern.slf4j.Slf4j;
+import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
@@ -57,7 +59,14 @@ public class TestController {
 
     @JsonView(TestCaseViews.Details.class)
     @GetMapping("/{id}")
-    public TestCase getTest(@PathVariable String organisation, @PathVariable UUID id) {
-        return repository.getCaseForId(organisation, id);
+    public TestCase getTest(@PathVariable String organisation,
+                            @PathVariable UUID id,
+                            @RequestParam(required = false) String status) {
+        TestCase testCase = repository.getCaseForId(organisation, id);
+        if (StringUtils.isEmpty(status)) {
+            return testCase;
+        } else {
+            return testCase.filterRelations(Status.get(status));
+        }
     }
 }

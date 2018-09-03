@@ -36,4 +36,23 @@ class TestCaseSpec extends Specification {
         assertThat(json, hasNoJsonPath('$.relations'))
     }
 
+    def "Filter relations running"() {
+        given:
+        testCase.start()
+
+        when:
+        def result = testCase.filterRelations(Status.RUNNING)
+
+        then:
+        result.relations['self'].size() == 1
+    }
+
+    def "Filter relations failed"() {
+        when:
+        def result = testCase.filterRelations(Status.FAILED)
+
+        then:
+        result.relations['self'].size() == 0
+    }
+
 }

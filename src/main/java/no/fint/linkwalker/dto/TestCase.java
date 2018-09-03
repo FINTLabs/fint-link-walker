@@ -9,6 +9,7 @@ import no.fint.linkwalker.TestedRelation;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * A TestCase gets the content of a URL, parses it, and follows any and all URLs
@@ -29,6 +30,15 @@ public class TestCase {
 
     @JsonView(TestCaseViews.Details.class)
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
+
+    private TestCase(TestCase testCase) {
+        this.id = testCase.id;
+        this.status = testCase.status;
+        this.reason = testCase.reason;
+        this.testRequest = testCase.testRequest;
+        this.time = testCase.time;
+        this.remaining.set(testCase.remaining.longValue());
+    }
 
     public TestCase(TestRequest testRequest) {
         this.id = UUID.randomUUID();
@@ -76,6 +86,19 @@ public class TestCase {
 
     public Map<String, Collection<TestedRelation>> getRelations() {
         return relations;
+    }
+
+    public TestCase filterRelations(Status status) {
+        Map<String, Collection<TestedRelation>> copiedRelations = new HashMap<>(relations);
+        Set<Map.Entry<String, Collection<TestedRelation>>> entries = copiedRelations.entrySet();
+        for (Map.Entry<String, Collection<TestedRelation>> entry : entries) {
+            List<TestedRelation> filteredStatuses = entry.getValue().stream().filter(val -> val.getStatus() == status).collect(Collectors.toList());
+            entry.setValue(filteredStatuses);
+        }
+
+        TestCase copiedTestCase = new TestCase(this);
+        copiedTestCase.relations.putAll(copiedRelations);
+        return copiedTestCase;
     }
 
 }
