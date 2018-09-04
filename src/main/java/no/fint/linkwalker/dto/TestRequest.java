@@ -13,7 +13,7 @@ import org.springframework.util.StringUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestRequest {
-    private static final String DEFAULT_BASE_URL = "https://play-with-fint.felleskomponent.no";
+    static final String DEFAULT_BASE_URL = "https://play-with-fint.felleskomponent.no";
 
     private String baseUrl;
     private String endpoint;
