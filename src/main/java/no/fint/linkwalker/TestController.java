@@ -66,7 +66,7 @@ public class TestController {
         if (StringUtils.isEmpty(status)) {
             return testCase;
         } else {
-            return testCase.filterRelations(Status.get(status));
+            return testCase.filterAndCopyRelations(Status.get(status));
         }
     }
 }

@@ -41,7 +41,7 @@ class TestCaseSpec extends Specification {
         testCase.start()
 
         when:
-        def result = testCase.filterRelations(Status.RUNNING)
+        def result = testCase.filterAndCopyRelations(Status.RUNNING)
 
         then:
         result.relations['self'].size() == 1
@@ -49,7 +49,7 @@ class TestCaseSpec extends Specification {
 
     def "Filter relations failed"() {
         when:
-        def result = testCase.filterRelations(Status.FAILED)
+        def result = testCase.filterAndCopyRelations(Status.FAILED)
 
         then:
         result.relations['self'].size() == 0

@@ -88,13 +88,12 @@ public class TestCase {
         return relations;
     }
 
-    public TestCase filterRelations(Status status) {
+    public TestCase filterAndCopyRelations(Status status) {
         Map<String, Collection<TestedRelation>> copiedRelations = new HashMap<>(relations);
-        Set<Map.Entry<String, Collection<TestedRelation>>> entries = copiedRelations.entrySet();
-        for (Map.Entry<String, Collection<TestedRelation>> entry : entries) {
+        copiedRelations.entrySet().forEach(entry -> {
             List<TestedRelation> filteredStatuses = entry.getValue().stream().filter(val -> val.getStatus() == status).collect(Collectors.toList());
             entry.setValue(filteredStatuses);
-        }
+        });
 
         TestCase copiedTestCase = new TestCase(this);
         copiedTestCase.relations.putAll(copiedRelations);
