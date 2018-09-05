@@ -1,14 +1,15 @@
 package no.fint.linkwalker.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
 import no.fint.linkwalker.TestedRelation;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * A TestCase gets the content of a URL, parses it, and follows any and all URLs
@@ -20,13 +21,24 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TestCase {
 
     private final UUID id;
-    private final AtomicLong remaining = new AtomicLong();
-    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
     private Status status;
     private String reason;
     private TestRequest testRequest;
     @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss")
     private Date time;
+    private final AtomicLong remaining = new AtomicLong();
+
+    @JsonView(TestCaseViews.Details.class)
+    private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
+
+    private TestCase(TestCase testCase) {
+        this.id = testCase.id;
+        this.status = testCase.status;
+        this.reason = testCase.reason;
+        this.testRequest = testCase.testRequest;
+        this.time = testCase.time;
+        this.remaining.set(testCase.remaining.longValue());
+    }
 
     public TestCase(TestRequest testRequest) {
         this.id = UUID.randomUUID();
@@ -52,6 +64,11 @@ public class TestCase {
         transition(Status.OK);
     }
 
+    public void partiallyFailed() {
+        transition(Status.PARTIALLY_FAILED);
+        reason = "There is no data to test.";
+    }
+
     public void failed(Throwable t) {
         transition(Status.FAILED);
         reason = t.getClass() + ": " + t.getMessage();
@@ -74,6 +91,18 @@ public class TestCase {
 
     public Map<String, Collection<TestedRelation>> getRelations() {
         return relations;
+    }
+
+    public TestCase filterAndCopyRelations(Status status) {
+        Map<String, Collection<TestedRelation>> copiedRelations = new HashMap<>(relations);
+        copiedRelations.entrySet().forEach(entry -> {
+            List<TestedRelation> filteredStatuses = entry.getValue().stream().filter(val -> val.getStatus() == status).collect(Collectors.toList());
+            entry.setValue(filteredStatuses);
+        });
+
+        TestCase copiedTestCase = new TestCase(this);
+        copiedTestCase.relations.putAll(copiedRelations);
+        return copiedTestCase;
     }
 
 }

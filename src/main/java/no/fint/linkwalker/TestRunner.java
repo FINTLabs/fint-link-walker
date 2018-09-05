@@ -1,5 +1,7 @@
 package no.fint.linkwalker;
 
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
@@ -13,6 +15,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
@@ -68,6 +71,7 @@ public class TestRunner {
 
             @Override
             public void handleError(ClientHttpResponse response) {
+                return;
             }
         });
     }
@@ -76,27 +80,35 @@ public class TestRunner {
         TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = createHeaders();
 
-        ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
-        if (response.getStatusCode().is2xxSuccessful()) {
-            try {
-                harvestChildren(testCase, response.getBody());
-                long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
-                testCase.getRemaining().set(count);
-                log.info("Found {} children.", count);
-                testChildren(testCase);
-                log.info("Completed testing children.");
-                long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
-                log.info("Found {} errors.", errors);
-                if (errors > 0)
-                    testCase.failed(String.format("Found %d errors in children.", errors));
-                else
-                    testCase.succeed();
-            } catch (FintLinkWalkerException e) {
-                testCase.failed(e);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                try {
+                    if (JsonPath.parse(response.getBody()).read( "$.total_items", int.class) == 0) {
+                        testCase.partiallyFailed();
+                        return;
+                    }
+                    harvestChildren(testCase, response.getBody());
+                    long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
+                    testCase.getRemaining().set(count);
+                    log.info("Found {} children.", count);
+                    testChildren(testCase);
+                    log.info("Completed testing children.");
+                    long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
+                    log.info("Found {} errors.", errors);
+                    if (errors > 0)
+                        testCase.failed(String.format("Found %d errors in children.", errors));
+                    else
+                        testCase.succeed();
+                } catch (FintLinkWalkerException e) {
+                    testCase.failed(e);
+                }
+            } else {
+                log.info("Failing {}", testRequest.getTarget());
+                testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
             }
-        } else {
-            log.info("Failing {}", testRequest.getTarget());
-            testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
+        } catch (ResourceAccessException e) {
+            testCase.failed(String.format("An error occurred. Probably because the client you use don't have access to the resource. (%s) ", e.getMessage()));
         }
     }
 
