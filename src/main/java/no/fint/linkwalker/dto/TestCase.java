@@ -64,6 +64,11 @@ public class TestCase {
         transition(Status.OK);
     }
 
+    public void partiallyFailed() {
+        transition(Status.PARTIALLY_FAILED);
+        reason = "There is no data to test.";
+    }
+
     public void failed(Throwable t) {
         transition(Status.FAILED);
         reason = t.getClass() + ": " + t.getMessage();

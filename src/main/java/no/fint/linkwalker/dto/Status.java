@@ -8,6 +8,7 @@ public enum Status {
     NOT_STARTED, // this test is scheduled, but not yet started
     RUNNING, // this test is still running
     FAILED, // this url did not return 200 OK
+    PARTIALLY_FAILED, // there is no data to test
     OK; // this url returned 200 OK.
 
     public static Status get(String status) {
