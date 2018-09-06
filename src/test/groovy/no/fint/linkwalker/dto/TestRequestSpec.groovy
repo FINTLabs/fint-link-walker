@@ -1,5 +1,6 @@
 package no.fint.linkwalker.dto
 
+import no.fint.linkwalker.Constants
 import spock.lang.Specification
 
 class TestRequestSpec extends Specification {
@@ -23,6 +24,6 @@ class TestRequestSpec extends Specification {
         def target = request.getTarget()
 
         then:
-        target == "${TestRequest.DEFAULT_BASE_URL}/test"
+        target == "${Constants.PWF_BASE_URL}/test"
     }
 }

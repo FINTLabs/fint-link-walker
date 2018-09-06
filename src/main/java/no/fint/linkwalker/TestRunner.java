@@ -1,6 +1,5 @@
 package no.fint.linkwalker;
 
-import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
@@ -84,7 +83,7 @@ public class TestRunner {
             ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 try {
-                    if (JsonPath.parse(response.getBody()).read( "$.total_items", int.class) == 0) {
+                    if (JsonPath.parse(response.getBody()).read("$.total_items", int.class) == 0) {
                         testCase.partiallyFailed();
                         return;
                     }
@@ -118,7 +117,6 @@ public class TestRunner {
     }
 
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
-        TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = createHeaders();
 
         ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>(headers), Void.class);

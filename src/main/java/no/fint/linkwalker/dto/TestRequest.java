@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import no.fint.linkwalker.Constants;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.StringUtils;
 
@@ -13,8 +14,6 @@ import org.springframework.util.StringUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestRequest {
-    static final String DEFAULT_BASE_URL = "https://play-with-fint.felleskomponent.no";
-
     private String baseUrl;
     private String endpoint;
     private String orgId;
@@ -23,7 +22,7 @@ public class TestRequest {
     @JsonIgnore
     public String getTarget() {
         if (StringUtils.isEmpty(baseUrl) || !UrlUtils.isAbsoluteUrl(baseUrl)) {
-            return String.format("%s%s", DEFAULT_BASE_URL, endpoint);
+            return String.format("%s%s", Constants.PWF_BASE_URL, endpoint);
         } else {
             return String.format("%s%s", baseUrl, endpoint);
         }
