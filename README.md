@@ -47,7 +47,6 @@ For protected resources, the following environment variables must be set with va
 | `fint.oauth.client-id`        | OAuth Client ID                                   |
 | `fint.oauth.client-secret`    | OAuth Client Secret                               |
 | `fint.oauth.scope`            | Set to `fint-client`                              |
-| `fint.oauth.request-url`      | Set to any request URL for a protected resource.  | 
 
 Example access token server URI: https://namidp01.rogfk.no/nidp/oauth/nam/token
 
