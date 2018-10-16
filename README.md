@@ -6,11 +6,11 @@ Verifies relation links for a given resource.
 
 Launching this application starts a web server at port `8080` with the following endpoints:
 
-| Path          | Method    | Description       |
-|---------------|-----------|-------------------|
-| /tests        | GET       | Get all tests     |
-| /tests        | POST      | Start a new test, returns location header with direct url to the test  |
-| /tests/{id}   | GET       | Get test with id  |
+| Path                    | Method    | Description       |
+|-------------------------|-----------|-------------------|
+| /api/tests/links        | GET       | Get all tests     |
+| /api/tests/links        | POST      | Start a new test, returns location header with direct url to the test  |
+| /api/tests/links/{id}   | GET       | Get test with id  |
 
 ## Model
 
