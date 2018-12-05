@@ -55,6 +55,11 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
     compile("com.github.springfox.loader:springfox-loader:${springfoxLoaderVersion}")
 
+// https://mvnrepository.com/artifact/org.apache.poi/poi
+    compile('org.apache.poi:poi:4.0.0')
+    compile('org.apache.poi:poi-ooxml:4.0.0')
+
+
     testCompile('com.jayway.jsonpath:json-path-assert:2.2.0')
     testCompile('no.fint:fint-test-utils:0.0.4')
     testCompile("cglib:cglib-nodep:${cglibVersion}")
