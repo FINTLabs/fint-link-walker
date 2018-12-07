@@ -63,6 +63,7 @@ public final class RelationFinder {
     private static DiscoveredRelation createRelation(Map<String, List<Map<String, String>>> linkObject, String rel) {
         DiscoveredRelation relation = new DiscoveredRelation();
         relation.setRel(rel);
+        relation.setParentUrl(linkObject.get("self").stream().map(map -> map.get("href")).map(RelationFinder::stringToURL).findFirst().get());
         relation.setLinks(linkObject.get(rel).stream()
                 .map(map -> map.get("href"))
                 .map(RelationFinder::stringToURL)

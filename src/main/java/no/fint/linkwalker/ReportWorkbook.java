@@ -1,11 +1,13 @@
 package no.fint.linkwalker;
 
+import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReportWorkbook {
@@ -28,29 +30,30 @@ public class ReportWorkbook {
         private final int COL_C = 2;
         private final int COL_D = 3;
         private final int COL_E = 4;
-        private final int COL_F = 5;
-        private final int COL_G = 6;
 
         private final short FONT_SIZE_DEFAULT = 12;
         private final short FONT_SIZE_HEADER = 16;
 
 
         private Workbook workbook;
-        private Sheet sheet;
+        private Sheet detailsSheet;
+        private Sheet summarySheet;
         private TestCase testCase;
 
 
         private WorkbookBuilder(TestCase testCase) {
             workbook = new XSSFWorkbook();
-            sheet = workbook.createSheet();
+            detailsSheet = workbook.createSheet("Details");
+            summarySheet = workbook.createSheet("Summary");
             this.testCase = testCase;
 
-            setupSheet();
+            setupDetailsSheet();
         }
 
         public Workbook build() {
 
-            setupSheet();
+            setupDetailsSheet();
+            setupSummarySheet();
             setupHeader();
             setupReportData();
             setupSummary();
@@ -65,21 +68,25 @@ public class ReportWorkbook {
             return font;
         }
 
-        private void setupSheet() {
-            sheet.setAutoFilter(CellRangeAddress.valueOf("A1:D1"));
-            sheet.createFreezePane(0, 1);
+        private void setupDetailsSheet() {
+            detailsSheet.setAutoFilter(CellRangeAddress.valueOf("A1:E1"));
+            detailsSheet.createFreezePane(0, 1);
 
 
-            sheet.setColumnWidth(COL_A, 25 * 256);
-            sheet.setColumnWidth(COL_B, 15 * 256);
-            sheet.setColumnWidth(COL_C, 25 * 256);
-            sheet.setColumnWidth(COL_D, 100 * 256);
-            sheet.setColumnWidth(COL_F, 20 * 256);
+            detailsSheet.setColumnWidth(COL_A, 25 * 256);
+            detailsSheet.setColumnWidth(COL_B, 15 * 256);
+            detailsSheet.setColumnWidth(COL_C, 25 * 256);
+            detailsSheet.setColumnWidth(COL_D, 100 * 256);
+            detailsSheet.setColumnWidth(COL_E, 100 * 256);
+        }
+
+        private void setupSummarySheet() {
+            summarySheet.setColumnWidth(COL_A, 25 * 256);
         }
 
         private void setupHeader() {
 
-            Row header = sheet.createRow(0);
+            Row header = detailsSheet.createRow(0);
 
             CellStyle headerStyle = workbook.createCellStyle();
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
@@ -103,7 +110,11 @@ public class ReportWorkbook {
             headerCell.setCellStyle(headerStyle);
 
             headerCell = header.createCell(COL_D);
-            headerCell.setCellValue("URL");
+            headerCell.setCellValue("Relation URL");
+            headerCell.setCellStyle(headerStyle);
+
+            headerCell = header.createCell(COL_E);
+            headerCell.setCellValue("Parent URL");
             headerCell.setCellStyle(headerStyle);
         }
 
@@ -127,30 +138,34 @@ public class ReportWorkbook {
         }
 
         private void setupSummary() {
-            Row totalSummaryRow = sheet.getRow(5);
-            Row failedSummaryRow = sheet.getRow(6);
-            Row okSummaryRow = sheet.getRow(7);
+            Row totalSummaryRow = summarySheet.createRow(1);
+            Row failedSummaryRow = summarySheet.createRow(2);
+            Row okSummaryRow = summarySheet.createRow(3);
 
             CellStyle defaultCellStyle = getDefaultCellStyle();
+            Font font = getDefaultFont();
+            font.setBold(true);
+            defaultCellStyle.setFont(font);
 
-            Cell cell = totalSummaryRow.createCell(COL_F);
-            Cell cellFormula = totalSummaryRow.createCell(COL_G);
+            Cell cell = totalSummaryRow.createCell(COL_A);
+            Cell cellFormula = totalSummaryRow.createCell(COL_B);
             cell.setCellValue("Total test count");
-            cellFormula.setCellFormula("COUNTA(A:A) - 1");
+            //cellFormula.setCellFormula("COUNTA(Details!A:A) - 1");
+            cellFormula.setCellValue(testCase.getRelations().values().stream().map(Collection::size).reduce(Integer::sum).get());
             cell.setCellStyle(defaultCellStyle);
             cellFormula.setCellStyle(defaultCellStyle);
 
-            cell = failedSummaryRow.createCell(COL_F);
-            cellFormula = failedSummaryRow.createCell(COL_G);
+            cell = failedSummaryRow.createCell(COL_A);
+            cellFormula = failedSummaryRow.createCell(COL_B);
             cell.setCellValue("Total failed count");
-            cellFormula.setCellFormula("COUNTIF(B:B, \"FAILED\")");
+            cellFormula.setCellFormula("COUNTIF(Details!B:B, \"FAILED\")");
             cell.setCellStyle(defaultCellStyle);
             cellFormula.setCellStyle(defaultCellStyle);
 
-            cell = okSummaryRow.createCell(COL_F);
-            cellFormula = okSummaryRow.createCell(COL_G);
+            cell = okSummaryRow.createCell(COL_A);
+            cellFormula = okSummaryRow.createCell(COL_B);
             cell.setCellValue("Total success count");
-            cellFormula.setCellFormula("COUNTIF(B:B, \"OK\")");
+            cellFormula.setCellFormula("B2-B3");
             cell.setCellStyle(defaultCellStyle);
             cellFormula.setCellStyle(defaultCellStyle);
 
@@ -165,8 +180,9 @@ public class ReportWorkbook {
             CreationHelper createHelper = workbook.getCreationHelper();
 
             AtomicInteger rowCount = new AtomicInteger(1);
-            testCase.getRelations().forEach((s, testedRelations) -> testedRelations.forEach(testedRelation -> {
-                Row row = sheet.createRow(rowCount.get());
+            TestCase filteredTestCase = testCase.filterAndCopyRelations(Status.FAILED);
+            filteredTestCase.getRelations().forEach((s, testedRelations) -> testedRelations.forEach(testedRelation -> {
+                Row row = detailsSheet.createRow(rowCount.get());
                 Cell cell = row.createCell(COL_A);
                 cell.setCellValue(s);
                 cell.setCellStyle(style);
@@ -185,6 +201,12 @@ public class ReportWorkbook {
                 link.setAddress(convertToTestClientUrl(testedRelation.getUrl().toString()));
                 cell.setHyperlink(link);
                 cell.setCellValue(testedRelation.getUrl().toString());
+                cell.setCellStyle(hRefCellStyle);
+
+                cell = row.createCell(COL_E);
+                link.setAddress(convertToTestClientUrl(testedRelation.getParentUrl().toString()));
+                cell.setHyperlink(link);
+                cell.setCellValue(testedRelation.getParentUrl().toString());
                 cell.setCellStyle(hRefCellStyle);
 
                 rowCount.getAndIncrement();

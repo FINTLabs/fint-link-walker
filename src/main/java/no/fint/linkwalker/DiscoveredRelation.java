@@ -9,4 +9,5 @@ import java.util.Set;
 public class DiscoveredRelation {
     private String rel;
     private Set<URL> links;
+    private URL parentUrl;
 }
