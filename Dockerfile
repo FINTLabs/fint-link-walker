@@ -1,8 +1,9 @@
-FROM gradle:4.2.1-jdk8-alpine as builder
+FROM gradle:4.10.2-jdk8-alpine as builder
 USER root
 COPY . .
 RUN gradle --no-daemon build
 
-FROM openjdk:8-jre-alpine
-COPY --from=builder /home/gradle/build/libs/fint-link-walker-*.jar /data/app.jar
-CMD ["java", "-jar", "/data/app.jar"]
+FROM gcr.io/distroless/java
+ENV JAVA_TOOL_OPTIONS -XX:+ExitOnOutOfMemoryError
+COPY --from=builder /home/gradle/build/libs/*.jar /data/app.jar
+CMD ["/data/app.jar"]
