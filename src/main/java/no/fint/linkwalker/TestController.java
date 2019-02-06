@@ -6,14 +6,26 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
+import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
+import sun.nio.ch.IOUtil;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.UUID;
 
 @Slf4j
@@ -27,6 +39,9 @@ public class TestController {
 
     @Autowired
     private TestCaseRepository repository;
+
+    @Autowired
+    private ReportService reportService;
 
     /**
      * Kicks off a startTest of an endpoint. All testing is async
@@ -69,4 +84,27 @@ public class TestController {
             return testCase.filterAndCopyRelations(Status.get(status));
         }
     }
+
+    @GetMapping(value = "/{id}/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<Resource> downloadTest(@PathVariable String organisation,
+                                                 @PathVariable UUID id,
+                                                 @RequestParam(required = false) String status) throws IOException {
+
+        TestCase testCase = repository.getCaseForId(organisation, id);
+
+        LocalDateTime ldt = LocalDateTime.now();
+        String formattedDate = DateTimeFormatter.ofPattern("ddMMyyyy_HHmmss", Locale.ENGLISH).format(ldt);
+
+        String fileName = String.format("%s-report-%s.xlsx", organisation, formattedDate);
+        ByteArrayInputStream export = reportService.export(testCase);
+        ByteArrayResource out = new ByteArrayResource(IOUtils.toByteArray(export));
+
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .contentLength(out.contentLength())
+        .body(out);
+    }
+
+
 }

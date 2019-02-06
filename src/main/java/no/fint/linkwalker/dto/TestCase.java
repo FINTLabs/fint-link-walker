@@ -86,7 +86,7 @@ public class TestCase {
             relations.put(rel, relationSet);
         }
         Collection<TestedRelation> testedRelations = relations.get(rel);
-        discoveredRelation.getLinks().forEach(link -> testedRelations.add(new TestedRelation(link)));
+        discoveredRelation.getLinks().forEach(link -> testedRelations.add(new TestedRelation(link, discoveredRelation.getParentUrl())));
     }
 
     public Map<String, Collection<TestedRelation>> getRelations() {

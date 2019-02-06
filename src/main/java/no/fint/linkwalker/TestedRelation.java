@@ -9,11 +9,13 @@ import java.net.URL;
 public class TestedRelation {
 
     private final URL url;
+    private final URL parentUrl;
     private Status status;
     private String reason;
 
-    public TestedRelation(URL url) {
+    public TestedRelation(URL url, URL parentUrl) {
         this.status = Status.RUNNING;
         this.url = url;
+        this.parentUrl = parentUrl;
     }
 }

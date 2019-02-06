@@ -119,6 +119,7 @@ public class TestRunner {
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
         HttpHeaders headers = createHeaders();
 
+
         ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>(headers), Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
