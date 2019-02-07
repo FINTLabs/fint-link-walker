@@ -2,6 +2,10 @@
 
 Verifies relation links for a given resource.
 
+## Run with Docker Compose
+
+Edit the supplied `docker-compose.yml` to add OAuth credentials, and use `docker-compose up` to start.
+
 ## Usage
 
 Launching this application starts a web server at port `8080` with the following endpoints:
