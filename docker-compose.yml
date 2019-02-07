@@ -2,8 +2,12 @@ version: '3'
 
 services:
   link-walker:
-    image: dtr.fintlabs.no/beta/linkwalker
+    image: dtr.fintlabs.no/beta/linkwalker:PR-10
     ports:
       - 8082:8082
     environment:
       TZ: Europe/Oslo
+#      fint.oauth.username:
+#      fint.oauth.password:
+#      fint.oauth.client-id:
+#      fint.oauth.client-secret:
