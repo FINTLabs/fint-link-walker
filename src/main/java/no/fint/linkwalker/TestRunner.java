@@ -6,9 +6,6 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.exceptions.FintLinkWalkerException;
-import no.fint.oauth.OAuthRestTemplateFactory;
-import no.fint.portal.model.client.Client;
-import no.fint.portal.model.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;
@@ -21,18 +18,12 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
 public class TestRunner {
 
     @Autowired
-    private OAuthRestTemplateFactory oAuthRestTemplateFactory;
-
-    @Autowired
-    private ClientService clientService;
-
     private RestTemplate restTemplate;
 
     @Async
@@ -43,17 +34,6 @@ public class TestRunner {
             return;
         } else {
             log.info("Running test {}", target);
-        }
-
-        if (PwfUtils.isPwf(testCase.getTestRequest().getBaseUrl())) {
-            restTemplate = new RestTemplate();
-        } else {
-            Client client = clientService.getClientByDn(testCase.getTestRequest().getClient()).orElseThrow(SecurityException::new);
-            String password = UUID.randomUUID().toString().toLowerCase();
-            clientService.resetClientPassword(client, password);
-            String clientSecret = clientService.getClientSecret(client);
-
-            restTemplate = oAuthRestTemplateFactory.create(client.getName(), password, client.getClientId(), clientSecret);
         }
 
         setRestTemplateErrorHandler();

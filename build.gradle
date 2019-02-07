@@ -41,7 +41,6 @@ repositories {
 
 dependencies {
     compile('no.fint:fint-oauth-token-service:1.4.0')
-    compile('no.fint:fint-portal-api:3.2.0')
     compileOnly("org.projectlombok:lombok:${lombokVersion}")
     compile('com.jayway.jsonpath:json-path:2.4.0')
 

@@ -4,13 +4,6 @@ services:
   link-walker:
     image: dtr.fintlabs.no/beta/linkwalker
     ports:
-      - 8080:8080
+      - 8082:8082
     environment:
       TZ: Europe/Oslo
-      fint.oauth.enabled: "true"
-      fint.oauth.scope: fint-client
-      fint.oauth.access-token-uri: https://idp.felleskomponent.no/nidp/oauth/nam/token
-      fint.oauth.username:
-      fint.oauth.password:
-      fint.oauth.client-id:
-      fint.oauth.client-secret:
