@@ -52,6 +52,6 @@ For protected resources, the following environment variables must be set with va
 | `fint.oauth.client-secret`    | OAuth Client Secret                               |
 | `fint.oauth.scope`            | Set to `fint-client`                              |
 
-Example access token server URI: https://namidp01.rogfk.no/nidp/oauth/nam/token
+Example access token server URI: https://idp.felleskomponent.no/nidp/oauth/nam/token
 
 Example request URL: https://beta.felleskomponent.no/administrasjon/personal
