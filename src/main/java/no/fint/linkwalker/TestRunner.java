@@ -6,34 +6,24 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.exceptions.FintLinkWalkerException;
-import no.fint.oauth.OAuthRestTemplateFactory;
-import no.fint.portal.model.client.Client;
-import no.fint.portal.model.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
-import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.ResponseErrorHandler;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
 public class TestRunner {
 
     @Autowired
-    private OAuthRestTemplateFactory oAuthRestTemplateFactory;
-
-    @Autowired
-    private ClientService clientService;
-
-    private RestTemplate restTemplate;
+    private ResourceFetcher fetcher;
 
     @Async
     public void runTest(TestCase testCase) {
@@ -45,34 +35,8 @@ public class TestRunner {
             log.info("Running test {}", target);
         }
 
-        if (PwfUtils.isPwf(testCase.getTestRequest().getBaseUrl())) {
-            restTemplate = new RestTemplate();
-        } else {
-            Client client = clientService.getClientByDn(testCase.getTestRequest().getClient()).orElseThrow(SecurityException::new);
-            String password = UUID.randomUUID().toString().toLowerCase();
-            clientService.resetClientPassword(client, password);
-            String clientSecret = clientService.getClientSecret(client);
-
-            restTemplate = oAuthRestTemplateFactory.create(client.getName(), password, client.getClientId(), clientSecret);
-        }
-
-        setRestTemplateErrorHandler();
         testCase.start();
         runIt(testCase);
-    }
-
-    private void setRestTemplateErrorHandler() {
-        restTemplate.setErrorHandler(new ResponseErrorHandler() {
-            @Override
-            public boolean hasError(ClientHttpResponse response) {
-                return false;
-            }
-
-            @Override
-            public void handleError(ClientHttpResponse response) {
-                return;
-            }
-        });
     }
 
     private void runIt(TestCase testCase) {
@@ -80,7 +44,7 @@ public class TestRunner {
         HttpHeaders headers = createHeaders();
 
         try {
-            ResponseEntity<String> response = restTemplate.exchange(testRequest.getTarget(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            ResponseEntity<String> response = fetcher.fetch(testRequest.getClient(), testRequest.getTarget(), headers, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 try {
                     if (JsonPath.parse(response.getBody()).read("$.total_items", int.class) == 0) {
@@ -120,7 +84,7 @@ public class TestRunner {
         HttpHeaders headers = createHeaders();
 
 
-        ResponseEntity<Void> response = restTemplate.exchange(testedRelation.getUrl().toString(), HttpMethod.GET, new HttpEntity<>(headers), Void.class);
+        ResponseEntity<Void> response = fetcher.fetch(testCase.getTestRequest().getClient(), testedRelation.getUrl().toString(), headers, Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
         } else {
