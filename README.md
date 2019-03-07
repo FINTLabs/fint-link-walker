@@ -6,9 +6,11 @@ Verifies relation links for a given resource.
 
 Edit the supplied `docker-compose.yml` to add OAuth credentials, and use `docker-compose up` to start.
 
+Open a browser at http://localhost:8082/swagger-ui.html 
+
 ## Usage
 
-Launching this application starts a web server at port `8080` with the following endpoints:
+Launching this application starts a web server at port `8082` with the following endpoints:
 
 The `org` path parameter can be any value you choose.
 
@@ -54,7 +56,7 @@ For protected resources, the following environment variables must be set with va
 
 | Variable                      | Content                                           |
 |-------------------------------|---------------------------------------------------|
-| `fint.oauth.enabled`          | Set to `true` to enable OAuth                     | 
+| `fint.oauth.enabled`          | Set to `true` to enable OAuth, `false` to disable.|                     | 
 | `fint.oauth.access-token-uri` | URI of access token server                        |
 | `fint.oauth.scope`            | Set to `fint-client`                              |
 | `fint.oauth.username`         | User Name                                         |

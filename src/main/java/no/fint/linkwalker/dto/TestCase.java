@@ -3,6 +3,7 @@ package no.fint.linkwalker.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.DiscoveredRelation;
 import no.fint.linkwalker.TestedRelation;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Getter
+@ToString(of = {"id", "status"})
 public class TestCase {
 
     private final UUID id;
