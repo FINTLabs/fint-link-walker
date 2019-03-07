@@ -19,7 +19,7 @@ pipeline {
             when { branch 'dist' }
             steps {
                 sh "docker tag ${GIT_COMMIT} fint/link-walker:latest"
-                withDockerRegistry([credentialsId: 'asgeir-docker', url: 'https://hub.docker.com']) {
+                withDockerRegistry([credentialsId: 'asgeir-docker', url: '']) {
                     sh "docker push fint/link-walker:latest"
                 }
             }
