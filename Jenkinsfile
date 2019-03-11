@@ -9,9 +9,9 @@ pipeline {
         stage('Publish master') {
             when { branch 'master' }
             steps {
-                sh "docker tag ${GIT_COMMIT} fintlabs.azurecr.io/link-walker:latest"
+                sh "docker tag ${GIT_COMMIT} fintlabs.azurecr.io/link-walker:build.${BUILD_NUMBER}"
                 withDockerRegistry([credentialsId: 'fintlabs.azurecr.io', url: 'https://fintlabs.azurecr.io']) {
-                    sh "docker push fintlabs.azurecr.io/link-walker:latest"
+                    sh "docker push fintlabs.azurecr.io/link-walker:build.${BUILD_NUMBER}"
                 }
             }
         }
@@ -27,9 +27,9 @@ pipeline {
         stage('Publish PR') {
             when { changeRequest() }
             steps {
-                sh "docker tag ${GIT_COMMIT} fintlabs.azurecr.io/link-walker:${BRANCH_NAME}"
+                sh "docker tag ${GIT_COMMIT} fintlabs.azurecr.io/link-walker:${BRANCH_NAME}.${BUILD_NUMBER}"
                 withDockerRegistry([credentialsId: 'fintlabs.azurecr.io', url: 'https://fintlabs.azurecr.io']) {
-                    sh "docker push fintlabs.azurecr.io/link-walker:${BRANCH_NAME}"
+                    sh "docker push fintlabs.azurecr.io/link-walker:${BRANCH_NAME}.${BUILD_NUMBER}"
                 }
             }
         }
