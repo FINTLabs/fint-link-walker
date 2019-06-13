@@ -48,6 +48,8 @@ dependencies {
     compile('org.springframework.boot:spring-boot-starter-web')
     compile("com.github.springfox.loader:springfox-loader:${springfoxLoaderVersion}")
 
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+
 // https://mvnrepository.com/artifact/org.apache.poi/poi
     compile('org.apache.poi:poi:4.0.0')
     compile('org.apache.poi:poi-ooxml:4.0.0')
