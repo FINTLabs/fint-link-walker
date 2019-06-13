@@ -6,6 +6,7 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import no.fint.linkwalker.exceptions.InvalidTestUrlException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -49,21 +50,29 @@ public final class RelationFinder {
         DocumentContext valueDocument = JsonPath.parse(json);
 
         try {
+            List<String> resourceLinks = pathDocument.read("$.._links.self[*].href");
             List<String> allLinkPaths = pathDocument.read("$.._links");
             return allLinkPaths.stream().flatMap(path -> {
                 Map<String, List<Map<String, String>>> linkObject = valueDocument.read(path, new TypeRef<Map<String, List<Map<String, String>>>>() {
                 });
-                return linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel));
+
+                URL parent = resourceLinks
+                        .stream()
+                        .max(Comparator.comparingInt(a -> StringUtils.indexOfDifference(path, a)))
+                        .map(p -> valueDocument.read(p, String.class))
+                        .map(RelationFinder::stringToURL)
+                        .orElse(null);
+                return linkObject.keySet().stream().map(rel -> createRelation(linkObject, rel, parent));
             }).collect(Collectors.toList());
         } catch (PathNotFoundException e) {
             throw new InvalidTestUrlException("No _links were found");
         }
     }
 
-    private static DiscoveredRelation createRelation(Map<String, List<Map<String, String>>> linkObject, String rel) {
+    private static DiscoveredRelation createRelation(Map<String, List<Map<String, String>>> linkObject, String rel, URL parent) {
         DiscoveredRelation relation = new DiscoveredRelation();
         relation.setRel(rel);
-        relation.setParentUrl(linkObject.get("self").stream().map(map -> map.get("href")).map(RelationFinder::stringToURL).findFirst().get());
+        relation.setParentUrl(parent);
         relation.setLinks(linkObject.get(rel).stream()
                 .map(map -> map.get("href"))
                 .map(RelationFinder::stringToURL)
