@@ -13,11 +13,6 @@ pipeline {
                 withDockerRegistry([credentialsId: 'fintlabs.azurecr.io', url: 'https://fintlabs.azurecr.io']) {
                     sh "docker push fintlabs.azurecr.io/link-walker:build.${BUILD_NUMBER}"
                 }
-            }
-        }
-        stage('Publish dist') {
-            when { branch 'dist' }
-            steps {
                 sh "docker tag ${GIT_COMMIT} fint/link-walker:latest"
                 withDockerRegistry([credentialsId: 'asgeir-docker', url: '']) {
                     sh "docker push fint/link-walker:latest"
@@ -44,6 +39,12 @@ pipeline {
                 sh "docker tag ${GIT_COMMIT} fintlabs.azurecr.io/link-walker:${VERSION}"
                 withDockerRegistry([credentialsId: 'fintlabs.azurecr.io', url: 'https://fintlabs.azurecr.io']) {
                     sh "docker push fintlabs.azurecr.io/link-walker:${VERSION}"
+                }
+                sh "docker tag ${GIT_COMMIT} fint/link-walker:latest"
+                sh "docker tag ${GIT_COMMIT} fint/link-walker:${VERSION}"
+                withDockerRegistry([credentialsId: 'asgeir-docker', url: '']) {
+                    sh "docker push fint/link-walker:latest"
+                    sh "docker push fint/link-walker:${VERSION}"
                 }
             }
         }
