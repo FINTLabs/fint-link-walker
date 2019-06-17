@@ -56,7 +56,7 @@ For protected resources, the following environment variables must be set with va
 
 | Variable                      | Content                                           |
 |-------------------------------|---------------------------------------------------|
-| `fint.oauth.enabled`          | Set to `true` to enable OAuth, `false` to disable.|                     | 
+| `fint.oauth.enabled`          | Set to `true` to enable OAuth, `false` to disable.| 
 | `fint.oauth.access-token-uri` | URI of access token server                        |
 | `fint.oauth.scope`            | Set to `fint-client`                              |
 | `fint.oauth.username`         | User Name                                         |
