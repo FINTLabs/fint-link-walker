@@ -14,18 +14,18 @@ import java.util.concurrent.TimeUnit;
 public class ResourceFetcher {
     private static final double MULTIPLIER = Math.sqrt(2);
     private static final int LIMIT = 10;
+    private static final int DELAY = 256;
 
     @Autowired
     private RestTemplateProvider restTemplateProvider;
 
     public <T> ResponseEntity<T> fetch(String client, String location, HttpHeaders headers, Class<T> type) {
         int count = 0;
-        long delay = 1000;
+        long delay = DELAY;
         do {
             try {
                 ++count;
-                RestTemplate restTemplate = getRestTemplate(client, location);
-                return restTemplate.exchange(location, HttpMethod.GET, new HttpEntity<>(headers), type);
+                return getRestTemplate(client, location).exchange(location, HttpMethod.GET, new HttpEntity<>(headers), type);
             } catch (ResourceAccessException e) {
                 log.info(e.getMessage());
                 log.info("Retry {}/{} in {} ms ...", count, LIMIT, delay);
