@@ -2,10 +2,13 @@ package no.fint.linkwalker;
 
 import lombok.extern.slf4j.Slf4j;
 import no.fint.oauth.OAuthRestTemplateFactory;
+import no.fint.portal.config.LdapConfiguration;
 import no.fint.portal.model.client.Client;
 import no.fint.portal.model.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +21,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "fint.rest-template.provider", havingValue = "portal-api")
+@Import(LdapConfiguration.class)
+@ComponentScan(basePackages = "no.fint.portal")
 public class PortalApiRestTemplateProvider extends RestTemplateProvider {
 
     @Autowired
