@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.concurrent.TimeUnit;
@@ -26,7 +25,7 @@ public class ResourceFetcher {
             try {
                 ++count;
                 return getRestTemplate(client, location).exchange(location, HttpMethod.GET, new HttpEntity<>(headers), type);
-            } catch (ResourceAccessException e) {
+            } catch (Exception e) {
                 log.info(e.getMessage());
                 log.info("Retry {}/{} in {} ms ...", count, LIMIT, delay);
                 try {
