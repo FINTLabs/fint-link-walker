@@ -29,10 +29,10 @@ public class TestRunner {
     public void runTest(TestCase testCase) {
         String target = testCase.getTestRequest().getTarget();
         if (testCase.getStatus() == Status.RUNNING || testCase.getStatus() == Status.OK || testCase.getStatus() == Status.FAILED) {
-            log.info("{} has status {}, so it will not be run", target, testCase.getStatus());
+            log.info("{}: {} has status {}, so it will not be run", testCase.getOrganisation(), target, testCase.getStatus());
             return;
         } else {
-            log.info("Running test {}", target);
+            log.info("{}: Running test {}", testCase.getOrganisation(), target);
         }
 
         testCase.start();
@@ -54,11 +54,11 @@ public class TestRunner {
                     harvestChildren(testCase, response.getBody());
                     long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
                     testCase.getRemaining().set(count);
-                    log.info("Found {} children.", count);
+                    log.info("{}: Found {} children.", testCase.getOrganisation(), count);
                     testChildren(testCase);
-                    log.info("Completed testing children.");
+                    log.info("{}: Completed testing children.", testCase.getOrganisation());
                     long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
-                    log.info("Found {} errors.", errors);
+                    log.info("{}: Found {} errors.", testCase.getOrganisation(), errors);
                     if (errors > 0)
                         testCase.failed(String.format("Found %d errors in children.", errors));
                     else
@@ -67,7 +67,7 @@ public class TestRunner {
                     testCase.failed(e);
                 }
             } else {
-                log.info("Failing {}", testRequest.getTarget());
+                log.info("{}: Failing {}", testCase.getOrganisation(), testRequest.getTarget());
                 testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
             }
         } catch (ResourceAccessException e) {

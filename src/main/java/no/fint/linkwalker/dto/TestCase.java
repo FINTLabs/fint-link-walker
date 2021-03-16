@@ -53,7 +53,7 @@ public class TestCase {
     }
 
     private void transition(Status newStatus) {
-        log.info("{} {} -> {}", testRequest.getTarget(), status, newStatus);
+        log.info("{}: {} {} -> {}", organisation, testRequest.getTarget(), status, newStatus);
         this.status = newStatus;
     }
 
