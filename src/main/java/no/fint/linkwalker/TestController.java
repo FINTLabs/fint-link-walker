@@ -29,7 +29,7 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @CrossOrigin
-@RequestMapping("/api/tests/links/{organisation:.+}")
+@RequestMapping("/api/tests/{organisation}/links")
 public class TestController {
 
     @Autowired

@@ -16,9 +16,9 @@ The `org` path parameter can be any value you choose.
 
 | Path                          | Method | Description       |
 |-------------------------------|--------|-------------------|
-| `/api/tests/links/{org}`      | GET    | Get all tests     |
-| `/api/tests/links/{org}`      | POST   | Start a new test, returns location header with direct url to the test  |
-| `/api/tests/links/{org}/{id}` | GET    | Get test with id  |
+| `/api/tests/{org}/links`      | GET    | Get all tests     |
+| `/api/tests/{org}/links`      | POST   | Start a new test, returns location header with direct url to the test  |
+| `/api/tests/{org}/links/{id}` | GET    | Get test with id  |
 
 ## Model
 

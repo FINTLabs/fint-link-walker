@@ -14,7 +14,7 @@ class TestCaseSpec extends Specification {
 
     void setup() {
         objectMapper = new ObjectMapper()
-        testCase = new TestCase(new TestRequest('baseUrl', 'endpoint', 'orgId', 'client'))
+        testCase = new TestCase('org', new TestRequest('baseUrl', 'endpoint', 'orgId', 'client'))
         testCase.addRelation(new DiscoveredRelation(rel: 'self', links: [new URL('http://localhost')]))
     }
 

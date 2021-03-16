@@ -44,7 +44,7 @@ public class TestRunner {
         HttpHeaders headers = createHeaders();
 
         try {
-            ResponseEntity<String> response = fetcher.fetch(testRequest.getClient(), testRequest.getTarget(), headers, String.class);
+            ResponseEntity<String> response = fetcher.fetch(testCase.getOrganisation(), testRequest.getClient(), testRequest.getTarget(), headers, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 try {
                     if (JsonPath.parse(response.getBody()).read("$.total_items", int.class) == 0) {
@@ -84,7 +84,7 @@ public class TestRunner {
         HttpHeaders headers = createHeaders();
 
 
-        ResponseEntity<Void> response = fetcher.fetch(testCase.getTestRequest().getClient(), testedRelation.getUrl().toString(), headers, Void.class);
+        ResponseEntity<Void> response = fetcher.fetch(testCase.getOrganisation(), testCase.getTestRequest().getClient(), testedRelation.getUrl().toString(), headers, Void.class);
         if (response.getStatusCode().is2xxSuccessful()) {
             testedRelation.setStatus(Status.OK);
         } else {

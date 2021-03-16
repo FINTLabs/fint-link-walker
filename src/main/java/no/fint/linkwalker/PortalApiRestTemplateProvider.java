@@ -5,6 +5,7 @@ import no.fint.oauth.OAuthRestTemplateFactory;
 import no.fint.portal.config.LdapConfiguration;
 import no.fint.portal.model.client.Client;
 import no.fint.portal.model.client.ClientService;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,7 +32,7 @@ public class PortalApiRestTemplateProvider extends RestTemplateProvider {
     @Autowired
     private OAuthRestTemplateFactory oAuthRestTemplateFactory;
 
-    private final ConcurrentMap<String, OAuth2RestTemplate> restTemplateCache = new ConcurrentSkipListMap<>();
+    private final ConcurrentMap<Pair<String, String>, OAuth2RestTemplate> restTemplateCache = new ConcurrentSkipListMap<>();
 
     @PostConstruct
     public void init() {
@@ -44,22 +45,22 @@ public class PortalApiRestTemplateProvider extends RestTemplateProvider {
     }
 
     @Override
-    public RestTemplate getAuthRestTemplate(String client) {
-        return withPermissiveErrorHandler(restTemplateCache.compute(client, this::computeOAuthRestTemplate));
+    public RestTemplate getAuthRestTemplate(String organisation, String client) {
+        return withPermissiveErrorHandler(restTemplateCache.compute(Pair.of(client, organisation), this::computeOAuthRestTemplate));
     }
 
-    private OAuth2RestTemplate computeOAuthRestTemplate(String client, OAuth2RestTemplate restTemplate) {
+    private OAuth2RestTemplate computeOAuthRestTemplate(Pair<String,String> key, OAuth2RestTemplate restTemplate) {
         if (restTemplate == null
                 || restTemplate.getOAuth2ClientContext() == null
                 || restTemplate.getOAuth2ClientContext().getAccessToken() == null
                 || restTemplate.getOAuth2ClientContext().getAccessToken().isExpired()) {
-            return createOAuthRestTemplate(client);
+            return createOAuthRestTemplate(key.getLeft(), key.getRight());
         }
         return restTemplate;
     }
 
-    private OAuth2RestTemplate createOAuthRestTemplate(String clientDn) {
-        Client client = clientService.getClientByDn(clientDn).orElseThrow(SecurityException::new);
+    private OAuth2RestTemplate createOAuthRestTemplate(String clientName, String organisationName) {
+        Client client = clientService.getClient(clientName, organisationName).orElseThrow(SecurityException::new);
         String password = UUID.randomUUID().toString().toLowerCase();
         clientService.resetClientPassword(client, password);
         String clientSecret = clientService.getClientSecret(client);

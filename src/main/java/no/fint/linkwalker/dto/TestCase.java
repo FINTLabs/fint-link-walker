@@ -25,15 +25,17 @@ public class TestCase {
     private final UUID id;
     private Status status;
     private String reason;
-    private TestRequest testRequest;
+    private final String organisation;
+    private final TestRequest testRequest;
     @JsonFormat(pattern = "dd.MM.yyyy HH:mm:ss")
-    private Date time;
+    private final Date time;
     private final AtomicLong remaining = new AtomicLong();
 
     @JsonView(TestCaseViews.Details.class)
     private final Map<String, Collection<TestedRelation>> relations = new HashMap<>();
 
     private TestCase(TestCase testCase) {
+        this.organisation = testCase.organisation;
         this.id = testCase.id;
         this.status = testCase.status;
         this.reason = testCase.reason;
@@ -42,7 +44,8 @@ public class TestCase {
         this.remaining.set(testCase.remaining.longValue());
     }
 
-    public TestCase(TestRequest testRequest) {
+    public TestCase(String organisation, TestRequest testRequest) {
+        this.organisation = organisation;
         this.id = UUID.randomUUID();
         this.testRequest = testRequest;
         this.time = new Date();

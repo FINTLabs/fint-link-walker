@@ -17,7 +17,7 @@ public class TestCaseRepository {
     private final Multimap<String, TestCase> cases = Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
     public TestCase buildNewCase(String organisation, TestRequest testRequest) {
-        TestCase testCase = new TestCase(testRequest);
+        TestCase testCase = new TestCase(organisation, testRequest);
         cases.put(organisation, testCase);
         return testCase;
     }
