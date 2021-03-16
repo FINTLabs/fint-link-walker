@@ -1,4 +1,4 @@
-package no.fint;
+package no.fint.linkwalker;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
