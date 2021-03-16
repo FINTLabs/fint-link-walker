@@ -30,7 +30,7 @@ class TestControllerSpec extends MockMvcSpecification {
 
     def "Start test without including TestRequest"() {
         when:
-        def response = mockMvc.perform(post('/api/tests/links/fake'))
+        def response = mockMvc.perform(post('/api/tests/fake/links'))
 
         then:
         response.andExpect(status().isBadRequest())
@@ -42,7 +42,7 @@ class TestControllerSpec extends MockMvcSpecification {
         def body = new ObjectMapper().writeValueAsString(request)
 
         when:
-        def response = mockMvc.perform(post('/api/tests/links/fake')
+        def response = mockMvc.perform(post('/api/tests/fake/links')
                 .contentType(MediaType.APPLICATION_JSON_UTF8)
                 .content(body))
 
@@ -56,7 +56,7 @@ class TestControllerSpec extends MockMvcSpecification {
         def testCase = new TestCase('fake', new TestRequest('http://localhost', '/test', 'fake', 'client'))
 
         when:
-        def response = mockMvc.perform(get('/api/tests/links/fake'))
+        def response = mockMvc.perform(get('/api/tests/fake/links'))
 
         then:
         1 * repository.allTestCases('fake') >> [testCase]
@@ -70,7 +70,7 @@ class TestControllerSpec extends MockMvcSpecification {
         def testCase = new TestCase('fake', new TestRequest('http://localhost', '/test', 'fake', 'client'))
 
         when:
-        def response = mockMvc.perform(get('/api/tests/links/fake/{id}', testCase.id.toString()))
+        def response = mockMvc.perform(get('/api/tests/fake/links/{id}', testCase.id.toString()))
 
         then:
         1 * repository.getCaseForId('fake', testCase.id) >> testCase
