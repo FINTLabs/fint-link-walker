@@ -47,13 +47,13 @@ class TestControllerSpec extends MockMvcSpecification {
                 .content(body))
 
         then:
-        1 * testScheduler.scheduleTest('fake', request) >> new TestCase(request)
+        1 * testScheduler.scheduleTest('fake', request) >> new TestCase('fake', request)
         response.andExpect(status().isCreated())
     }
 
     def "Get all test cases without relations in response body"() {
         given:
-        def testCase = new TestCase(new TestRequest('http://localhost', '/test', 'fake', 'client'))
+        def testCase = new TestCase('fake', new TestRequest('http://localhost', '/test', 'fake', 'client'))
 
         when:
         def response = mockMvc.perform(get('/api/tests/links/fake'))
@@ -67,7 +67,7 @@ class TestControllerSpec extends MockMvcSpecification {
 
     def "Get single test case with relations in response body"() {
         given:
-        def testCase = new TestCase(new TestRequest('http://localhost', '/test', 'fake', 'client'))
+        def testCase = new TestCase('fake', new TestRequest('http://localhost', '/test', 'fake', 'client'))
 
         when:
         def response = mockMvc.perform(get('/api/tests/links/fake/{id}', testCase.id.toString()))

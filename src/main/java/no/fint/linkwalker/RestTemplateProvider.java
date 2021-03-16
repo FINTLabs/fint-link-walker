@@ -7,7 +7,7 @@ import org.springframework.web.client.RestTemplate;
 public abstract class RestTemplateProvider {
     public abstract RestTemplate getRestTemplate();
 
-    public abstract RestTemplate getAuthRestTemplate(String client);
+    public abstract RestTemplate getAuthRestTemplate(String organisation, String client);
 
     protected RestTemplate withPermissiveErrorHandler(RestTemplate input) {
         input.setErrorHandler(new ResponseErrorHandler() {

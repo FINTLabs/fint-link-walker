@@ -28,7 +28,7 @@ public class OAuthTokenRestTemplateProvider extends RestTemplateProvider {
     }
 
     @Override
-    public RestTemplate getAuthRestTemplate(String client) {
+    public RestTemplate getAuthRestTemplate(String organisation, String client) {
         return withPermissiveErrorHandler(restTemplate);
     }
 }

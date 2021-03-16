@@ -18,13 +18,13 @@ public class ResourceFetcher {
     @Autowired
     private RestTemplateProvider restTemplateProvider;
 
-    public <T> ResponseEntity<T> fetch(String client, String location, HttpHeaders headers, Class<T> type) {
+    public <T> ResponseEntity<T> fetch(String organisation, String client, String location, HttpHeaders headers, Class<T> type) {
         int count = 0;
         long delay = DELAY;
         do {
             try {
                 ++count;
-                return getRestTemplate(client, location).exchange(location, HttpMethod.GET, new HttpEntity<>(headers), type);
+                return getRestTemplate(organisation, client, location).exchange(location, HttpMethod.GET, new HttpEntity<>(headers), type);
             } catch (Exception e) {
                 log.info(e.getMessage());
                 log.info("Retry {}/{} in {} ms ...", count, LIMIT, delay);
@@ -39,11 +39,11 @@ public class ResourceFetcher {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
     }
 
-    private RestTemplate getRestTemplate(String client, String location) {
+    private RestTemplate getRestTemplate(String organisation, String client, String location) {
         if (PwfUtils.isPwf(location)) {
             return restTemplateProvider.getRestTemplate();
         }
-        return restTemplateProvider.getAuthRestTemplate(client);
+        return restTemplateProvider.getAuthRestTemplate(organisation, client);
     }
 
 }
