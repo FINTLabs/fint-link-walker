@@ -1,12 +1,16 @@
 package no.fint.linkwalker.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.PathNotFoundException
 import no.fint.linkwalker.DiscoveredRelation
+import org.springframework.test.web.reactive.server.JsonPathAssertions
 import spock.lang.Specification
+
+import java.lang.module.Configuration
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath
-import static org.junit.Assert.assertThat
 
 class TestCaseSpec extends Specification {
     private ObjectMapper objectMapper
@@ -23,17 +27,30 @@ class TestCaseSpec extends Specification {
         def json = objectMapper.writerWithView(TestCaseViews.Details.class).writeValueAsString(testCase)
 
         then:
-        assertThat(json, hasJsonPath('$.id'))
-        assertThat(json, hasJsonPath('$.relations'))
+        // assertThat(json, hasJsonPath('$.id'))
+        // assertThat(json, hasJsonPath('$.relations'))
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json)
+        JsonPath.read(document, '$.id') != ""
+        JsonPath.read(document, '$.relations') != ""
     }
 
-    def "Serialize only results overview fields"() {
+    def "Serialize only result with id"() {
         when:
         def json = objectMapper.writerWithView(TestCaseViews.ResultsOverview.class).writeValueAsString(testCase)
 
         then:
-        assertThat(json, hasJsonPath('$.id'))
-        assertThat(json, hasNoJsonPath('$.relations'))
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json)
+        JsonPath.read(document, '$.id') != ""
+    }
+
+    def "Serialize only result without relations"() {
+        when:
+        def json = objectMapper.writerWithView(TestCaseViews.ResultsOverview.class).writeValueAsString(testCase)
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json)
+        JsonPath.read(document, '$.relations')
+
+        then:
+        thrown(PathNotFoundException)
     }
 
     def "Filter relations running"() {
