@@ -7,13 +7,6 @@ on:
 
 env:
   REGISTRY_NAME: fintlabsacr
-  ALPHA_CLUSTER_NAME: aks-alpha-fint-2021-11-18
-  ALPHA_CLUSTER_RESOURCE_GROUP: rg-aks-alpha
-  BETA_CLUSTER_NAME: aks-beta-fint-2021-11-23
-  BETA_CLUSTER_RESOURCE_GROUP: rg-aks-beta
-  API_CLUSTER_NAME: aks-api-fint-2022-02-08
-  API_CLUSTER_RESOURCE_GROUP: rg-aks-api
-  NAMESPACE: default
 
 jobs:
   publish:
@@ -39,12 +32,6 @@ jobs:
           docker build . -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{steps.get_repo.outputs.REPO}}:${{ github.sha }}
           docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{steps.get_repo.outputs.REPO}}:${{ github.sha }}
 
-## Uncomment to trigger a deployment
-## remember to set environment i deploy.yaml
-      # - name: Start deployment workflow
-      #   uses: peter-evans/repository-dispatch@v1
-      #   with:
-      #     token: ${{ secrets.GITHUBACTION_TOKEN}}
-      #     event-type: trigger-to-deploy
+# Deployment wil be triggered from fint-kunde-backend
 
 
