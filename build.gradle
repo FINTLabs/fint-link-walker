@@ -32,7 +32,7 @@ repositories {
 
 dependencies {
     implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
-    implementation 'no.fint:fint-portal-api:3.17.0-rc-2'
+    implementation 'no.fintlabs:fint-portal-api:3.17.0-rc-2'
     
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-web'
