@@ -31,26 +31,26 @@ repositories {
 
 
 dependencies {
-    implementation('no.fint:fint-oauth-token-service:1.6.1')
-    implementation('no.fint:fint-portal-api:3.15.0')
+    implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
+    implementation 'no.fint:fint-portal-api:3.17.0-rc-2'
     
-    implementation('com.jayway.jsonpath:json-path:2.7.0')
-    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation 'com.jayway.jsonpath:json-path:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
 
-    implementation('org.apache.poi:poi:5.2.2')
-    implementation('org.apache.poi:poi-ooxml:5.2.2')
+    implementation 'org.apache.poi:poi:5.2.2'
+    implementation 'org.apache.poi:poi-ooxml:5.2.2'
     implementation 'com.google.guava:guava:31.1-jre'
 
-    compileOnly("org.projectlombok:lombok")
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    testImplementation('com.jayway.jsonpath:json-path-assert:2.7.0')
-    testImplementation('no.fint:fint-test-utils:0.0.6')
-    testImplementation("cglib:cglib-nodep:3.3.0")
-    testImplementation("org.spockframework:spock-spring:2.3-groovy-3.0")
-    testImplementation("org.spockframework:spock-core:2.3-groovy-3.0")
-    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    testImplementation 'com.jayway.jsonpath:json-path-assert:2.7.0'
+    testImplementation 'no.fint:fint-test-utils:0.0.6'
+    testImplementation 'cglib:cglib-nodep:3.3.0'
+    testImplementation 'org.spockframework:spock-spring:2.3-groovy-3.0'
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-3.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 test {
