@@ -1,24 +1,19 @@
 package no.fint.linkwalker.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 @Configuration
-@EnableWebFluxSecurity
-public class SecurityConfiguration {
+@EnableWebSecurity
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
-    @Bean
-    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
         http
-                .authorizeExchange((authorize) -> authorize
-                        .pathMatchers("/**")
-                        .authenticated()
-                        .anyExchange()
-                        .authenticated()
-                ).build();
-        return http.build();
+                .authorizeRequests()
+                .antMatchers("/**")
+                .authenticated();
     }
 }
