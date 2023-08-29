@@ -3,7 +3,7 @@ springfox:
  version: '@version@'
 
 server:
- port: 8082
+  port: 8080
 
 security:
   basic:
