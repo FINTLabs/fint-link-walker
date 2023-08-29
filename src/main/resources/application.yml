@@ -3,11 +3,18 @@ springfox:
  version: '@version@'
 
 server:
- port: 8082
+  port: 8080
 
 security:
   basic:
     enabled: false
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://idp.felleskomponent.no/nidp/oauth/nam
 
 fint:
   oauth:
