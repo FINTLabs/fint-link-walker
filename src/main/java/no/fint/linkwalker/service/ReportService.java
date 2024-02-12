@@ -1,5 +1,6 @@
-package no.fint.linkwalker;
+package no.fint.linkwalker.service;
 
+import no.fint.linkwalker.ReportWorkbook;
 import no.fint.linkwalker.dto.TestCase;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.stereotype.Service;

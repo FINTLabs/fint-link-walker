@@ -1,5 +1,7 @@
 package no.fint.linkwalker
 
+import no.fint.linkwalker.data.Constants
+import no.fint.linkwalker.data.PwfUtils
 import spock.lang.Specification
 
 class PwfUtilsSpec extends Specification {

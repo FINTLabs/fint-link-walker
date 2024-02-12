@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.fint.linkwalker.dto.TestCase
 import no.fint.linkwalker.dto.TestRequest
+import no.fint.linkwalker.service.TestScheduler
 import no.fint.test.utils.MockMvcSpecification
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter

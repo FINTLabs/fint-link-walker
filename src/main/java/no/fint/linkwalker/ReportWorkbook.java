@@ -1,5 +1,6 @@
 package no.fint.linkwalker;
 
+import no.fint.linkwalker.data.PwfUtils;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import org.apache.poi.common.usermodel.HyperlinkType;
@@ -11,9 +12,6 @@ import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReportWorkbook {
-
-
-
 
     public static ReportWorkbook builder() {
         return new ReportWorkbook();

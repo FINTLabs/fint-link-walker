@@ -1,6 +1,7 @@
-package no.fint.linkwalker;
+package no.fint.linkwalker.service;
 
 import lombok.extern.slf4j.Slf4j;
+import no.fint.linkwalker.RestTemplateProvider;
 import no.fint.oauth.OAuthRestTemplateFactory;
 import no.fint.portal.config.LdapConfiguration;
 import no.fint.portal.model.client.Client;

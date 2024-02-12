@@ -6,6 +6,8 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
+import no.fint.linkwalker.service.ReportService;
+import no.fint.linkwalker.service.TestScheduler;
 import org.apache.poi.util.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;

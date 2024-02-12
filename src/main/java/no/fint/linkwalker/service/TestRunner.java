@@ -1,7 +1,10 @@
-package no.fint.linkwalker;
+package no.fint.linkwalker.service;
 
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
+import no.fint.linkwalker.data.DiscoveredRelation;
+import no.fint.linkwalker.RelationFinder;
+import no.fint.linkwalker.data.TestedRelation;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;

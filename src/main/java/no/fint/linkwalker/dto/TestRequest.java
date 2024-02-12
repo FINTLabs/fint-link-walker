@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import no.fint.linkwalker.Constants;
+import no.fint.linkwalker.data.Constants;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.StringUtils;
 
