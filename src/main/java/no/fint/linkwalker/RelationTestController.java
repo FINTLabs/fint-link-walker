@@ -1,6 +1,7 @@
 package no.fint.linkwalker;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
@@ -9,7 +10,6 @@ import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.service.ReportService;
 import no.fint.linkwalker.service.TestScheduler;
 import org.apache.poi.util.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -32,17 +32,13 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @CrossOrigin
+@RequiredArgsConstructor
 @RequestMapping("/api/tests/{organisation}/links")
 public class RelationTestController {
 
-    @Autowired
-    private TestScheduler testScheduler;
-
-    @Autowired
-    private TestCaseRepository repository;
-
-    @Autowired
-    private ReportService reportService;
+    private final TestScheduler testScheduler;
+    private final TestCaseRepository repository;
+    private final ReportService reportService;
 
     /**
      * Kicks off a startTest of an endpoint. All testing is async
@@ -104,7 +100,7 @@ public class RelationTestController {
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentLength(out.contentLength())
-        .body(out);
+                .body(out);
     }
 
 
