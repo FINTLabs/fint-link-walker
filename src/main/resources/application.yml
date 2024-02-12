@@ -2,9 +2,6 @@ springfox:
  title: Fint Link Walker
  version: '@version@'
 
-server:
-  port: 8080
-
 security:
   basic:
     enabled: false
@@ -15,6 +12,9 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://idp.felleskomponent.no/nidp/oauth/nam
+  threads:
+    virtual:
+      enabled: true
 
 fint:
   oauth:
