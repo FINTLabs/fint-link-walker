@@ -2,8 +2,8 @@ package no.fint.linkwalker.service;
 
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
-import no.fint.linkwalker.data.DiscoveredRelation;
 import no.fint.linkwalker.RelationFinder;
+import no.fint.linkwalker.data.DiscoveredRelation;
 import no.fint.linkwalker.data.TestedRelation;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
@@ -45,36 +45,38 @@ public class TestRunner {
     private void runIt(TestCase testCase) {
         TestRequest testRequest = testCase.getTestRequest();
         HttpHeaders headers = createHeaders();
-
-        try {
-            ResponseEntity<String> response = fetcher.fetch(testCase.getOrganisation(), testRequest.getClient(), testRequest.getTarget(), headers, String.class);
-            if (response.getStatusCode().is2xxSuccessful()) {
-                try {
-                    if (JsonPath.parse(response.getBody()).read("$.total_items", int.class) == 0) {
-                        testCase.partiallyFailed();
-                        return;
+        fetcher.fetchResource(testCase.getOrganisation(), testRequest.getClient(), testRequest.getTarget(), headers, String.class)
+                .doOnError(throwable -> handleError(throwable, testCase, testRequest))
+                .subscribe(response -> {
+                    try {
+                        if (JsonPath.parse(response.getBody()).read("$.total_items", int.class) == 0) {
+                            testCase.partiallyFailed();
+                            return;
+                        }
+                        harvestChildren(testCase, response.getBody());
+                        long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
+                        testCase.getRemaining().set(count);
+                        log.info("{}: Found {} children.", testCase.getOrganisation(), count);
+                        testChildren(testCase);
+                        log.info("{}: Completed testing children.", testCase.getOrganisation());
+                        long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
+                        log.info("{}: Found {} errors.", testCase.getOrganisation(), errors);
+                        if (errors > 0)
+                            testCase.failed(String.format("Found %d errors in children.", errors));
+                        else
+                            testCase.succeed();
+                    } catch (FintLinkWalkerException e) {
+                        testCase.failed(e);
                     }
-                    harvestChildren(testCase, response.getBody());
-                    long count = testCase.getRelations().values().stream().mapToLong(Collection::size).sum();
-                    testCase.getRemaining().set(count);
-                    log.info("{}: Found {} children.", testCase.getOrganisation(), count);
-                    testChildren(testCase);
-                    log.info("{}: Completed testing children.", testCase.getOrganisation());
-                    long errors = testCase.getRelations().values().stream().flatMap(Collection::parallelStream).map(TestedRelation::getStatus).filter(status -> status == Status.FAILED).count();
-                    log.info("{}: Found {} errors.", testCase.getOrganisation(), errors);
-                    if (errors > 0)
-                        testCase.failed(String.format("Found %d errors in children.", errors));
-                    else
-                        testCase.succeed();
-                } catch (FintLinkWalkerException e) {
-                    testCase.failed(e);
-                }
-            } else {
-                log.info("{}: Failing {}", testCase.getOrganisation(), testRequest.getTarget());
-                testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
-            }
-        } catch (ResourceAccessException e) {
+                });
+    }
+
+    private void handleError(Throwable throwable, TestCase testCase, TestRequest request) {
+        if (throwable instanceof ResourceAccessException) {
             testCase.failed(String.format("An error occurred. Probably because the client you use don't have access to the resource. (%s) ", e.getMessage()));
+        } else {
+            log.info("{}: Failing {}", testCase.getOrganisation(), testRequest.getTarget());
+            testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
         }
     }
 
