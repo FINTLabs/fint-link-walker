@@ -11,16 +11,16 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
-class TestControllerSpec extends MockMvcSpecification {
+class RelationTestControllerSpec extends MockMvcSpecification {
     private MockMvc mockMvc
     private TestScheduler testScheduler
     private TestCaseRepository repository
-    private TestController controller
+    private RelationTestController controller
 
     void setup() {
         testScheduler = Mock()
         repository = Mock()
-        controller = new TestController(testScheduler: testScheduler, repository: repository)
+        controller = new RelationTestController(testScheduler: testScheduler, repository: repository)
 
         def objectMapper = new ObjectMapper()
         objectMapper.enable(MapperFeature.DEFAULT_VIEW_INCLUSION)

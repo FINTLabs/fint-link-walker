@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
+import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.util.UUID;
 @RestController
 @CrossOrigin
 @RequestMapping("/api/tests/{organisation}/links")
-public class TestController {
+public class RelationTestController {
 
     @Autowired
     private TestScheduler testScheduler;
@@ -50,7 +51,7 @@ public class TestController {
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public ResponseEntity<TestCase> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
+    public Mono<ResponseEntity<TestCase>> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
         TestCase testCase = testScheduler.scheduleTest(organisation, testRequest);
         log.info("Registering testcase " + testCase.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder
