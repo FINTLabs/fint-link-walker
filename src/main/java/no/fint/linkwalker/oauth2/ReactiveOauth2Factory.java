@@ -37,6 +37,8 @@ public class ReactiveOauth2Factory {
     private final Map<String, String> registrationIdMap = new HashMap<>();
     private final WebClient webClient = WebClient.create();
 
+    // TODO: Handle bug scenario
+    // A bug may occur if a client's password is reset after it's been registered by the service.
     public void registerNewClient(String clientName, String organisationName, ServerWebExchange serverWebExchange) {
         if (registrationIdMap.containsKey(clientName)) {
             return;
