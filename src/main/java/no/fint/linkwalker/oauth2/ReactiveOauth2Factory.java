@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.fint.portal.model.client.Client;
 import no.fint.portal.model.client.ClientService;
 import no.fintlabs.core.resource.server.security.converter.CorePrincipalConverter;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -30,12 +31,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReactiveOauth2Factory {
 
+    private final Map<String, String> registrationIdMap = new HashMap<>();
     private final CorePrincipalConverter converter = new CorePrincipalConverter();
     private final JwtDecoder jwtDecoder;
     private final ClientService clientService;
     private final ServerOAuth2AuthorizedClientRepository authorizedClientRepository;
-    private final Map<String, String> registrationIdMap = new HashMap<>();
     private final WebClient webClient = WebClient.create();
+
+    @Bean("registrationIdMap")
+    Map<String, String> registrationIdMap() {
+        return registrationIdMap;
+    }
 
     // TODO: Handle bug scenario
     // A bug may occur if a client's password is reset after it's been registered by the service.
@@ -105,8 +111,8 @@ public class ReactiveOauth2Factory {
             Objects.requireNonNull(converter.convert(jwt))
                     .doOnError(throwable -> log.error(throwable.getMessage()))
                     .subscribe(authentication -> {
-                authorizedClientRepository.saveAuthorizedClient(oAuth2AuthorizedClient, authentication, serverWebExchange).subscribe();
-            });
+                        authorizedClientRepository.saveAuthorizedClient(oAuth2AuthorizedClient, authentication, serverWebExchange).subscribe();
+                    });
         });
     }
 
