@@ -2,21 +2,21 @@ package no.fint.linkwalker.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import no.fint.linkwalker.RestTemplateProvider;
 import no.fint.linkwalker.data.PwfUtils;
+import no.fint.linkwalker.oauth2.TokenService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerErrorException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
-import static no.fint.linkwalker.data.Constants.PWF_BASE_URL;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Slf4j
 @Service
@@ -27,13 +27,14 @@ public class ResourceFetcher {
     private static final long INITIAL_DELAY = 100;
     private static final long MULTIPLIER = 2;
 
-    private final RestTemplateProvider restTemplateProvider;
+    private final WebClient webClient = WebClient.create();
+    private final TokenService tokenService;
 
     public <T> Mono<ResponseEntity<T>> fetchResource(String organisation, String client, String location, HttpHeaders headers, Class<T> type) {
-        return getWebClient(organisation, client, location)
+        return webClient
                 .get()
                 .uri(location)
-                .headers(httpHeaders -> httpHeaders.addAll(headers))
+                .headers(addHeaders(headers, location, client, organisation))
                 .retrieve()
                 .toEntity(type)
                 .retryWhen(Retry.backoff(RETRY_LIMIT, Duration.ofMillis(INITIAL_DELAY))
@@ -44,18 +45,13 @@ public class ResourceFetcher {
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()));
     }
 
-    private WebClient getWebClient(String organisation, String client, String location) {
-        if (PwfUtils.isPwf(location)) {
-            return WebClient.builder().build();
-        }
-        return WebClient.builder().build();
-    }
-
-    private RestTemplate getRestTemplate(String organisation, String client, String location) {
-        if (PwfUtils.isPwf(location)) {
-            return restTemplateProvider.getRestTemplate();
-        }
-        return restTemplateProvider.getAuthRestTemplate(organisation, client);
+    private Consumer<HttpHeaders> addHeaders(HttpHeaders headers, String location, String client, String organisation) {
+        return httpHeaders -> {
+            httpHeaders.addAll(headers);
+            if (!PwfUtils.isPwf(location)) {
+                httpHeaders.add(AUTHORIZATION, "Bearer " + tokenService.getBearerToken(client, organisation));
+            }
+        };
     }
 
 }
