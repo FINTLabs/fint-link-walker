@@ -33,10 +33,7 @@ repositories {
 
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.security:spring-security-oauth2-client'
-    implementation 'org.springframework.security:spring-security-oauth2-authorization-server'
 
     implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
     implementation 'no.fintlabs:fint-portal-api:3.19.0'
