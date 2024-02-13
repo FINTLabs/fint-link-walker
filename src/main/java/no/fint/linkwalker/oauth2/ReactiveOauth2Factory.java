@@ -38,6 +38,10 @@ public class ReactiveOauth2Factory {
     private final WebClient webClient = WebClient.create();
 
     public void registerNewClient(String clientName, String organisationName, ServerWebExchange serverWebExchange) {
+        if (registrationIdMap.containsKey(clientName)) {
+            return;
+        }
+
         String registrationId = UUID.randomUUID().toString();
         registrationIdMap.put(clientName, registrationId);
 
