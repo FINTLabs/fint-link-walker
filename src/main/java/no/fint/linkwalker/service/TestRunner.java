@@ -1,6 +1,7 @@
 package no.fint.linkwalker.service;
 
 import com.jayway.jsonpath.JsonPath;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.RelationFinder;
 import no.fint.linkwalker.data.DiscoveredRelation;
@@ -9,13 +10,14 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestRequest;
 import no.fint.linkwalker.exceptions.FintLinkWalkerException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,10 +25,10 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TestRunner {
 
-    @Autowired
-    private ResourceFetcher fetcher;
+    private final ResourceFetcher fetcher;
 
     @Async
     public void runTest(TestCase testCase) {
@@ -71,12 +73,16 @@ public class TestRunner {
                 });
     }
 
-    private void handleError(Throwable throwable, TestCase testCase, TestRequest request) {
+    private void handleError(Throwable throwable, TestCase testCase, TestRequest testRequest) {
         if (throwable instanceof ResourceAccessException) {
-            testCase.failed(String.format("An error occurred. Probably because the client you use don't have access to the resource. (%s) ", e.getMessage()));
+            testCase.failed(String.format("An error occurred. Probably because the client you use don't have access to the resource. (%s)", throwable.getMessage()));
+        } else if (throwable instanceof WebClientResponseException webClientResponseException) {
+            int statusCode = webClientResponseException.getStatusCode().value();
+            testCase.failed(String.format("Wrong status code. %d is not 200 OK. Response body: %s", statusCode, webClientResponseException.getResponseBodyAsString()));
+            log.info("{}: Failing {} with status code {}", testCase.getOrganisation(), testRequest.getTarget(), statusCode);
         } else {
             log.info("{}: Failing {}", testCase.getOrganisation(), testRequest.getTarget());
-            testCase.failed(String.format("Wrong status code. %s is not 200 OK", response.getStatusCode().value()));
+            testCase.failed("An unexpected error occurred.");
         }
     }
 
@@ -87,16 +93,16 @@ public class TestRunner {
 
     private void testRelation(TestCase testCase, TestedRelation testedRelation) {
         HttpHeaders headers = createHeaders();
-
-
-        ResponseEntity<Void> response = fetcher.fetch(testCase.getOrganisation(), testCase.getTestRequest().getClient(), testedRelation.getUrl().toString(), headers, Void.class);
-        if (response.getStatusCode().is2xxSuccessful()) {
-            testedRelation.setStatus(Status.OK);
-        } else {
-            testedRelation.setStatus(Status.FAILED);
-            testedRelation.setReason(String.format("%s is not 200.", response.getStatusCode().value()));
-        }
-        testCase.getRemaining().decrementAndGet();
+        Mono<ResponseEntity<Void>> monoResponse = fetcher.fetchResource(testCase.getOrganisation(), testCase.getTestRequest().getClient(), testedRelation.getUrl().toString(), headers, Void.class);
+        monoResponse.subscribe(response -> {
+            if (response.getStatusCode().is2xxSuccessful()) {
+                testedRelation.setStatus(Status.OK);
+            } else {
+                testedRelation.setStatus(Status.FAILED);
+                testedRelation.setReason(String.format("%s is not 200.", response.getStatusCode().value()));
+            }
+            testCase.getRemaining().decrementAndGet();
+        });
     }
 
     private HttpHeaders createHeaders() {
