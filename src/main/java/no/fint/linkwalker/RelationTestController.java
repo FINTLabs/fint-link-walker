@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
-import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,7 +46,7 @@ public class RelationTestController {
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public Mono<ResponseEntity<TestCase>> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
+    public ResponseEntity<TestCase> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
         TestCase testCase = testScheduler.scheduleTest(organisation, testRequest);
         log.info("Registering testcase " + testCase.getId());
         UriComponents uriComponents = ServletUriComponentsBuilder
@@ -102,6 +101,5 @@ public class RelationTestController {
                 .contentLength(out.contentLength())
                 .body(out);
     }
-
 
 }
