@@ -17,6 +17,8 @@ spring:
       enabled: true
 
 fint:
+  security:
+    enabled: false
   oauth:
     enabled: true
     access-token-uri: https://idp.felleskomponent.no/nidp/oauth/nam/token
