@@ -18,7 +18,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ReactiveOauth2Factory {
+public class TokenService {
 
     private final Map<String, AccessToken> accessTokenMap = new HashMap<>();
     private final ClientService clientService;
