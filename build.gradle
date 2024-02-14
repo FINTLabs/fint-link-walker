@@ -37,7 +37,6 @@ dependencies {
 
     implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
     implementation 'no.fintlabs:fint-portal-api:3.19.0'
-    implementation 'no.fintlabs:fint-core-resource-server-security:2.0.0'
 
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
