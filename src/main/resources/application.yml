@@ -1,7 +1,3 @@
-springfox:
- title: Fint Link Walker
- version: '@version@'
-
 security:
   basic:
     enabled: false
