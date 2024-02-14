@@ -14,9 +14,9 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -25,15 +25,19 @@ import java.util.UUID;
 @ComponentScan(basePackages = "no.fint.portal")
 public class FintTokenService {
 
-    private final Map<String, AccessToken> accessTokenMap = new HashMap<>();
+    private final Map<String, AccessToken> accessTokenMap = new ConcurrentHashMap<>();
     private final ClientService clientService;
     private final WebClient webClient = WebClient.create();
 
     public String getBearerToken(String clientName, String organisationName) {
-        if (!accessTokenMap.containsKey(clientName) || accessTokenMap.get(clientName).getExpiresIn() < 60) {
+        AccessToken accessToken = accessTokenMap.get(clientName);
+        boolean tokenIsExpired = accessToken == null || System.currentTimeMillis() > accessToken.getExpirationTime();
+
+        if (tokenIsExpired) {
             Client client = clientService.getClient(clientName, organisationName).orElseThrow(SecurityException::new);
-            createNewAccessToken(client).subscribe(accessToken -> accessTokenMap.put(clientName, accessToken));
+            createNewAccessToken(client).subscribe(newAccessToken -> accessTokenMap.put(clientName, newAccessToken));
         }
+
         return accessTokenMap.get(clientName).getAccessToken();
     }
 
@@ -55,7 +59,14 @@ public class FintTokenService {
                         .with("password", resetPassword(client))
                         .with("scope", "fint-client"))
                 .retrieve()
-                .bodyToMono(AccessToken.class);
+                .bodyToMono(AccessToken.class)
+                .doOnNext(this::setExpirationTime);
+    }
+
+    private void setExpirationTime(AccessToken accessToken) {
+        long bufferTime = 60 * 1000;
+        long expirationTime = System.currentTimeMillis() + (accessToken.getExpiresIn() * 1000) - bufferTime;
+        accessToken.setExpirationTime(expirationTime);
     }
 
 }

@@ -10,5 +10,6 @@ public class AccessToken {
     private long expiresIn;
     private String scope;
     private String acr;
+    private long expirationTime;
 
 }
