@@ -2,8 +2,11 @@ package no.fint.linkwalker.oauth2;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fint.portal.config.LdapConfiguration;
 import no.fint.portal.model.client.Client;
 import no.fint.portal.model.client.ClientService;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,8 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Import(LdapConfiguration.class)
+@ComponentScan(basePackages = "no.fint.portal")
 public class FintTokenService {
 
     private final Map<String, AccessToken> accessTokenMap = new HashMap<>();
