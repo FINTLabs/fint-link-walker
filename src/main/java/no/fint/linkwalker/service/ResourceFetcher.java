@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ServerErrorException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -42,7 +43,14 @@ public class ResourceFetcher {
                         .doBeforeRetry(retrySignal -> log.info("Retry {}/{} due to 5xx server error. Waiting {} ms before retrying...",
                                 retrySignal.totalRetries() + 1, RETRY_LIMIT, INITIAL_DELAY * (long) Math.pow(MULTIPLIER, retrySignal.totalRetries()))))
                 .doOnError(e -> log.error("Failed to fetch resource: " + e.getMessage()))
-                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build()));
+                .onErrorResume(this::handleError);
+    }
+
+    private <T> Mono<? extends ResponseEntity<T>> handleError(Throwable throwable) {
+        if (throwable instanceof WebClientResponseException webClientResponseException) {
+            return Mono.just(ResponseEntity.status(webClientResponseException.getStatusCode()).build());
+        }
+        return Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
     }
 
     private Consumer<HttpHeaders> addHeaders(HttpHeaders headers, String location, String client, String organisation) {
