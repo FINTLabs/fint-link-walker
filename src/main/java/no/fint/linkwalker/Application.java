@@ -6,6 +6,7 @@ import no.fint.oauth.OAuthConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -16,6 +17,7 @@ import jakarta.annotation.PostConstruct;
 @Import(OAuthConfig.class)
 @EnableAsync
 @EnableScheduling
+@ComponentScan("no.fintlabs")
 @SpringBootApplication
 public class Application {
 
