@@ -27,6 +27,11 @@ spec:
       value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
     - name: fint.rest-template.provider
       value: 'portal-api'
+  kafka:
+    acls:
+      - permission: admin
+        topic: flais-io.fint-customer-objects.*
+    enabled: true
   resources:
     limits:
       memory: "1Gi"
