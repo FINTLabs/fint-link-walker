@@ -34,9 +34,12 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.kafka:spring-kafka'
 
     implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
     implementation 'no.fintlabs:fint-portal-api:3.19.0'
+    implementation 'no.fintlabs:fint-kafka:4.0.1'
+    implementation 'no.fintlabs:flais-operator-starter:1.0.0'
 
     implementation 'com.jayway.jsonpath:json-path:2.7.0'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'

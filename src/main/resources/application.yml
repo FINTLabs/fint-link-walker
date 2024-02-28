@@ -13,6 +13,8 @@ spring:
       enabled: true
 
 fint:
+  kafka:
+    application-id: fint-link-walker
   security:
     enabled: false
   oauth:
