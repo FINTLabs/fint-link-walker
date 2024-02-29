@@ -7,6 +7,10 @@ import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
+import no.fint.linkwalker.kafka.Client;
+import no.fint.linkwalker.kafka.ClientEvent;
+import no.fint.linkwalker.kafka.ClientEventRequestProducerService;
+import no.fint.linkwalker.kafka.FintCustomerObjectEvent;
 import no.fint.linkwalker.service.ReportService;
 import no.fint.linkwalker.service.TestScheduler;
 import org.apache.poi.util.IOUtils;
@@ -26,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -38,6 +43,7 @@ public class RelationTestController {
     private final TestScheduler testScheduler;
     private final TestCaseRepository repository;
     private final ReportService reportService;
+    private final ClientEventRequestProducerService clientEventRequestProducerService;
 
     /**
      * Kicks off a startTest of an endpoint. All testing is async
@@ -60,6 +66,20 @@ public class RelationTestController {
 
     @PostMapping("/{dn}")
     public ResponseEntity<Object> test(ServerWebExchange exchange, @PathVariable String dn) {
+        Client client = Client.builder()
+                .dn(dn)
+                .build();
+
+        ClientEvent clientEvent = ClientEvent.builder()
+                .object(client)
+                .orgId("fintlabs.no")
+                .operation(FintCustomerObjectEvent.Operation.READ)
+                .build();
+
+        Optional<ClientEvent> optionalClientEvent = clientEventRequestProducerService.get(clientEvent);
+        if (optionalClientEvent.isPresent()) {
+            return ResponseEntity.accepted().build();
+        }
         return ResponseEntity.ok().build();
     }
 
