@@ -6,7 +6,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import no.fint.linkwalker.data.Constants;
-import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.StringUtils;
 
 @Getter
@@ -21,7 +20,7 @@ public class TestRequest {
 
     @JsonIgnore
     public String getTarget() {
-        if (StringUtils.isEmpty(baseUrl) || !UrlUtils.isAbsoluteUrl(baseUrl)) {
+        if (StringUtils.isEmpty(baseUrl) || baseUrl.contains(Constants.PWF_BASE_URL)) {
             return String.format("%s%s", Constants.PWF_BASE_URL, endpoint);
         } else {
             return String.format("%s%s", baseUrl, endpoint);

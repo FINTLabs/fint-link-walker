@@ -3,7 +3,6 @@ package no.fint.linkwalker.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.data.PwfUtils;
-import no.fint.linkwalker.oauth2.FintTokenService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +28,6 @@ public class ResourceFetcher {
     private static final long MULTIPLIER = 2;
 
     private final WebClient webClient = WebClient.create();
-    private final FintTokenService fintTokenService;
 
     public <T> Mono<ResponseEntity<T>> fetchResource(String organisation, String client, String location, HttpHeaders headers, Class<T> type) {
         return webClient
@@ -57,7 +55,7 @@ public class ResourceFetcher {
         return httpHeaders -> {
             httpHeaders.addAll(headers);
             if (!PwfUtils.isPwf(location)) {
-                httpHeaders.add(AUTHORIZATION, "Bearer " + fintTokenService.getBearerToken(client, organisation));
+                httpHeaders.add(AUTHORIZATION, "Bearer " + "asdf");
             }
         };
     }

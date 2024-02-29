@@ -1,13 +1,4 @@
-security:
-  basic:
-    enabled: false
-
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://idp.felleskomponent.no/nidp/oauth/nam
   threads:
     virtual:
       enabled: true
@@ -15,9 +6,3 @@ spring:
 fint:
   kafka:
     application-id: fint-link-walker
-  security:
-    enabled: false
-  oauth:
-    enabled: true
-    access-token-uri: https://idp.felleskomponent.no/nidp/oauth/nam/token
-    scope: fint-client
