@@ -13,7 +13,7 @@ spring:
 
 logging:
   level:
-    org.apache.kafka: WARN
-    no.fintlabs.kafka: WARN
-    org.springframework.kafka: WARN
+    org.apache.kafka: DEBUG
+    no.fintlabs.kafka: DEBUG
+    org.springframework.kafka: DEBUG
     no.fintlabs: DEBUG

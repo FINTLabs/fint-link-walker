@@ -1,0 +1,35 @@
+apiVersion: fintlabs.no/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/instance: fint-link-walker_fintlabs_no
+    app.kubernetes.io/name: fint-link-walker
+    app.kubernetes.io/part-of: fint-core
+    app.kubernetes.io/version: latest
+    fintlabs.no/org-id: fintlabs.no
+    fintlabs.no/team: core
+  name: fint-link-walker
+  namespace: fintlabs-no
+spec:
+  image: ghcr.io/fintlabs/fint-link-walker:latest
+  imagePullPolicy: Always
+  kafka:
+    acls:
+    - permission: admin
+      topic: flais-io.fint-customer-objects.*
+    enabled: true
+  orgId: fintlabs.no
+  env:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-XX:+ExitOnOutOfMemoryError -Xmx4108m"
+  resources:
+    limits:
+      cpu: 2
+      memory: 5Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  url:
+    basePath: /link-walker
+    hostname: kunde-beta.felleskomponent.no
