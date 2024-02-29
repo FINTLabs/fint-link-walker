@@ -1,11 +1,15 @@
+fint:
+  application-id: fint-link-walker
+  kafka:
+    application-id: ${fint.application-id}
+
 spring:
+  kafka:
+    consumer:
+      group-id: ${fint.application-id}
   threads:
     virtual:
       enabled: true
-
-fint:
-  kafka:
-    application-id: fint-link-walker
 
 logging:
   level:
