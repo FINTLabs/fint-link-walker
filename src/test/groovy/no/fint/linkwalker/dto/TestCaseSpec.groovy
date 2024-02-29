@@ -3,14 +3,8 @@ package no.fint.linkwalker.dto
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
-import no.fint.linkwalker.DiscoveredRelation
-import org.springframework.test.web.reactive.server.JsonPathAssertions
+import no.fint.linkwalker.data.DiscoveredRelation
 import spock.lang.Specification
-
-import java.lang.module.Configuration
-
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath
 
 class TestCaseSpec extends Specification {
     private ObjectMapper objectMapper

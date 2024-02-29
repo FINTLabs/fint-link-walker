@@ -1,5 +1,6 @@
-package no.fint.linkwalker;
+package no.fint.linkwalker.data;
 
+import no.fint.linkwalker.data.Constants;
 import org.apache.commons.lang3.StringUtils;
 
 public enum PwfUtils {

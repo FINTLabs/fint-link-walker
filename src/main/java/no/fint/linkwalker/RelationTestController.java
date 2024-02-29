@@ -1,13 +1,19 @@
 package no.fint.linkwalker;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.linkwalker.dto.Status;
 import no.fint.linkwalker.dto.TestCase;
 import no.fint.linkwalker.dto.TestCaseViews;
 import no.fint.linkwalker.dto.TestRequest;
+import no.fint.linkwalker.kafka.Client;
+import no.fint.linkwalker.kafka.ClientEvent;
+import no.fint.linkwalker.kafka.ClientEventRequestProducerService;
+import no.fint.linkwalker.kafka.FintCustomerObjectEvent;
+import no.fint.linkwalker.service.ReportService;
+import no.fint.linkwalker.service.TestScheduler;
 import org.apache.poi.util.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -15,31 +21,29 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.UriComponents;
+import org.springframework.web.server.ServerWebExchange;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @RestController
 @CrossOrigin
+@RequiredArgsConstructor
 @RequestMapping("/api/tests/{organisation}/links")
-public class TestController {
+public class RelationTestController {
 
-    @Autowired
-    private TestScheduler testScheduler;
-
-    @Autowired
-    private TestCaseRepository repository;
-
-    @Autowired
-    private ReportService reportService;
+    private final TestScheduler testScheduler;
+    private final TestCaseRepository repository;
+    private final ReportService reportService;
+    private final ClientEventRequestProducerService clientEventRequestProducerService;
 
     /**
      * Kicks off a startTest of an endpoint. All testing is async
@@ -48,14 +52,10 @@ public class TestController {
      * @return a UUID that can be used to retrieve the current status of a running startTest
      */
     @PostMapping
-    public ResponseEntity<TestCase> startTest(@PathVariable String organisation, @RequestBody TestRequest testRequest) {
+    public ResponseEntity<TestCase> startTest(ServerWebExchange serverWebExchange, @PathVariable String organisation, @RequestBody TestRequest testRequest) {
         TestCase testCase = testScheduler.scheduleTest(organisation, testRequest);
         log.info("Registering testcase " + testCase.getId());
-        UriComponents uriComponents = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(testCase.getId());
-        return ResponseEntity.created(uriComponents.toUri()).body(testCase);
+        return ResponseEntity.created(URI.create(serverWebExchange.getRequest().getURI().toASCIIString() + "/{id}")).body(testCase);
     }
 
     @JsonView(TestCaseViews.ResultsOverview.class)
@@ -64,8 +64,27 @@ public class TestController {
         return repository.allTestCases(organisation);
     }
 
+    @PostMapping("/{dn}")
+    public ResponseEntity<Object> test(ServerWebExchange exchange, @PathVariable String dn) {
+        Client client = Client.builder()
+                .dn(dn)
+                .build();
+
+        ClientEvent clientEvent = ClientEvent.builder()
+                .object(client)
+                .orgId("fintlabs.no")
+                .operation(FintCustomerObjectEvent.Operation.READ)
+                .build();
+
+        Optional<ClientEvent> optionalClientEvent = clientEventRequestProducerService.get(clientEvent);
+        if (optionalClientEvent.isPresent()) {
+            return ResponseEntity.accepted().build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @PutMapping
-    public ResponseEntity clearAllTests(@PathVariable String organisation) {
+    public ResponseEntity<Void> clearAllTests(@PathVariable String organisation) {
         repository.clearTests(organisation);
         return ResponseEntity.ok().build();
     }
@@ -101,8 +120,7 @@ public class TestController {
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
                 .contentLength(out.contentLength())
-        .body(out);
+                .body(out);
     }
-
 
 }

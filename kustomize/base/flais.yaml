@@ -12,7 +12,6 @@ metadata:
     fintlabs.no/team: core
     fintlabs.no/org-id: fintlabs.no
 spec:
-  port: 8080
   imagePullPolicy: Always
   orgId: fintlabs.no
   image: ghcr.io/fintlabs/fint-link-walker:latest
@@ -24,7 +23,7 @@ spec:
         name: fint-portal-user
   env:
     - name: JAVA_TOOL_OPTIONS
-      value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
+      value: '-XX:+ExitOnOutOfMemoryError -Xmx2048M'
     - name: fint.rest-template.provider
       value: 'portal-api'
   kafka:
@@ -34,13 +33,8 @@ spec:
     enabled: true
   resources:
     limits:
-      memory: "1Gi"
+      memory: "3Gi"
       cpu: "1"
     requests:
       memory: "512Mi"
       cpu: "250m"
-  restartPolicy: Always
-  replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }

@@ -1,4 +1,4 @@
-package no.fint.linkwalker;
+package no.fint.linkwalker.data;
 
 import lombok.Data;
 

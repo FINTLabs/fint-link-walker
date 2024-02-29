@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import no.fint.linkwalker.DiscoveredRelation;
-import no.fint.linkwalker.TestedRelation;
+import no.fint.linkwalker.data.DiscoveredRelation;
+import no.fint.linkwalker.data.TestedRelation;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;

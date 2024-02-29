@@ -1,6 +1,6 @@
 package no.fint.linkwalker.dto
 
-import no.fint.linkwalker.Constants
+import no.fint.linkwalker.data.Constants
 import spock.lang.Specification
 
 class TestRequestSpec extends Specification {

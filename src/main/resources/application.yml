@@ -1,23 +1,19 @@
-springfox:
- title: Fint Link Walker
- version: '@version@'
-
-server:
-  port: 8080
-
-security:
-  basic:
-    enabled: false
+fint:
+  application-id: fint-link-walker
+  kafka:
+    application-id: ${fint.application-id}
 
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: https://idp.felleskomponent.no/nidp/oauth/nam
+  kafka:
+    consumer:
+      group-id: ${fint.application-id}
+  threads:
+    virtual:
+      enabled: true
 
-fint:
-  oauth:
-    enabled: true
-    access-token-uri: https://idp.felleskomponent.no/nidp/oauth/nam/token
-    scope: fint-client
+logging:
+  level:
+    org.apache.kafka: WARN
+    no.fintlabs.kafka: WARN
+    org.springframework.kafka: WARN
+    no.fintlabs: DEBUG
