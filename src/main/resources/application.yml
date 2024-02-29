@@ -1,5 +1,5 @@
 fint:
-  application-id: fint-link-walker
+  application-id: link-walker
   kafka:
     application-id: ${fint.application-id}
 
