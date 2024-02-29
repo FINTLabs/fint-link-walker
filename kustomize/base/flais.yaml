@@ -18,14 +18,6 @@ spec:
   url:
     hostname: kunde-beta.felleskomponent.no
     basePath: /link-walker
-  envFrom:
-    - secretRef:
-        name: fint-portal-user
-  env:
-    - name: JAVA_TOOL_OPTIONS
-      value: '-XX:+ExitOnOutOfMemoryError -Xmx2048M'
-    - name: fint.rest-template.provider
-      value: 'portal-api'
   kafka:
     acls:
       - permission: admin
@@ -33,8 +25,8 @@ spec:
     enabled: true
   resources:
     limits:
-      memory: "3Gi"
-      cpu: "1"
+      memory: 1Gi
+      cpu: 500m
     requests:
-      memory: "512Mi"
-      cpu: "250m"
+      memory: 512Mi
+      cpu: 250m
