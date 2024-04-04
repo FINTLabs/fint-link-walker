@@ -16,7 +16,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    void testRequestIsValid() {
+    void valid_request() {
         Task task = Task.builder()
                 .url("https://example.com")
                 .clientName("clientName")
@@ -27,7 +27,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    void testRequestIsInvalidDueToMissingURL() {
+    void missing_url() {
         Task task = Task.builder()
                 .clientName("clientName")
                 .org("org")
@@ -37,7 +37,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    void testRequestIsInvalidDueToMissingClientNameAndOrgWithoutAuthHeader() {
+    void missing_required_body_and_header() {
         Task task = Task.builder()
                 .url("https://example.com")
                 .build();
@@ -46,7 +46,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    void testRequestIsValidWithAuthHeaderOnly() {
+    void valid_request_header_only() {
         Task task = Task.builder()
                 .url("https://example.com")
                 .build();
