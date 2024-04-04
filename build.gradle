@@ -6,8 +6,9 @@ plugins {
 }
 
 group = 'no.fintlabs'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '21'
+java {
+    sourceCompatibility = 21
+}
 
 configurations {
     compileOnly {
@@ -33,6 +34,8 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 test {
