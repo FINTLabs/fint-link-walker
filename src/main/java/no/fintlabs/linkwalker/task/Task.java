@@ -1,4 +1,4 @@
-package no.fint.linkwalker.task;
+package no.fintlabs.linkwalker.task;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
