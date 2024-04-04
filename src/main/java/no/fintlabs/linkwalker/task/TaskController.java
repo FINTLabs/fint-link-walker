@@ -1,16 +1,40 @@
 package no.fintlabs.linkwalker.task;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
 
 @Slf4j
 @RestController
-@RequestMapping("/tasks/{organization}")
+@RequestMapping("/tasks")
 public class TaskController {
 
     @PostMapping
-    public void postTask(@PathVariable String organization, @RequestBody Task task) {
+    public ResponseEntity<?> postTask(@RequestBody Task task,
+                                      @RequestHeader(value = "Authorization", required = false) String authHeader,
+                                      ServerWebExchange webExchange) {
         log.info(task.toString());
+        if (requestNotValid(task, authHeader)) {
+            return ResponseEntity.badRequest().body("Client & organization are required or a valid Bearer token in header");
+        }
+        // Process Task
+
+        return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
+    }
+
+    public boolean requestNotValid(Task task, String authHeader) {
+        return task.getUrl() == null || (authHeader == null && (task.getClientName() == null || task.getOrg() == null));
+    }
+
+    private URI createIdUri(ServerWebExchange webExchange, String id) {
+        return UriComponentsBuilder.fromUriString(webExchange.getRequest().getURI().toString())
+                .path("/{id}")
+                .buildAndExpand(id)
+                .toUri();
     }
 
 }
