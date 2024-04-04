@@ -8,6 +8,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Collection;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,6 +27,17 @@ public class TaskController {
         }
         taskService.startTask(task);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
+    }
+
+    @GetMapping
+    public ResponseEntity<Collection<Task>> getTasks(@RequestBody Task task) {
+        return ResponseEntity.ok(taskService.getCache(task.getOrg()));
+    }
+
+    @PutMapping
+    public ResponseEntity<?> clearTasks(@RequestBody Task task) {
+        taskService.clearCache(task.getOrg());
+        return ResponseEntity.ok().build();
     }
 
     public boolean requestNotValid(Task task, String authHeader) {
