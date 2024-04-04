@@ -17,7 +17,6 @@ public class TaskController {
     public ResponseEntity<?> postTask(@RequestBody Task task,
                                       @RequestHeader(value = "Authorization", required = false) String authHeader,
                                       ServerWebExchange webExchange) {
-        log.info(task.toString());
         if (requestNotValid(task, authHeader)) {
             return ResponseEntity.badRequest().body("Client & organization are required or a valid Bearer token in header");
         }
@@ -27,7 +26,7 @@ public class TaskController {
     }
 
     public boolean requestNotValid(Task task, String authHeader) {
-        return task.getUrl() == null || (authHeader == null && (task.getClientName() == null || task.getOrg() == null));
+        return task.getUrl() == null || task.getOrg() == null || (authHeader == null && task.getClientName() == null);
     }
 
     private URI createIdUri(ServerWebExchange webExchange, String id) {
