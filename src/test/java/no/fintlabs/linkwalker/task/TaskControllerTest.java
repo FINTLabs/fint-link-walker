@@ -16,7 +16,7 @@ public class TaskControllerTest {
     }
 
     @Test
-    void valid_request() {
+    void valid_request_with_everything() {
         Task task = Task.builder()
                 .url("https://example.com")
                 .clientName("clientName")
@@ -37,7 +37,17 @@ public class TaskControllerTest {
     }
 
     @Test
-    void missing_required_body_and_header() {
+    void missing_org() {
+        Task task = Task.builder()
+                .url("https://example.com")
+                .clientName("clientName")
+                .build();
+
+        assertTrue(controller.requestNotValid(task, "Bearer Token, but missing org."));
+    }
+
+    @Test
+    void missing_required_fields_without_auth_header() {
         Task task = Task.builder()
                 .url("https://example.com")
                 .build();
@@ -46,9 +56,10 @@ public class TaskControllerTest {
     }
 
     @Test
-    void valid_request_header_only() {
+    void valid_request_with_header() {
         Task task = Task.builder()
                 .url("https://example.com")
+                .org("org")
                 .build();
 
         assertFalse(controller.requestNotValid(task, "Am I the bearer of token? Yes, I am."));
