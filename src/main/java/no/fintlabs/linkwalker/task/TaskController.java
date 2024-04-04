@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.task;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,9 +10,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
+
+    private final TaskService taskService;
 
     @PostMapping
     public ResponseEntity<?> postTask(@RequestBody Task task,
@@ -20,8 +24,7 @@ public class TaskController {
         if (requestNotValid(task, authHeader)) {
             return ResponseEntity.badRequest().body("Client & organization are required or a valid Bearer token in header");
         }
-        // Process Task
-
+        taskService.startTask(task);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
     }
 
