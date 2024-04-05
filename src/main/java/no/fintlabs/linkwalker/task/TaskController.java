@@ -25,7 +25,7 @@ public class TaskController {
         if (requestNotValid(task, authHeader)) {
             return ResponseEntity.badRequest().body("Client & organization are required or a valid Bearer token in header");
         }
-        taskService.startTask(task);
+        taskService.startTask(task, authHeader);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
     }
 
