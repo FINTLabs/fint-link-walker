@@ -21,9 +21,9 @@ public class Task {
     private final String url;
     private final String clientName;
     private final String org;
-    private final String token;
     private final Set<String> filter;
     private final AtomicInteger requests = new AtomicInteger(0);
+    private String token;
     private Status status;
 
     public enum Status {
