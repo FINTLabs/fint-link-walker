@@ -15,15 +15,21 @@ public class TaskService {
     private final LinkWalker linkWalker;
     private final Map<String, Map<String, Task>> organizationCache = new HashMap<>();
 
-    public void startTask(Task task, String authHeader) {
+    public void startTask(Task task, String organization, String authHeader) {
         task.setStatus(Task.Status.STARTED);
+        task.setOrg(organization);
         if (authHeader != null) task.setToken(authHeader.replace("Bearer ", ""));
+
         organizationCache.putIfAbsent(task.getOrg(), new HashMap<>());
         organizationCache.get(task.getOrg()).put(task.getOrg(), task);
         linkWalker.processTask(task);
     }
 
-    public Collection<Task> getCache(String organization) {
+    public Optional<Task> getTask(String organization, String id) {
+        return Optional.ofNullable(organizationCache.getOrDefault(organization, new HashMap<>()).getOrDefault(id, null));
+    }
+
+    public Collection<Task> getTasks(String organization) {
         return Optional.ofNullable(organizationCache.get(organization))
                 .map(Map::values)
                 .orElse(Collections.emptyList());
