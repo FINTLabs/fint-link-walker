@@ -2,17 +2,22 @@ package no.fintlabs.linkwalker.task;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class TaskControllerTest {
 
     private TaskController controller;
 
+    @Mock
+    private TaskService taskService;
+
     @BeforeEach
     void setUp() {
-        controller = new TaskController();
+        controller = new TaskController(taskService);
     }
 
     @Test
