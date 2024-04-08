@@ -20,8 +20,8 @@ public class LinkWalker {
             // Customer-Object-Gateway to fetch client credentials & Set token
         }
 
-        requestService.getRequest(task.getUrl(), task.getToken()).subscribe(requestResponse -> {
-            log.info(requestResponse.toString());
+        requestService.fetchFintResources(task.getUrl(), task.getToken()).subscribe(fintResources -> {
+            log.info(fintResources.toString());
         });
 
     }
