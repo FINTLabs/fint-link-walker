@@ -9,39 +9,54 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/tasks/{organization}")
 public class TaskController {
 
     private final TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<?> postTask(@RequestBody Task task,
+    public ResponseEntity<?> postTask(@PathVariable String organization,
+                                      @RequestBody Task task,
                                       @RequestHeader(value = "Authorization", required = false) String authHeader,
                                       ServerWebExchange webExchange) {
         if (requestNotValid(task, authHeader)) {
-            return ResponseEntity.badRequest().body("Client & organization are required or a valid Bearer token in header");
+            return ResponseEntity.badRequest().body(badRequestMessage(task));
         }
-        taskService.startTask(task, authHeader);
+        taskService.startTask(task, organization, authHeader);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
     }
 
     @GetMapping
-    public ResponseEntity<Collection<Task>> getTasks(@RequestBody Task task) {
-        return ResponseEntity.ok(taskService.getCache(task.getOrg()));
+    public ResponseEntity<Collection<Task>> getTasks(@PathVariable String organization) {
+        return ResponseEntity.ok(taskService.getTasks(organization));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> getTask(@PathVariable String organization, @PathVariable String id) {
+        return taskService.getTask(organization, id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping
-    public ResponseEntity<?> clearTasks(@RequestBody Task task) {
-        taskService.clearCache(task.getOrg());
+    public ResponseEntity<?> clearTasks(@PathVariable String organization) {
+        taskService.clearCache(organization);
         return ResponseEntity.ok().build();
     }
 
+    private String badRequestMessage(Task task) {
+        return task.getUrl() == null
+                ? "Url is required in body"
+                : "Client is required in body or a Bearer <token> in Authorization header";
+    }
+
     public boolean requestNotValid(Task task, String authHeader) {
-        return task.getUrl() == null || task.getOrg() == null || (authHeader == null && task.getClientName() == null);
+        return task.getUrl() == null || (authHeader == null && task.getClientName() == null);
     }
 
     private URI createIdUri(ServerWebExchange webExchange, String id) {
