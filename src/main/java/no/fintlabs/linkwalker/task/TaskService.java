@@ -16,6 +16,7 @@ public class TaskService {
     private final Map<String, Map<String, Task>> organizationCache = new HashMap<>();
 
     public void startTask(Task task, String authHeader) {
+        task.setStatus(Task.Status.STARTED);
         if (authHeader != null) task.setToken(authHeader.replace("Bearer ", ""));
         organizationCache.putIfAbsent(task.getOrg(), new HashMap<>());
         organizationCache.get(task.getOrg()).put(task.getOrg(), task);
