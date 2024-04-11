@@ -38,7 +38,7 @@ public class LinkWalker {
                             .operation(FintCustomerObjectEvent.Operation.READ)
                             .client(Client.builder()
                                     .name(task.getClientName())
-                                    .dn(String.format("%s.clients.%s.organisations.fint", task.getClientName(), task.getOrg().replace(".", "_")))
+                                    .dn("cn=Henrik@client.fintlabs.no,ou=clients,ou=fintlabs,o=fint")
                                     .build())
                             .build()
             );
