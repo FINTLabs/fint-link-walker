@@ -22,7 +22,7 @@ spec:
   ingress:
     enabled: true
     middlewares:
-      - name: fint-kunde-portal-sso
+      - fint-kunde-portal-sso
   env:
     - name: JAVA_TOOL_OPTIONS
       value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
