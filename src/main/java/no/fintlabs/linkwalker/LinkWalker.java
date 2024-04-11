@@ -2,6 +2,7 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.FintCustomerObjectEvent;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.client.ClientEvent;
 import no.fintlabs.linkwalker.client.ClientEventRequestProducerService;
@@ -34,6 +35,7 @@ public class LinkWalker {
             Optional<ClientEvent> optionalClient = clientRequestService.get(
                     ClientEvent.builder()
                             .orgId(task.getOrg())
+                            .operation(FintCustomerObjectEvent.Operation.READ)
                             .client(Client.builder()
                                     .name(task.getClientName())
                                     .build())
