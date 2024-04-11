@@ -2,66 +2,40 @@
 
 Verifies relation links for a given resource.
 
-## Run with Docker Compose
+## Run locally
 
-Edit the supplied `docker-compose.yml` to add OAuth credentials, and use `docker-compose up` to start.
-
-Open a browser at http://localhost:8082/swagger-ui.html 
+Pull the repository and run the application through IntelliJ or by building the Jar file with gradle.
 
 ## Usage
 
-Launching this application starts a web server at port `8082` with the following endpoints:
+Launching this application starts a web server at port `8080` with the following endpoints:
 
-The `org` path parameter can be any value you choose.
+| Path                            | Method | Description                                                           |
+|---------------------------------|--------|-----------------------------------------------------------------------|
+| `/link-walker/tasks/{org}`      | POST   | Start a new task, returns location header with direct url to the task |
+| `/link-walker/tasks/{org}`      | GET    | Get all tasks                                                         |
+| `/link-walker/tasks/{org}`      | PUT    | Clear all tasks                                                       |
+| `/link-walker/tasks/{org}/{id}` | GET    | Displays the specific task                                            |
+| `/link-walker/tasks/{org}/{id}` | PUT    | Clear specific task                                                   |
 
-| Path                          | Method | Description       |
-|-------------------------------|--------|-------------------|
-| `/api/tests/{org}/links`      | GET    | Get all tests     |
-| `/api/tests/{org}/links`      | POST   | Start a new test, returns location header with direct url to the test  |
-| `/api/tests/{org}/links/{id}` | GET    | Get test with id  |
+### Display results
+
+| Path                             | Method | Description                            |
+|----------------------------------|--------|----------------------------------------|
+| `/link-walker/report/{org}`      | GET    | Get all reports for tasks thats active |
+| `/link-walker/report/{org}/{id}` | GET    | Get report of specific task            |
+
 
 ## Model
 
 The POST method requires a JSON object with the following elements:
 
     {
-        "baseUrl": "https://api.felleskomponent.no",
-        "endpoint": "/administrasjon/personal/personalressurs",
-        "client": "client",
-        "orgId": "pwf.no"
+        "url": "https://api.felleskomponent.no/utdanning/elev/elev",
+        "clientName": "name@client.no"
     }
     
-| Element  | Description                         |
-|----------|-------------------------------------|
-| baseUrl  | Base URL for access.                |
-| endpoint | Data endpoint to verify.            |
-| client   | Some name for the client            |
-| orgId    | Organization ID to verify data for. |
-
-Base URL can be one of the following:
-  - https://api.felleskomponent.no                   
-  - https://beta.felleskomponent.no                  
-  - https://play-with-fint.felleskomponent.no        
-
-Endpoint refer to data elements, here are some examples:
-
-  - `/administrasjon/personal/person`
-  - `/administrasjon/personal/personalressurs`
-  - `/utdanning/elev/person`
-  - `/utdanning/elev/elev`
-
-## OAuth 2.0 Environment variables
-
-For protected resources, the following environment variables must be set with valid credentials:
-
-| Variable                      | Content                                           |
-|-------------------------------|---------------------------------------------------|
-| `fint.oauth.enabled`          | Set to `true` to enable OAuth, `false` to disable.| 
-| `fint.oauth.access-token-uri` | URI of access token server                        |
-| `fint.oauth.scope`            | Set to `fint-client`                              |
-| `fint.oauth.username`         | User Name                                         |
-| `fint.oauth.password`         | Password                                          |
-| `fint.oauth.client-id`        | OAuth Client ID                                   |
-| `fint.oauth.client-secret`    | OAuth Client Secret                               |
-
-Example access token server URI: https://idp.felleskomponent.no/nidp/oauth/nam/token
+| Element    | Description                                             |
+|------------|---------------------------------------------------------|
+| url        | Data endpoint to verify.                                |
+| clientName | <optional> required if you do not have bearer token set |
