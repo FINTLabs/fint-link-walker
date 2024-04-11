@@ -3,4 +3,5 @@ spring:
     base-path: /link-walker
 
 fint:
-  application-id: link-walker
+  kafka:
+    application-id: link-walker

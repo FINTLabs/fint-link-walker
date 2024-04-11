@@ -24,7 +24,7 @@ public class ClientEventRequestProducerService {
     private final RequestProducer<ClientEvent, ClientEvent> requestProducer;
 
     public ClientEventRequestProducerService(
-            @Value("${fint.application-id}") String applicationId,
+            @Value("${fint.kafka.application-id}") String applicationId,
             RequestProducerFactory requestProducerFactory,
             ReplyTopicService replyTopicService
     ) {
