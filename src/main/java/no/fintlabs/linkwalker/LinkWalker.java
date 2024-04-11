@@ -38,16 +38,18 @@ public class LinkWalker {
                             .operation(FintCustomerObjectEvent.Operation.READ)
                             .client(Client.builder()
                                     .name(task.getClientName())
+                                    .dn(String.format("%s.clients.%s.organisations.fint", task.getClientName(), task.getOrg().replace(".", "_")))
                                     .build())
                             .build()
             );
 
             if (optionalClient.isPresent()) {
                 ClientEvent clientEvent = optionalClient.get();
-                log.info("ITS HERE!! {}", clientEvent.getClient().toString());
                 if (clientEvent.hasError()) {
                     log.error("Found client.. but it has an error!!");
                     log.error(clientEvent.getErrorMessage());
+                } else {
+                    log.info("ITS HERE!! {}", clientEvent.getClient().toString());
                 }
             } else {
                 log.error("Client not found");
