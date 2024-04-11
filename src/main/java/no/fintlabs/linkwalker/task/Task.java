@@ -5,7 +5,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.fintlabs.linkwalker.report.model.EntryReport;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties({"token"})
+@JsonIgnoreProperties({"token", "entryReports"})
 public class Task {
 
     private final String id = UUID.randomUUID().toString();
@@ -22,15 +25,32 @@ public class Task {
     private final String clientName;
     private final Set<String> filter;
     private final AtomicInteger requests = new AtomicInteger(0);
+    private final List<EntryReport> entryReports = new ArrayList<>();
+    private int totalRequests;
     private String org;
     private String token;
     private Status status;
+
+    public void incrementTotalRequest(Integer count) {
+        totalRequests += count;
+    }
+
+    public void incrementRequest() {
+        requests.incrementAndGet();
+    }
+
+    public void decrementRequest() {
+        requests.decrementAndGet();
+    }
+
+    public void addEntryReport(EntryReport entryReport) {
+        entryReports.add(entryReport);
+    }
 
     public enum Status {
         STARTED,
         FETCHING_RESOURCES,
         CREATING_ENTRY_REPORTS,
-        COUNTING_REQUESTS,
         PROCESSING_LINKS,
         COMPLETED,
         FAILED

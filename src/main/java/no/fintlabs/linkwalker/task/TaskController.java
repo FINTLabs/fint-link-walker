@@ -43,6 +43,13 @@ public class TaskController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> clearTask(@PathVariable String organization, @PathVariable String id) {
+        taskService.clearTask(organization, id);
+        return ResponseEntity.ok().build();
+    }
+
+
     @PutMapping
     public ResponseEntity<?> clearTasks(@PathVariable String organization) {
         taskService.clearCache(organization);
