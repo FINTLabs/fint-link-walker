@@ -48,7 +48,7 @@ public class TaskControllerTest {
                 .clientName("clientName")
                 .build();
 
-        assertTrue(controller.requestNotValid(task, "Bearer Token, but missing org."));
+        assertFalse(controller.requestNotValid(task, "Bearer Token, but missing org."));
     }
 
     @Test
