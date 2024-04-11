@@ -1,6 +1,7 @@
 package no.fintlabs.linkwalker.client;
 
 
+import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters;
 import no.fintlabs.kafka.requestreply.RequestProducer;
 import no.fintlabs.kafka.requestreply.RequestProducerConfiguration;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class ClientEventRequestProducerService {
 
@@ -53,6 +55,7 @@ public class ClientEventRequestProducerService {
     }
 
     public Optional<ClientEvent> get(ClientEvent clientEvent) {
+        log.info("Sending request to get client: {}", clientEvent);
         return requestProducer.requestAndReceive(
                         RequestProducerRecord.<ClientEvent>builder()
                                 .topicNameParameters(requestTopicNameParameters)
