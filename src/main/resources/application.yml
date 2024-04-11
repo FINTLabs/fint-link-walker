@@ -1,7 +1,14 @@
 spring:
+  kafka:
+    consumer:
+      group-id: link-walker
   webflux:
     base-path: /link-walker
 
 fint:
+  application-id: link-walker
   kafka:
-    application-id: link-walker
+    topic:
+      org-id: flais.io
+      domain-context: flais
+    application-id: ${fint.application-id}
