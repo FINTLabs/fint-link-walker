@@ -2,6 +2,9 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.linkwalker.client.Client;
+import no.fintlabs.linkwalker.client.ClientEvent;
+import no.fintlabs.linkwalker.client.ClientEventRequestProducerService;
 import no.fintlabs.linkwalker.report.model.EntryReport;
 import no.fintlabs.linkwalker.report.model.RelationError;
 import no.fintlabs.linkwalker.request.RequestService;
@@ -12,6 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Async
@@ -20,12 +24,32 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class LinkWalker {
 
+    private final ClientEventRequestProducerService clientRequestService;
     private final RequestService requestService;
     private final TaskCache taskCache;
 
     public void processTask(Task task) {
         if (task.getToken() == null) {
             // Customer-Object-Gateway to fetch client credentials & Set token
+            Optional<ClientEvent> optionalClient = clientRequestService.get(
+                    ClientEvent.builder()
+                            .orgId(task.getOrg())
+                            .client(Client.builder()
+                                    .name(task.getClientName())
+                                    .build())
+                            .build()
+            );
+
+            if (optionalClient.isPresent()) {
+                ClientEvent clientEvent = optionalClient.get();
+                log.info("ITS HERE!! {}", clientEvent.getClient().toString());
+                if (clientEvent.hasError()) {
+                    log.error("Found client.. but it has an error!!");
+                    log.error(clientEvent.getErrorMessage());
+                }
+            } else {
+                log.error("Client not found");
+            }
         }
 
         fetchResources(task);

@@ -32,6 +32,8 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+    implementation 'no.fintlabs:fint-kafka:3.1.0-rc-1'
+
     implementation 'io.netty:netty-resolver-dns-native-macos:4.1.108.Final'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'

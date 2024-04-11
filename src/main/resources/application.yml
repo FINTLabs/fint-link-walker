@@ -1,3 +1,6 @@
 spring:
   webflux:
     base-path: /link-walker
+
+fint:
+  application-id: link-walker
