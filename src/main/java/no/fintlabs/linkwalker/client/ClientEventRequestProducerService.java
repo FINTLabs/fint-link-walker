@@ -9,6 +9,7 @@ import no.fintlabs.kafka.requestreply.RequestProducerRecord;
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters;
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicService;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,6 @@ import java.time.Duration;
 import java.util.Optional;
 
 @Service
-@ComponentScan("no.fintlabs.kafka")
 public class ClientEventRequestProducerService {
 
     private final RequestTopicNameParameters requestTopicNameParameters;
@@ -59,6 +59,6 @@ public class ClientEventRequestProducerService {
                                 .value(clientEvent)
                                 .build()
                 )
-                .map(consumerRecord -> consumerRecord.value());
+                .map(ConsumerRecord::value);
     }
 }
