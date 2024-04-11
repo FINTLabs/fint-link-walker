@@ -1,13 +1,14 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.5'
+    id 'org.springframework.boot' version '3.2.4'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'java'
     id 'groovy'
 }
 
 group = 'no.fintlabs'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
+java {
+    sourceCompatibility = 21
+}
 
 configurations {
     compileOnly {
@@ -21,38 +22,23 @@ jar {
 
 repositories {
     mavenCentral()
-    repositories {
-        maven {
-            url "https://repo.fintlabs.no/releases"
-        }
+    maven {
+        url "https://repo.fintlabs.no/releases"
     }
     mavenLocal()
 }
 
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    implementation 'no.fintlabs:fint-oauth-token-service:1.7.0-rc-1'
-    implementation 'no.fintlabs:fint-portal-api:3.19.0'
-    
-    implementation 'com.jayway.jsonpath:json-path:2.7.0'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
-
-    implementation 'org.apache.poi:poi:5.2.2'
-    implementation 'org.apache.poi:poi-ooxml:5.2.2'
-    implementation 'com.google.guava:guava:31.1-jre'
-
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.1.108.Final'
     compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
 
-    testImplementation 'com.jayway.jsonpath:json-path-assert:2.7.0'
-    testImplementation 'no.fint:fint-test-utils:0.0.6'
-    testImplementation 'cglib:cglib-nodep:3.3.0'
-    testImplementation 'org.spockframework:spock-spring:2.3-groovy-3.0'
-    testImplementation 'org.spockframework:spock-core:2.3-groovy-3.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
 }
 
 test {
