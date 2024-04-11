@@ -19,6 +19,10 @@ spec:
   url:
     hostname: kunde-beta.felleskomponent.no
     basePath: /link-walker
+  ingress:
+    enabled: true
+    middlewares:
+      - name: fint-kunde-portal-sso
   env:
     - name: JAVA_TOOL_OPTIONS
       value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
