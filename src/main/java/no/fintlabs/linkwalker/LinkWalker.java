@@ -25,6 +25,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class LinkWalker {
 
+    private final SecretService secretService;
     private final ClientEventRequestProducerService clientRequestService;
     private final RequestService requestService;
     private final TaskCache taskCache;
@@ -39,6 +40,7 @@ public class LinkWalker {
                             .client(Client.builder()
                                     .name(task.getClientName())
                                     .dn("cn=Henrik@client.fintlabs.no,ou=clients,ou=fintlabs,o=fint")
+                                    .publicKey(secretService.getPublicKeyString())
                                     .build())
                             .build()
             );
