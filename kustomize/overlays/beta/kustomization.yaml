@@ -17,13 +17,9 @@ patches:
       - op: replace
         path: "/spec/url/hostname"
         value: 'kunde-beta.felleskomponent.no'
+      - op: replace
+        path: "/spec/onePassword/itemPath"
+        value: 'vaults/aks-beta-vault/items/link-walker'
     target:
       kind: Application
       name: fint-link-walker
-  - patch: |-
-      - op: replace
-        path: "/spec/itemPath"
-        value: "vaults/aks-beta-vault/items/link-walker"
-    target:
-      kind: OnePasswordItem
-      name: finterator

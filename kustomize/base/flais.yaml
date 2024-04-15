@@ -26,6 +26,8 @@ spec:
   env:
     - name: JAVA_TOOL_OPTIONS
       value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
+  onePassword:
+    itemPath: pass
   kafka:
     acls:
       - permission: admin
