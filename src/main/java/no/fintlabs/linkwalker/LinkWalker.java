@@ -70,7 +70,6 @@ public class LinkWalker {
                 ).toFuture()
                 .thenApply(tokenResponse -> {
                     task.setToken(tokenResponse.access_token());
-                    log.info("Token: {}", tokenResponse.access_token());
                     return true;
                 });
     }
