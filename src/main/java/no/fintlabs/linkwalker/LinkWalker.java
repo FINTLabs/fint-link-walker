@@ -2,10 +2,8 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.FintCustomerObjectEvent;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.client.ClientEvent;
-import no.fintlabs.linkwalker.client.ClientEventRequestProducerService;
 import no.fintlabs.linkwalker.client.ClientService;
 import no.fintlabs.linkwalker.report.model.EntryReport;
 import no.fintlabs.linkwalker.report.model.RelationError;
@@ -17,8 +15,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Async
 @Component
@@ -29,32 +27,51 @@ public class LinkWalker {
     private final RequestService requestService;
     private final TaskCache taskCache;
     private final ClientService clientService;
+    private final SecretService secretService;
 
     public void processTask(Task task) {
-        if (task.getToken() == null) {
-            Optional<ClientEvent> optionalClient = clientService.get(task.getClientName(), task.getOrg());
+        initializeTaskWithToken(task)
+                .thenAcceptAsync(hasToken -> {
+                    if (hasToken) fetchResources(task);
+                })
+                .exceptionally(e -> {
+                    log.error("Error processing task: {}", e.getMessage());
+                    task.setStatus(Task.Status.FAILED);
+                    return null;
+                });
+    }
 
-            if (optionalClient.isPresent()) {
-                ClientEvent clientEvent = optionalClient.get();
-                if (clientEvent.hasError()) {
-                    log.error("Found client.. but it has an error!!");
-                    log.error(clientEvent.getErrorMessage());
-                    return;
-                } else {
-                    log.info("ITS HERE!! {}", clientEvent.getObject().toString());
-                    Client object = clientEvent.getObject();
-                    log.info(object.getName());
-                    log.info(object.getClientId());
-                    log.info(object.getClientSecret());
-                    log.info(object.getPassword());
-                }
-            } else {
-                log.error("Client not found");
-                return;
-            }
+    private CompletableFuture<Boolean> initializeTaskWithToken(Task task) {
+        if (task.getToken() != null) {
+            return CompletableFuture.completedFuture(true);
         }
 
-        fetchResources(task);
+        return clientService.get(task.getClientName(), task.getOrg())
+                .map(clientEvent -> handleClientEvent(clientEvent, task))
+                .orElseGet(() -> {
+                    log.error("Client not found");
+                    return CompletableFuture.completedFuture(false);
+                });
+    }
+
+    private CompletableFuture<Boolean> handleClientEvent(ClientEvent clientEvent, Task task) {
+        if (clientEvent.hasError()) {
+            log.error("Found client.. but it has an error!!");
+            log.error(clientEvent.getErrorMessage());
+            return CompletableFuture.completedFuture(false);
+        }
+
+        Client client = clientEvent.getObject();
+        return requestService.getToken(
+                        client.getName(),
+                        secretService.decrypt(client.getPassword()),
+                        client.getClientId(),
+                        secretService.decrypt(client.getClientSecret())
+                ).toFuture()
+                .thenApply(tokenResponse -> {
+                    task.setToken(tokenResponse.access_token());
+                    return true;
+                });
     }
 
     private void fetchResources(Task task) {
