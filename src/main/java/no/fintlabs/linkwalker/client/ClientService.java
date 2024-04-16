@@ -18,6 +18,7 @@ public class ClientService {
         return clientRequestService.get(
                 ClientEvent.builder()
                         .operation(FintCustomerObjectEvent.Operation.READ)
+                        .orgId(organization)
                         .object(Client.builder()
                                 .dn(createDn(clientName, organization))
                                 .publicKey(secretService.getPublicKeyString())
