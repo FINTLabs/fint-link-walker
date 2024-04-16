@@ -42,7 +42,8 @@ public class RequestService {
                         .with("username", clientName)
                         .with("password", password)
                         .with("client_id", clientId)
-                        .with("client_secret", clientSecret))
+                        .with("client_secret", clientSecret)
+                        .with("scope", "fint-client"))
                 .retrieve()
                 .bodyToMono(TokenResponse.class);
 
