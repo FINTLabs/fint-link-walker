@@ -42,6 +42,11 @@ public class LinkWalker {
                     return;
                 } else {
                     log.info("ITS HERE!! {}", clientEvent.getObject().toString());
+                    Client object = clientEvent.getObject();
+                    log.info(object.getName());
+                    log.info(object.getClientId());
+                    log.info(object.getClientSecret());
+                    log.info(object.getPassword());
                 }
             } else {
                 log.error("Client not found");
