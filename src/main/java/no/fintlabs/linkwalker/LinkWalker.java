@@ -6,6 +6,7 @@ import no.fintlabs.FintCustomerObjectEvent;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.client.ClientEvent;
 import no.fintlabs.linkwalker.client.ClientEventRequestProducerService;
+import no.fintlabs.linkwalker.client.ClientService;
 import no.fintlabs.linkwalker.report.model.EntryReport;
 import no.fintlabs.linkwalker.report.model.RelationError;
 import no.fintlabs.linkwalker.request.RequestService;
@@ -25,36 +26,26 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class LinkWalker {
 
-    private final SecretService secretService;
-    private final ClientEventRequestProducerService clientRequestService;
     private final RequestService requestService;
     private final TaskCache taskCache;
+    private final ClientService clientService;
 
     public void processTask(Task task) {
         if (task.getToken() == null) {
-            // Customer-Object-Gateway to fetch client credentials & Set token
-            Optional<ClientEvent> optionalClient = clientRequestService.get(
-                    ClientEvent.builder()
-                            .orgId(task.getOrg())
-                            .operation(FintCustomerObjectEvent.Operation.READ)
-                            .client(Client.builder()
-                                    .name(task.getClientName())
-                                    .dn("cn=Henrik@client.fintlabs.no,ou=clients,ou=fintlabs,o=fint")
-                                    .publicKey(secretService.getPublicKeyString())
-                                    .build())
-                            .build()
-            );
+            Optional<ClientEvent> optionalClient = clientService.get(task.getClientName(), task.getOrg());
 
             if (optionalClient.isPresent()) {
                 ClientEvent clientEvent = optionalClient.get();
                 if (clientEvent.hasError()) {
                     log.error("Found client.. but it has an error!!");
                     log.error(clientEvent.getErrorMessage());
+                    return;
                 } else {
-                    log.info("ITS HERE!! {}", clientEvent.getClient().toString());
+                    log.info("ITS HERE!! {}", clientEvent.getObject().toString());
                 }
             } else {
                 log.error("Client not found");
+                return;
             }
         }
 

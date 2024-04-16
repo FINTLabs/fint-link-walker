@@ -15,7 +15,7 @@ import java.lang.reflect.ParameterizedType;
 @AllArgsConstructor
 @SuperBuilder
 public abstract class FintCustomerObjectEvent<T> {
-    private Client client;
+    private Client object;
     private String orgId;
     private Operation operation;
     private String errorMessage;
