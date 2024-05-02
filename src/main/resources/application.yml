@@ -12,5 +12,3 @@ fint:
       org-id: flais.io
       domain-context: flais
     application-id: ${fint.application-id}
-
-debug: true
