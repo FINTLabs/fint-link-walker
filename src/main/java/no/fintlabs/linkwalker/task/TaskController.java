@@ -25,6 +25,7 @@ public class TaskController {
                                       @RequestHeader(value = "Authorization", required = false) String authHeader,
                                       ServerWebExchange webExchange) {
         if (requestNotValid(task, authHeader)) {
+            log.info("The request is not valid for client: {} ", task.getClientName());
             return ResponseEntity.badRequest().body(badRequestMessage(task));
         }
         taskService.startTask(task, organization, authHeader);
