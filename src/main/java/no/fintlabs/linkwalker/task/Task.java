@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import no.fintlabs.linkwalker.report.model.EntryReport;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,7 +24,7 @@ public class Task {
     private final Set<String> filter;
     private final AtomicInteger requests = new AtomicInteger(0);
     private final List<EntryReport> entryReports = new ArrayList<>();
-    private final Date time = new Date();
+    private final SimpleDateFormat time = new SimpleDateFormat();
     private int totalRequests;
     private String org;
     private String token;
