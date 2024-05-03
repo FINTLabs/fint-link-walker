@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import no.fintlabs.linkwalker.report.model.EntryReport;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,6 +44,12 @@ public class Task {
 
     public void addEntryReport(EntryReport entryReport) {
         entryReports.add(entryReport);
+    }
+
+    public String getFormattedTime(){
+        String pattern = "dd/MM/yyyy HH:mm";
+        SimpleDateFormat dateFormatter = new SimpleDateFormat(pattern);
+        return dateFormatter.format(time);
     }
 
     public enum Status {
