@@ -23,9 +23,6 @@ spec:
     enabled: true
     middlewares:
       - fint-kunde-portal-sso
-  env:
-    - name: JAVA_TOOL_OPTIONS
-      value: '-XX:+ExitOnOutOfMemoryError -Xmx800M'
   onePassword:
     itemPath: pass
   kafka:
@@ -35,8 +32,8 @@ spec:
     enabled: true
   resources:
     limits:
-      memory: "1Gi"
-      cpu: "1"
+      memory: "3Gi"
+      cpu: "2"
     requests:
       memory: "512Mi"
       cpu: "250m"
