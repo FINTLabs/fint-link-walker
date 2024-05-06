@@ -20,11 +20,13 @@ public class Task {
 
     private final String id = UUID.randomUUID().toString();
     private final String url;
+    private final String env = url.split("//")[1].split("\\.")[0];
+    private final String uri = url.split("\\.no")[1];
     private final String clientName;
     private final Set<String> filter;
     private final AtomicInteger requests = new AtomicInteger(0);
     private final List<EntryReport> entryReports = new ArrayList<>();
-    private final Date time = new Date();
+    private final String time = getFormattedTime();
     private int totalRequests;
     private String org;
     private String token;
@@ -46,10 +48,10 @@ public class Task {
         entryReports.add(entryReport);
     }
 
-    public String getFormattedTime(){
-        String pattern = "dd/MM/yyyy HH:mm";
+    public String getFormattedTime() {
+        String pattern = "dd/MM HH:mm";
         SimpleDateFormat dateFormatter = new SimpleDateFormat(pattern);
-        return dateFormatter.format(time);
+        return dateFormatter.format(new Date());
     }
 
     public enum Status {
