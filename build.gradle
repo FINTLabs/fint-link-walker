@@ -31,8 +31,9 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-
     implementation 'org.springframework.kafka:spring-kafka'
+
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
     implementation 'no.fintlabs:fint-kafka:3.0.0-rc-1'
 
     implementation 'io.netty:netty-resolver-dns-native-macos:4.1.108.Final'
