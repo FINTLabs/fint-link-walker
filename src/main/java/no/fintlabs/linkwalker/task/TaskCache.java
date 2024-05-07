@@ -1,5 +1,6 @@
-package no.fintlabs.linkwalker;
+package no.fintlabs.linkwalker.task;
 
+import no.fintlabs.linkwalker.task.model.Task;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;

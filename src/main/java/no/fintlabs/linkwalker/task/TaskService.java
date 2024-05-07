@@ -1,7 +1,9 @@
-package no.fintlabs.linkwalker;
+package no.fintlabs.linkwalker.task;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.linkwalker.LinkWalker;
+import no.fintlabs.linkwalker.task.model.Task;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;

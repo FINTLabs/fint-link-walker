@@ -1,4 +1,4 @@
-package no.fintlabs.linkwalker;
+package no.fintlabs.linkwalker.task;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +23,7 @@ import java.util.Optional;
 public class TaskController {
 
     private final TaskService taskService;
+    private final SpreadsheetService spreadsheetService;
 
     @PostMapping
     public ResponseEntity<?> postTask(@PathVariable String organization,
