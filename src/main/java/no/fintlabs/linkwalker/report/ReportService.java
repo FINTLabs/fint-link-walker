@@ -1,6 +1,6 @@
 package no.fintlabs.linkwalker.report;
 
-import no.fintlabs.linkwalker.task.Task;
+import no.fintlabs.linkwalker.Task;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;

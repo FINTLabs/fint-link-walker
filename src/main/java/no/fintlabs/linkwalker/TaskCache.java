@@ -1,4 +1,4 @@
-package no.fintlabs.linkwalker.task;
+package no.fintlabs.linkwalker;
 
 import org.springframework.stereotype.Service;
 
@@ -40,4 +40,5 @@ public class TaskCache {
     public boolean exists(String organization, String id) {
         return taskCache.containsKey(organization) && taskCache.get(organization).containsKey(id);
     }
+
 }

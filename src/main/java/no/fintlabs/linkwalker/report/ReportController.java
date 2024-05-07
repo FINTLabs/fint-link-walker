@@ -2,8 +2,8 @@ package no.fintlabs.linkwalker.report;
 
 import lombok.RequiredArgsConstructor;
 import no.fintlabs.linkwalker.report.model.Report;
-import no.fintlabs.linkwalker.task.Task;
-import no.fintlabs.linkwalker.task.TaskCache;
+import no.fintlabs.linkwalker.Task;
+import no.fintlabs.linkwalker.TaskCache;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

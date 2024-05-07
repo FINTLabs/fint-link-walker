@@ -1,4 +1,4 @@
-package no.fintlabs.linkwalker.task;
+package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor

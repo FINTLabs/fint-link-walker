@@ -9,8 +9,6 @@ import no.fintlabs.linkwalker.report.model.EntryReport;
 import no.fintlabs.linkwalker.report.model.RelationError;
 import no.fintlabs.linkwalker.request.RequestService;
 import no.fintlabs.linkwalker.request.model.Entry;
-import no.fintlabs.linkwalker.task.Task;
-import no.fintlabs.linkwalker.task.TaskCache;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
