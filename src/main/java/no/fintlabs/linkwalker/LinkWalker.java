@@ -99,7 +99,10 @@ public class LinkWalker {
                         task.setStatus(Task.Status.COMPLETED);
                     }
                     if (httpStatusCode.isError()) {
+                        task.getRelationErrors().incrementAndGet();
                         entryReport.addRelationError(new RelationError(url, httpStatusCode.value()));
+                    } else {
+                        task.getHealthyRelations().incrementAndGet();
                     }
                 });
             }
