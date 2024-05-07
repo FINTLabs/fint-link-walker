@@ -17,10 +17,6 @@ public class EntryReport {
     private final Set<String> relationLinks = new HashSet<>();
     private final List<RelationError> relationErrors = new ArrayList<>();
 
-    public boolean hasRelationError() {
-        return !relationErrors.isEmpty();
-    }
-
     public void addSelfLink(String parentLink) {
         selfLinks.add(parentLink);
     }
