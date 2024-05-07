@@ -1,7 +1,6 @@
-package no.fintlabs.linkwalker.report.model;
+package no.fintlabs.linkwalker.task.model;
 
 import lombok.Data;
-import no.fintlabs.linkwalker.Task;
 
 import java.util.ArrayList;
 import java.util.Collection;

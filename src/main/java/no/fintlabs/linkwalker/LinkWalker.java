@@ -5,10 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.client.ClientEvent;
 import no.fintlabs.linkwalker.client.ClientService;
-import no.fintlabs.linkwalker.report.model.EntryReport;
-import no.fintlabs.linkwalker.report.model.RelationError;
+import no.fintlabs.linkwalker.task.model.EntryReport;
+import no.fintlabs.linkwalker.task.model.RelationError;
 import no.fintlabs.linkwalker.request.RequestService;
 import no.fintlabs.linkwalker.request.model.Entry;
+import no.fintlabs.linkwalker.task.model.Task;
+import no.fintlabs.linkwalker.task.TaskCache;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 

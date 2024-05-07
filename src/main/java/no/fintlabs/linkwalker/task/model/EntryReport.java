@@ -1,9 +1,8 @@
-package no.fintlabs.linkwalker.report.model;
+package no.fintlabs.linkwalker.task.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import no.fintlabs.linkwalker.request.model.Entry;
-import no.fintlabs.linkwalker.Task;
 
 import java.util.ArrayList;
 import java.util.HashSet;
