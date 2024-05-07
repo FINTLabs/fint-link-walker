@@ -16,6 +16,9 @@ spec:
   imagePullPolicy: Always
   orgId: fintlabs.no
   image: ghcr.io/fintlabs/fint-link-walker:latest
+  env:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-XX:+ExitOnOutOfMemoryError -Xmx2G"
   url:
     hostname: kunde-beta.felleskomponent.no
     basePath: /link-walker
