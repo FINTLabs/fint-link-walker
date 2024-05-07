@@ -1,9 +1,9 @@
-package no.fintlabs.linkwalker;
+package no.fintlabs.linkwalker.task.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
-import no.fintlabs.linkwalker.report.model.EntryReport;
+import no.fintlabs.linkwalker.task.model.EntryReport;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -23,6 +23,8 @@ public class Task {
     private final AtomicInteger requests = new AtomicInteger(0);
     private final List<EntryReport> entryReports = new ArrayList<>();
     private final String time = getFormattedTime();
+    private AtomicInteger relationErrors = new AtomicInteger(0);
+    private AtomicInteger healthyRelations = new AtomicInteger(0);
     private int totalRequests;
     private String token;
     private Status status;
