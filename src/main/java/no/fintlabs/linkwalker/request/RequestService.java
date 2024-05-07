@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.request;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.request.model.FintResources;
@@ -18,6 +19,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class RequestService {
 
     private final WebClient webClient;
+    private final Cache<String, HttpStatusCode> statusCodeCache;
 
     public Mono<FintResources> fetchFintResources(String uri, String token) {
         return webClient.get()
@@ -28,10 +30,19 @@ public class RequestService {
     }
 
     public Mono<HttpStatusCode> fetchStatusCode(String uri, String token) {
+        HttpStatusCode cachedStatus = statusCodeCache.getIfPresent(uri);
+        if (cachedStatus != null) {
+            return Mono.just(cachedStatus);
+        }
+
         return webClient.get()
                 .uri(uri)
                 .header(AUTHORIZATION, "Bearer " + token)
-                .exchangeToMono(response -> Mono.just(response.statusCode()));
+                .exchangeToMono(response -> {
+                    HttpStatusCode statusCode = response.statusCode();
+                    statusCodeCache.put(uri, statusCode);
+                    return Mono.just(statusCode);
+                });
     }
 
     public Mono<TokenResponse> getToken(String clientName, String password, String clientId, String clientSecret) {
