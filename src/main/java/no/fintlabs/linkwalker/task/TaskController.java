@@ -2,6 +2,11 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.linkwalker.SpreadsheetService;
+import no.fintlabs.linkwalker.task.model.Task;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ServerWebExchange;
@@ -9,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Collection;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -41,6 +47,24 @@ public class TaskController {
         return taskService.getTask(organization, id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<byte[]> downloadRelationErrors(@PathVariable String organization, @PathVariable String id) {
+        Optional<Task> optionalTask = taskService.getTask(organization, id);
+
+        if (optionalTask.isPresent()) {
+            Task task = optionalTask.get();
+            byte[] spreadsheet = spreadsheetService.createSpreadSheet(task.getEntryReports());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", String.format("relasjonstest-%s.xlsx", task.getTime()));
+
+            return new ResponseEntity<>(spreadsheet, headers, HttpStatus.OK);
+        }
+
+        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
