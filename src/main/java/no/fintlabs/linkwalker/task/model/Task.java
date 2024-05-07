@@ -3,7 +3,6 @@ package no.fintlabs.linkwalker.task.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
-import no.fintlabs.linkwalker.task.model.EntryReport;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -11,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties({"token", "entryReports"})
+@JsonIgnoreProperties({"token", "entryReports", "formattedTime"})
 public class Task {
 
     private final String id = UUID.randomUUID().toString();
