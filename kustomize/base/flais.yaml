@@ -18,7 +18,7 @@ spec:
   image: ghcr.io/fintlabs/fint-link-walker:latest
   env:
     - name: JAVA_TOOL_OPTIONS
-      value: "-XX:+ExitOnOutOfMemoryError -Xmx2G"
+      value: "-XX:+ExitOnOutOfMemoryError -Xmx9G"
   url:
     hostname: kunde-beta.felleskomponent.no
     basePath: /link-walker
@@ -35,7 +35,7 @@ spec:
     enabled: true
   resources:
     limits:
-      memory: "3Gi"
+      memory: "10Gi"
       cpu: "2"
     requests:
       memory: "512Mi"
