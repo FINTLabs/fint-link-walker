@@ -46,7 +46,7 @@ public class LinkWalker {
             return CompletableFuture.completedFuture(true);
         }
 
-        return clientService.get(task.getClientName(), task.getOrg())
+        return clientService.get(task.getClient(), task.getOrg())
                 .map(clientEvent -> handleClientEvent(clientEvent, task))
                 .orElseGet(() -> {
                     log.error("Client not found");

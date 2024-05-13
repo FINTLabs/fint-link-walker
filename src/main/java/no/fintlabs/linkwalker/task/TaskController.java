@@ -88,7 +88,7 @@ public class TaskController {
     }
 
     public boolean requestNotValid(Task task, String authHeader) {
-        return task.getUrl() == null || (authHeader == null && task.getClientName() == null);
+        return task.getUrl() == null || (authHeader == null && task.getClient() == null);
     }
 
     private URI createIdUri(ServerWebExchange webExchange, String id) {

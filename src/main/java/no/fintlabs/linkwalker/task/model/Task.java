@@ -17,7 +17,7 @@ public class Task {
     private final String url;
     private final String env;
     private final String uri;
-    private final String clientName;
+    private final String client;
     private final Set<String> filter;
     private final AtomicInteger requests = new AtomicInteger(0);
     private final List<EntryReport> entryReports = new ArrayList<>();
@@ -29,11 +29,11 @@ public class Task {
     private Status status;
     private String org;
 
-    public Task(String url, String clientName, Set<String> filter) {
+    public Task(String url, String client, Set<String> filter) {
         this.url = url;
         this.env = url.split("//")[1].split("\\.")[0];
         this.uri = url.split("\\.no")[1];
-        this.clientName = clientName;
+        this.client = client;
         this.filter = filter;
     }
 
