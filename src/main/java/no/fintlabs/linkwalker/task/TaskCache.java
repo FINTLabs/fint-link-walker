@@ -38,8 +38,14 @@ public class TaskCache {
         }
     }
 
-    public boolean exists(String organization, String id) {
-        return taskCache.containsKey(organization) && taskCache.get(organization).containsKey(id);
+    public boolean active(String organization, String id) {
+        if (!taskCache.containsKey(organization)) {
+            return false;
+        }
+
+        Task task = taskCache.get(organization).get(id);
+
+        return task != null && task.getStatus() != Task.Status.FAILED;
     }
 
 }

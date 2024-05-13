@@ -94,7 +94,7 @@ public class LinkWalker {
 
     private void checkStatusCodes(Set<String> links, EntryReport entryReport, Task task) {
         links.forEach(url -> {
-            if (taskCache.exists(task.getOrg(), task.getId())) {
+            if (taskCache.active(task.getOrg(), task.getId())) {
                 requestService.fetchStatusCode(url, task.getToken()).subscribe(httpStatusCode -> {
                     task.decrementRequest();
                     if (task.getRequests().get() == 0) {
