@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.client.ClientEvent;
 import no.fintlabs.linkwalker.client.ClientService;
-import no.fintlabs.linkwalker.task.model.EntryReport;
-import no.fintlabs.linkwalker.task.model.RelationError;
 import no.fintlabs.linkwalker.request.RequestService;
 import no.fintlabs.linkwalker.request.model.Entry;
-import no.fintlabs.linkwalker.task.model.Task;
 import no.fintlabs.linkwalker.task.TaskCache;
+import no.fintlabs.linkwalker.task.model.EntryReport;
+import no.fintlabs.linkwalker.task.model.RelationError;
+import no.fintlabs.linkwalker.task.model.Task;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -76,11 +76,19 @@ public class LinkWalker {
 
     private void fetchResources(Task task) {
         task.setStatus(Task.Status.FETCHING_RESOURCES);
-        requestService.fetchFintResources(task.getUrl(), task.getToken()).subscribe(fintResources -> {
-            createEntryReports(task, fintResources._embedded()._entries());
-            processLinks(task);
-        });
+        requestService.fetchFintResources(task.getUrl(), task.getToken())
+                .subscribe(
+                        fintResources -> {
+                            createEntryReports(task, fintResources._embedded()._entries());
+                            processLinks(task);
+                        },
+                        throwable -> {
+                            task.setStatus(Task.Status.FAILED);
+                            log.error("Error fetching resources for task: " + throwable.getMessage());
+                        }
+                );
     }
+
 
     private void processLinks(Task task) {
         task.setStatus(Task.Status.PROCESSING_LINKS);
