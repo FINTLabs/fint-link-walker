@@ -70,7 +70,6 @@ public class LinkWalker {
 						secretService.decrypt(client.getClientSecret())
 				).toFuture()
 				.thenApply(tokenResponse -> {
-					log.info("Token: {}", tokenResponse.access_token());
 					task.setToken(tokenResponse.access_token());
 					return true;
 				});
