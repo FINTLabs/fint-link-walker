@@ -84,6 +84,8 @@ public class LinkWalker {
                             processLinks(task);
                         },
                         throwable -> {
+							log.info(String.valueOf(throwable.getCause()));
+							log.info(task.getToken());
                             task.setStatus(Task.Status.FAILED);
                             log.error("Error fetching resources for task: " + throwable.getMessage());
                         }
