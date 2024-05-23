@@ -1,9 +1,11 @@
 package no.fintlabs.linkwalker.task;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.LinkWalker;
 import no.fintlabs.linkwalker.task.model.Task;
+import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -21,7 +23,10 @@ public class TaskService {
     public void startTask(Task task, String organization, String authHeader) {
         task.setStatus(Task.Status.STARTED);
         task.setOrg(organization);
-        if (authHeader != null) task.setToken(authHeader.replace("Bearer ", ""));
+        if (StringUtils.isEmpty(task.getClient())){
+			log.info("Client not set, using bearer");
+			task.setToken(authHeader.replace("Bearer ", ""));
+		}
 
         taskCache.add(task);
         linkWalker.processTask(task);
