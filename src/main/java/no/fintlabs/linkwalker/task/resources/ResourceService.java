@@ -1,44 +1,51 @@
 package no.fintlabs.linkwalker.task.resources;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 
 @Service
 public class ResourceService {
 
-	@Value("${fint.baseUrl}")
-	private String baseUrl;
+	@Value("${fint.metaModel}")
+	private String url;
 
-	public List<String> getResources(String domainAndComponent) throws JSONException {
-		List<String> urls = new ArrayList<>();
-		RestTemplate restTemplate = new RestTemplate();
-		String url = baseUrl + domainAndComponent;
+	private final RestTemplate restTemplate = new RestTemplate();
+
+	public Map<String, List<String>> getResources() {
+		ObjectMapper objectMapper = new ObjectMapper();
 
 		String response = restTemplate.getForObject(url, String.class);
 
-		JSONObject jsonObject = new JSONObject(response);
+		try {
+			JsonNode rootNode = objectMapper.readTree(response);
 
-		for (Iterator it = jsonObject.keys(); it.hasNext(); ) {
-			String key = (String) it.next();
-			JSONObject innerObject = jsonObject.getJSONObject(key);
-			urls.add(innerObject.getString("collectionUrl"));
+			Map<String, List<String>> resultMap = new HashMap<>();
+
+			JsonNode entriesNode = rootNode.path("_embedded").path("_entries");
+
+			Iterator<JsonNode> elements = entriesNode.elements();
+			while (elements.hasNext()) {
+				JsonNode entry = elements.next();
+
+				String id = entry.path("id").path("identifikatorverdi").asText();
+
+				String[] parts = id.split("\\.");
+				String key = parts[2] + " " + parts[3];
+				String value = parts[parts.length - 1];
+
+				resultMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+			}
+			return resultMap;
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		return findResources(urls);
-	}
-
-	public List<String> findResources(List<String> urls){
-		List<String> resousces = new ArrayList<>();
-		urls.forEach(s -> {
-			resousces.add(s.substring(s.lastIndexOf("/")));
-		});
-		return resousces;
+		return Collections.emptyMap();
 	}
 }
