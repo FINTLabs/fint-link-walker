@@ -3,6 +3,8 @@ package no.fintlabs.linkwalker.task.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,7 +20,11 @@ public class ResourceService {
 
 	private final RestTemplate restTemplate = new RestTemplate();
 
-	public Map<String, List<String>> getResources() {
+	@Getter
+	private Map<String, List<String>> resultMap = new HashMap<>();
+
+	@PostConstruct
+	public void getResources() {
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		String response = restTemplate.getForObject(url, String.class);
@@ -26,7 +32,6 @@ public class ResourceService {
 		try {
 			JsonNode rootNode = objectMapper.readTree(response);
 
-			Map<String, List<String>> resultMap = new HashMap<>();
 
 			JsonNode entriesNode = rootNode.path("_embedded").path("_entries");
 
@@ -42,10 +47,8 @@ public class ResourceService {
 
 				resultMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
 			}
-			return resultMap;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return Collections.emptyMap();
 	}
 }

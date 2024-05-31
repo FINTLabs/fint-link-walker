@@ -20,6 +20,6 @@ public class ResourceController {
 
 	@GetMapping
 	public ResponseEntity<Map<String, List<String>>> getResources() {
-		return ResponseEntity.ok(resourceService.getResources());
+		return ResponseEntity.ok(resourceService.getResultMap());
 	}
 }
