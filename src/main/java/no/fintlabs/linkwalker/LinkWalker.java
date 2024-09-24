@@ -33,7 +33,9 @@ public class LinkWalker {
 	public void processTask(Task task) {
 		initializeTaskWithToken(task)
 				.thenAcceptAsync(hasToken -> {
-					if (hasToken) fetchResources(task);
+					if (hasToken){
+                        fetchResources(task);
+                    }else log.error("Could not get Token");
 				})
 				.exceptionally(e -> {
 					log.error("Error processing task: {}", e.getMessage());
