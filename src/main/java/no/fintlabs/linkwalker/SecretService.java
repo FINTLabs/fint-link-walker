@@ -57,10 +57,13 @@ public class SecretService {
             Cipher decryptCipher = Cipher.getInstance("RSA");
             decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
 
-            return new String(
+            //CT-1409 skal se om passordet stemmer etter det har blit dekryptert
+            String s = new String(
                     decryptCipher.doFinal(
                             Base64.getDecoder().decode(encryptedPassword.getBytes(StandardCharsets.UTF_8))),
                     StandardCharsets.UTF_8);
+            log.info("Decrypted password: {}", s);
+            return s;
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
                  BadPaddingException e) {
