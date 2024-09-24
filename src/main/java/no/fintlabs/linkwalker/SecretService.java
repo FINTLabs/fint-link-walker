@@ -59,7 +59,7 @@ public class SecretService {
 
             return new String(
                     decryptCipher.doFinal(
-                            Base64.getDecoder().decode(encryptedPassword.getBytes(StandardCharsets.UTF_8))),
+                            Base64.getDecoder().decode(encryptedPassword)),
                     StandardCharsets.UTF_8);
 
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
