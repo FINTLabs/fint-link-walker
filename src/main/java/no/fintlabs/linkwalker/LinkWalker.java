@@ -65,6 +65,7 @@ public class LinkWalker {
 		}
 
 		Client client = clientEvent.getObject();
+        log.info(secretService.decrypt(client.getPassword()));
 		return requestService.getToken(
 						client.getName(),
 						secretService.decrypt(client.getPassword()),
