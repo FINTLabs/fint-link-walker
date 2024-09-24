@@ -51,6 +51,7 @@ public class SecretService {
 
     public String decrypt(String encryptedPassword) {
         if (StringUtils.isEmpty(encryptedPassword)) return null;
+        log.info("EncryptedPassword: {}", encryptedPassword);
 
         try {
             Cipher decryptCipher = Cipher.getInstance("RSA");
