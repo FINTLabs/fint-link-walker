@@ -65,12 +65,12 @@ public class LinkWalker {
 		}
 
 		Client client = clientEvent.getObject();
-        log.info(secretService.decrypt(client.getPassword()));
+        log.info("encrypted clien-secret: {}",client.getClientSecret());
 		return requestService.getToken(
-						client.getName(),
-						secretService.decrypt(client.getPassword()),
 						client.getClientId(),
-						secretService.decrypt(client.getClientSecret())
+						secretService.decrypt(client.getClientSecret()),
+						client.getName(),
+						secretService.decrypt(client.getPassword())
 				).toFuture()
 				.thenApply(tokenResponse -> {
 					task.setToken(tokenResponse.access_token());
