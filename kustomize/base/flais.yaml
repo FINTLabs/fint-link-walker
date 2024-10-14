@@ -19,20 +19,8 @@ spec:
   env:
     - name: JAVA_TOOL_OPTIONS
       value: "-XX:+ExitOnOutOfMemoryError -Xmx9G"
-  url:
-    hostname: kunde-beta.felleskomponent.no
-    basePath: /link-walker
-  ingress:
-    enabled: true
-    middlewares:
-      - fint-kunde-portal-sso
   onePassword:
     itemPath: pass
-  kafka:
-    acls:
-      - permission: admin
-        topic: flais-io.fint-customer-objects.*
-    enabled: true
   resources:
     limits:
       memory: "10Gi"
