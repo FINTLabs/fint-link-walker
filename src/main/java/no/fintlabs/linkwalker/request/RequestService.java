@@ -2,7 +2,6 @@ package no.fintlabs.linkwalker.request;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
-import no.fintlabs.linkwalker.client.Client;
 import no.fintlabs.linkwalker.request.model.FintResources;
 import no.fintlabs.linkwalker.request.model.TokenResponse;
 import org.springframework.http.HttpStatusCode;

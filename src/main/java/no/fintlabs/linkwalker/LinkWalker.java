@@ -2,8 +2,6 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.linkwalker.client.Client;
-import no.fintlabs.linkwalker.client.ClientEvent;
 import no.fintlabs.linkwalker.config.AuthService;
 import no.fintlabs.linkwalker.request.RequestService;
 import no.fintlabs.linkwalker.request.model.Entry;
@@ -27,7 +25,6 @@ public class LinkWalker {
 
     private final RequestService requestService;
     private final TaskCache taskCache;
-    private final SecretService secretService;
     private final AuthService authService;
 
     public void processTask(Task task) {
@@ -55,27 +52,6 @@ public class LinkWalker {
         } catch (Exception e) {
             return CompletableFuture.completedFuture(false);
         }
-    }
-
-    private CompletableFuture<Boolean> handleClientEvent(ClientEvent clientEvent, Task task) {
-        if (clientEvent.hasError()) {
-            log.error("Found client.. but it has an error!!");
-            log.error(clientEvent.getErrorMessage());
-            return CompletableFuture.completedFuture(false);
-        }
-
-        Client client = clientEvent.getObject();
-        log.info("encrypted clien-secret: {}", client.getClientSecret());
-        return requestService.getToken(
-                        client.getClientId(),
-                        secretService.decrypt(client.getClientSecret()),
-                        client.getName(),
-                        secretService.decrypt(client.getPassword())
-                ).toFuture()
-                .thenApply(tokenResponse -> {
-                    task.setToken(tokenResponse.access_token());
-                    return true;
-                });
     }
 
     private void fetchResources(Task task) {
