@@ -28,6 +28,13 @@ public class WebClientConfig {
                 .build();
     }
 
+    @Bean
+    public WebClient gatewayWebClient() {
+        return WebClient.builder()
+                .baseUrl(gatewayUrl)
+                .build();
+    }
+
     private ExchangeStrategies unlimitedBufferSize() {
         return ExchangeStrategies.builder()
                 .codecs(configurer -> configurer
@@ -50,13 +57,6 @@ public class WebClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 900000)
                 .responseTimeout(Duration.ofMinutes(10))
         );
-    }
-
-    @Bean
-    public WebClient gatewayWebClient() {
-        return WebClient.builder()
-                .baseUrl(gatewayUrl)
-                .build();
     }
 
 }
