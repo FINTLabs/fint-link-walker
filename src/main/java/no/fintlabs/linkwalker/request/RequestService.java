@@ -3,11 +3,8 @@ package no.fintlabs.linkwalker.request;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import no.fintlabs.linkwalker.request.model.FintResources;
-import no.fintlabs.linkwalker.request.model.TokenResponse;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -42,21 +39,6 @@ public class RequestService {
                     statusCodeCache.put(uri, statusCode);
                     return Mono.just(statusCode);
                 });
-    }
-
-    public Mono<TokenResponse> getToken(String clientName, String password, String clientId, String clientSecret) {
-        return webClient.post()
-                .uri("https://idp.felleskomponent.no/nidp/oauth/nam/token")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData("grant_type", "password")
-                        .with("username", clientName)
-                        .with("password", password)
-                        .with("client_id", clientId)
-                        .with("client_secret", clientSecret)
-                        .with("scope", "fint-client"))
-                .retrieve()
-                .bodyToMono(TokenResponse.class);
-
     }
 
 }
