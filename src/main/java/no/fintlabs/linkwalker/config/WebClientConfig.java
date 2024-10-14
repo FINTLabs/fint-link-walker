@@ -16,11 +16,10 @@ import java.time.Duration;
 @Configuration
 public class WebClientConfig {
 
-
-    @Value("fint.gateway-url")
+    @Value("${fint.gateway-url}")
     private String gatewayUrl;
 
-    @Value("fint.idp-url")
+    @Value("${fint.idp-url}")
     private String idpUrl;
 
     @Bean

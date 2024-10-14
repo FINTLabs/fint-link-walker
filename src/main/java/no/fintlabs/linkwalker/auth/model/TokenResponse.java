@@ -1,4 +1,4 @@
-package no.fintlabs.linkwalker.config;
+package no.fintlabs.linkwalker.auth.model;
 
 public record TokenResponse (
         String accesToken,

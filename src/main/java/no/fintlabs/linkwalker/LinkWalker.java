@@ -2,7 +2,7 @@ package no.fintlabs.linkwalker;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.linkwalker.config.AuthService;
+import no.fintlabs.linkwalker.auth.AuthService;
 import no.fintlabs.linkwalker.request.RequestService;
 import no.fintlabs.linkwalker.request.model.Entry;
 import no.fintlabs.linkwalker.task.TaskCache;
@@ -47,10 +47,10 @@ public class LinkWalker {
         }
 
         try {
-            task.setToken(authService.getNewAccessToken(task.getOrg(), task.getClient()));
+            authService.applyNewAccessToken(task);
             return CompletableFuture.completedFuture(true);
         } catch (Exception e) {
-            return CompletableFuture.completedFuture(false);
+            throw e;
         }
     }
 

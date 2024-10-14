@@ -1,35 +1,40 @@
-package no.fintlabs.linkwalker.config;
+package no.fintlabs.linkwalker.auth;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.linkwalker.auth.model.AuthObject;
+import no.fintlabs.linkwalker.auth.model.AuthResponse;
+import no.fintlabs.linkwalker.auth.model.TokenResponse;
+import no.fintlabs.linkwalker.task.model.Task;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class AuthService {
 
     private final WebClient gatewayWebClient;
     private final WebClient idpWebClient;
 
-    public AuthService(WebClient gatewayWebClient, WebClient idpWebClient) {
-        this.gatewayWebClient = gatewayWebClient;
-        this.idpWebClient = idpWebClient;
+    public void applyNewAccessToken(Task task) {
+        getAuthResponse(task.getOrg(), task.getClient())
+                .subscribe(authResponse -> decryptAuthResponse(task.getClient(), authResponse)
+                        .subscribe(decryptedResponse -> getTokenResponse(decryptedResponse)
+                                .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken()))));
     }
 
-    public String getNewAccessToken(String orgName, String clientName) throws Exception {
-        AuthResponse decryptAuthResponse = decryptAuthResponse(clientName, getAuthResponse(orgName, clientName));
-        return getTokenResponse(decryptAuthResponse).accesToken();
-    }
-
-    private TokenResponse getTokenResponse(AuthResponse decryptAuthResponse) throws Exception {
+    private Mono<TokenResponse> getTokenResponse(AuthObject decryptAuthResponse) {
         return idpWebClient.post()
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData(createFormData(decryptAuthResponse.object())))
+                .body(BodyInserters.fromFormData(createFormData(decryptAuthResponse)))
                 .retrieve()
-                .bodyToMono(TokenResponse.class)
-                .block();
+                .bodyToMono(TokenResponse.class);
     }
 
     private MultiValueMap<String, String> createFormData(AuthObject authObject) {
@@ -51,21 +56,20 @@ public class AuthService {
         }
     }
 
-    private AuthResponse decryptAuthResponse(String clientName, AuthResponse authResponse) throws Exception {
+    private Mono<AuthObject> decryptAuthResponse(String clientName, AuthResponse authResponse) {
         return gatewayWebClient.post()
                 .uri(createDecryptUri(clientName))
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(authResponse)
                 .retrieve()
-                .bodyToMono(AuthResponse.class)
-                .block();
+                .bodyToMono(AuthObject.class);
     }
 
-    private AuthResponse getAuthResponse(String orgName, String clientName) throws Exception {
+    private Mono<AuthResponse> getAuthResponse(String orgName, String clientName) {
         return gatewayWebClient.get()
                 .uri(createUri(orgName, clientName))
                 .retrieve()
-                .bodyToMono(AuthResponse.class)
-                .block();
+                .bodyToMono(AuthResponse.class);
     }
 
     private String createUri(String orgName, String clientName) {
