@@ -23,8 +23,10 @@ public class AuthService {
     private final WebClient idpWebClient;
 
     public void applyNewAccessToken(Task task) {
-        getAuthResponse(task.getOrg(), task.getClient())
-                .subscribe(authResponse -> decryptAuthResponse(task.getClient(), authResponse)
+        String client = task.getClient().toLowerCase();
+
+        getAuthResponse(task.getOrg(), client)
+                .subscribe(authResponse -> decryptAuthResponse(client, authResponse)
                         .subscribe(decryptedResponse -> getTokenResponse(decryptedResponse)
                                 .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken()))));
     }
