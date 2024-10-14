@@ -7,7 +7,7 @@ plugins {
 
 group = 'no.fintlabs'
 java {
-    sourceCompatibility = 21
+    sourceCompatibility = 17
 }
 
 configurations {

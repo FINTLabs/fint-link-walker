@@ -20,6 +20,9 @@ public class WebClientConfig {
     @Value("fint.gateway-url")
     private String gatewayUrl;
 
+    @Value("fint.idp-url")
+    private String idpUrl;
+
     @Bean
     public WebClient webClient() {
         return WebClient.builder()
@@ -32,6 +35,13 @@ public class WebClientConfig {
     public WebClient gatewayWebClient() {
         return WebClient.builder()
                 .baseUrl(gatewayUrl)
+                .build();
+    }
+
+    @Bean
+    public WebClient idpWebClient(){
+        return WebClient.builder()
+                .baseUrl(idpUrl)
                 .build();
     }
 
