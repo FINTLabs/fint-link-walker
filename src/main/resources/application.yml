@@ -6,6 +6,7 @@ spring:
     base-path: /link-walker
 
 fint:
+  gateway-url: ""
   metaModel: "https://beta.felleskomponent.no/fint/metamodell/klasse"
   application-id: link-walker
   kafka:

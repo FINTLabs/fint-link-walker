@@ -1,6 +1,7 @@
 package no.fintlabs.linkwalker.config;
 
 import io.netty.channel.ChannelOption;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ClientHttpConnector;
@@ -14,6 +15,10 @@ import java.time.Duration;
 
 @Configuration
 public class WebClientConfig {
+
+
+    @Value("fint.gateway-url")
+    private String gatewayUrl;
 
     @Bean
     public WebClient webClient() {
@@ -45,6 +50,13 @@ public class WebClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 900000)
                 .responseTimeout(Duration.ofMinutes(10))
         );
+    }
+
+    @Bean
+    public WebClient gatewayWebClient() {
+        return WebClient.builder()
+                .baseUrl(gatewayUrl)
+                .build();
     }
 
 }
