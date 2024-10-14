@@ -1,17 +1,8 @@
-spring:
-  kafka:
-    consumer:
-      group-id: link-walker
-  webflux:
-    base-path: /link-walker
-
 fint:
   gateway-url: "http://fint-customer-object-gateway.flais-io.svc.cluster.local:8080"
   idp-url: "https://idp.felleskomponent.no/nidp/oauth/nam/token"
   metaModel: "https://beta.felleskomponent.no/fint/metamodell/klasse"
-  application-id: link-walker
-  kafka:
-    topic:
-      org-id: flais.io
-      domain-context: flais
-    application-id: ${fint.application-id}
+
+spring:
+  webflux:
+    base-path: /link-walker
