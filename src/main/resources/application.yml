@@ -1,7 +1,7 @@
 fint:
   gateway-url: http://fint-customer-objects-gateway.flais-io.svc.cluster.local:8080
-  idp-url: "https://idp.felleskomponent.no/nidp/oauth/nam/token"
-  metaModel: "https://beta.felleskomponent.no/fint/metamodell/klasse"
+  idp-url: https://idp.felleskomponent.no/nidp/oauth/nam/token
+  metaModel: https://beta.felleskomponent.no/fint/metamodell/klasse
 
 spring:
   webflux:
