@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.task;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.SpreadsheetService;
@@ -88,7 +89,7 @@ public class TaskController {
     }
 
     public boolean requestNotValid(Task task, String authHeader) {
-        return task.getUrl() == null || (authHeader == null && task.getClient() == null);
+        return task.getUrl() == null || (authHeader == null && StringUtils.isEmpty(task.getClient()));
     }
 
     private URI createIdUri(ServerWebExchange webExchange, String id) {
