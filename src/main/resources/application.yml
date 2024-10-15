@@ -1,5 +1,5 @@
 fint:
-  gateway-url: "http://fint-customer-object-gateway.flais-io.svc.cluster.local:8080"
+  gateway-url: http://fint-customer-objects-gateway.flais-io.svc.cluster.local:8080
   idp-url: "https://idp.felleskomponent.no/nidp/oauth/nam/token"
   metaModel: "https://beta.felleskomponent.no/fint/metamodell/klasse"
 
