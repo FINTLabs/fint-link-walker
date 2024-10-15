@@ -31,10 +31,10 @@ public class AuthService {
                                 .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken()))));
     }
 
-    private Mono<TokenResponse> getTokenResponse(AuthObject decryptAuthResponse) {
+    private Mono<TokenResponse> getTokenResponse(AuthObject decryptedAuthObject) {
         return idpWebClient.post()
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData(createFormData(decryptAuthResponse)))
+                .body(BodyInserters.fromFormData(createFormData(decryptedAuthObject)))
                 .retrieve()
                 .bodyToMono(TokenResponse.class);
     }
