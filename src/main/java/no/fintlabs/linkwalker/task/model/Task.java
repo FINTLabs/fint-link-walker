@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties({"token", "entryReports", "formattedTime"})
+@JsonIgnoreProperties({"token", "entryReports", "formattedTime", "authHeader"})
 public class Task {
 
     private final String id = UUID.randomUUID().toString();
@@ -25,6 +25,7 @@ public class Task {
     private AtomicInteger relationErrors = new AtomicInteger(0);
     private AtomicInteger healthyRelations = new AtomicInteger(0);
     private int totalRequests;
+    private String authHeader;
     private String token;
     private Status status;
     private String org;

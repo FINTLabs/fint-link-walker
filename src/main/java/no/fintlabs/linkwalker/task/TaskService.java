@@ -23,10 +23,7 @@ public class TaskService {
     public void startTask(Task task, String organization, String authHeader) {
         task.setStatus(Task.Status.STARTED);
         task.setOrg(organization);
-        if (StringUtils.isEmpty(task.getClient())){
-			log.info("Client not set, using bearer");
-			task.setToken(authHeader.replace("Bearer ", ""));
-		}
+        task.setAuthHeader(authHeader);
 
         taskCache.add(task);
         linkWalker.processTask(task);

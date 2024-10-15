@@ -31,10 +31,6 @@ public class TaskController {
                                       @RequestBody Task task,
                                       @RequestHeader(value = "Authorization", required = false) String authHeader,
                                       ServerWebExchange webExchange) {
-        if (requestNotValid(task, authHeader)) {
-            log.error("The requested taks is not valid{}", task);
-            return ResponseEntity.badRequest().body(badRequestMessage(task));
-        }
         taskService.startTask(task, organization, authHeader);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
     }

@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.auth.AuthService;
@@ -32,7 +33,10 @@ public class LinkWalker {
                 .thenAcceptAsync(hasToken -> {
                     if (hasToken) {
                         fetchResources(task);
-                    } else log.error("Could not get Token");
+                    } else {
+                        log.error("Could not get Token");
+                        task.setStatus(Task.Status.FAILED);
+                    };
                 })
                 .exceptionally(e -> {
                     log.error("Error processing task: {}", e.getMessage());
@@ -42,6 +46,15 @@ public class LinkWalker {
     }
 
     private CompletableFuture<Boolean> initializeTaskWithToken(Task task) {
+        if (task.getUrl().contains("play-with-fint")) {
+            return CompletableFuture.completedFuture(true);
+        }
+
+        if (StringUtils.isEmpty(task.getClient())){
+            log.info("Client not set, using bearer");
+            task.setToken(task.getAuthHeader().replace("Bearer ", ""));
+        }
+
         if (task.getToken() != null) {
             return CompletableFuture.completedFuture(true);
         }
