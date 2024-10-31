@@ -78,12 +78,13 @@ public class LinkWalker {
                         throwable -> {
                             if (throwable instanceof WebClientResponseException) {
                                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                                task.setErrorMessage(webClientResponseException.getMessage());
                                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode() +
                                         ", Body: " + webClientResponseException.getResponseBodyAsString(), webClientResponseException);
+                                task.setErrorMessage(webClientResponseException.getResponseBodyAsString());
                             } else {
                                 log.error("Error fetching resources for task: " + throwable.getMessage(), throwable);
                             }
+                            task.setErrorMessage(throwable.getMessage());
                             task.setStatus(Task.Status.FAILED);
                         }
                 );
