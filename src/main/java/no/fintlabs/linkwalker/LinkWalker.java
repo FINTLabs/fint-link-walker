@@ -1,5 +1,8 @@
 package no.fintlabs.linkwalker;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -76,15 +79,28 @@ public class LinkWalker {
                             processLinks(task);
                         },
                         throwable -> {
+                            String errorMessage = "";
                             if (throwable instanceof WebClientResponseException) {
                                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode() +
                                         ", Body: " + webClientResponseException.getResponseBodyAsString(), webClientResponseException);
-                                task.setErrorMessage(webClientResponseException.getResponseBodyAsString());
+                                try {
+                                    ObjectMapper objectMapper = new ObjectMapper();
+                                    String responseBody = webClientResponseException.getResponseBodyAsString();
+                                    JsonNode jsonNode = objectMapper.readTree(responseBody);
+
+                                    errorMessage = "HTTP Status: " + webClientResponseException.getStatusCode() +
+                                            ", Error Details: " + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+                                } catch (Exception e) {
+                                    log.error("Failed to parse error response body: " + e.getMessage(), e);
+                                    errorMessage = "HTTP Status: " + webClientResponseException.getStatusCode() +
+                                            ", Error Body: " + webClientResponseException.getResponseBodyAsString();
+                                }
+                                task.setErrorMessage(errorMessage);
                             } else {
                                 log.error("Error fetching resources for task: " + throwable.getMessage(), throwable);
                             }
-                            task.setErrorMessage(throwable.getMessage());
+
                             task.setStatus(Task.Status.FAILED);
                         }
                 );
