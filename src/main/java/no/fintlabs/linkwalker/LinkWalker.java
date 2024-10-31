@@ -79,24 +79,12 @@ public class LinkWalker {
                             processLinks(task);
                         },
                         throwable -> {
-                            String errorMessage = "";
                             if (throwable instanceof WebClientResponseException) {
                                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
                                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode() +
                                         ", Body: " + webClientResponseException.getResponseBodyAsString(), webClientResponseException);
-                                try {
-                                    ObjectMapper objectMapper = new ObjectMapper();
-                                    String responseBody = webClientResponseException.getResponseBodyAsString();
-                                    JsonNode jsonNode = objectMapper.readTree(responseBody);
+                                task.setErrorMessage(webClientResponseException.getStatusCode().toString());
 
-                                    errorMessage = "HTTP Status: " + webClientResponseException.getStatusCode() +
-                                            ", Error Details: " + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
-                                } catch (Exception e) {
-                                    log.error("Failed to parse error response body: " + e.getMessage(), e);
-                                    errorMessage = "HTTP Status: " + webClientResponseException.getStatusCode() +
-                                            ", Error Body: " + webClientResponseException.getResponseBodyAsString();
-                                }
-                                task.setErrorMessage(errorMessage);
                             } else {
                                 log.error("Error fetching resources for task: " + throwable.getMessage(), throwable);
                             }
