@@ -29,6 +29,7 @@ public class Task {
     private String token;
     private Status status;
     private String org;
+    private String errorMessage;
 
     public Task(String url, String client, Set<String> filter) {
         this.url = url;
