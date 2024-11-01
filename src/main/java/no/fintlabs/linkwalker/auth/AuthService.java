@@ -26,9 +26,10 @@ public class AuthService {
         String client = task.getClient().toLowerCase();
 
         getAuthResponse(task.getOrg(), client)
-                .subscribe(authResponse -> decryptAuthResponse(client, authResponse)
-                        .subscribe(decryptedResponse -> getTokenResponse(decryptedResponse)
-                                .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken()))));
+                .subscribe(authResponse -> resetPassword(authResponse)
+                        .subscribe(resetAuthResponse -> decryptAuthResponse(client, resetAuthResponse)
+                                .subscribe(decryptedResponse -> getTokenResponse(decryptedResponse)
+                                        .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken())))));
     }
 
     private Mono<TokenResponse> getTokenResponse(AuthObject decryptedAuthObject) {
@@ -56,6 +57,14 @@ public class AuthService {
         } else {
             return "fint-client";
         }
+    }
+
+    private Mono<AuthResponse> resetPassword(AuthResponse authResponse) {
+        return gatewayWebClient.post()
+                .uri("/client/password/reset")
+                .bodyValue(authResponse)
+                .retrieve()
+                .bodyToMono(AuthResponse.class);
     }
 
     private Mono<AuthObject> decryptAuthResponse(String clientName, AuthResponse authResponse) {
