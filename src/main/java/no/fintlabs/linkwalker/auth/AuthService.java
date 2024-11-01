@@ -33,15 +33,11 @@ public class AuthService {
     }
 
     private Mono<TokenResponse> getTokenResponse(AuthObject decryptedAuthObject) {
-        Mono<TokenResponse> tokenResponseMono = idpWebClient.post()
+        return idpWebClient.post()
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .body(BodyInserters.fromFormData(createFormData(decryptedAuthObject)))
                 .retrieve()
                 .bodyToMono(TokenResponse.class);
-
-        log.info("token: {}", tokenResponseMono.block().tokenType());
-
-        return tokenResponseMono;
     }
 
     private MultiValueMap<String, String> createFormData(AuthObject authObject) {
