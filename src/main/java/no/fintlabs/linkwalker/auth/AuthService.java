@@ -14,6 +14,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -22,15 +24,22 @@ public class AuthService {
     private final WebClient gatewayWebClient;
     private final WebClient idpWebClient;
 
-    public void applyNewAccessToken(Task task) {
+    public CompletableFuture<Boolean> applyNewAccessToken(Task task) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
         String client = task.getClient().toLowerCase();
 
         getAuthResponse(task.getOrg(), client)
-                .subscribe(authResponse -> resetPassword(authResponse)
-                        .subscribe(resetAuthResponse -> decryptAuthResponse(client, resetAuthResponse)
-                                .subscribe(decryptedResponse -> getTokenResponse(decryptedResponse)
-                                        .subscribe(tokenResponse -> task.setToken(tokenResponse.accesToken())))));
+                .flatMap(this::resetPassword)
+                .flatMap(resetAuthResponse -> decryptAuthResponse(client, resetAuthResponse))
+                .flatMap(this::getTokenResponse)
+                .subscribe(tokenResponse -> {
+                    task.setToken(tokenResponse.accesToken());
+                    future.complete(true);
+                }, future::completeExceptionally);
+
+        return future;
     }
+
 
     private Mono<TokenResponse> getTokenResponse(AuthObject decryptedAuthObject) {
         return idpWebClient.post()
