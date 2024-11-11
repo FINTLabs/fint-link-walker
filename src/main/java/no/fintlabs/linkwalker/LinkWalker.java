@@ -1,8 +1,5 @@
 package no.fintlabs.linkwalker;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,21 +50,23 @@ public class LinkWalker {
             return CompletableFuture.completedFuture(true);
         }
 
-        if (StringUtils.isEmpty(task.getClient())){
+        if (StringUtils.isEmpty(task.getClient())) {
             log.info("Client not set, using bearer");
             task.setToken(task.getAuthHeader().replace("Bearer ", ""));
         }
 
         if (task.getToken() != null) {
+            log.info("Token already present: {}", task.getToken());
             return CompletableFuture.completedFuture(true);
         }
 
-        try {
-            authService.applyNewAccessToken(task);
-            return CompletableFuture.completedFuture(true);
-        } catch (Exception e) {
-            throw e;
-        }
+        return authService.applyNewAccessToken(task)
+                .thenApply(hasToken -> {
+                    if (!hasToken) {
+                        log.error("Could not get Token");
+                    }
+                    return hasToken;
+                });
     }
 
     private void fetchResources(Task task) {
@@ -81,8 +80,7 @@ public class LinkWalker {
                         throwable -> {
                             if (throwable instanceof WebClientResponseException) {
                                 WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
-                                log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode() +
-                                        ", Body: " + webClientResponseException.getResponseBodyAsString(), webClientResponseException);
+                                log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
                                 task.setErrorMessage(webClientResponseException.getStatusCode().toString());
 
                             } else {
