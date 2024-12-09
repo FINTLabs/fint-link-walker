@@ -31,12 +31,12 @@ public class LinkWalker {
     public void processTask(Task task) {
         initializeTaskWithToken(task)
                 .thenAcceptAsync(hasToken -> {
-                    if (hasToken) {
+                    if (StringUtils.isNotBlank(task.getToken()) && StringUtils.isNotEmpty(task.getToken())) {
                         fetchResources(task);
                     } else {
                         log.error("Could not get Token");
                         task.setStatus(Task.Status.FAILED);
-                    };
+                    }
                 })
                 .exceptionally(e -> {
                     log.error("Error processing task: {}", e.getMessage());
