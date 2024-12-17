@@ -10,6 +10,7 @@ import no.fintlabs.linkwalker.task.TaskCache;
 import no.fintlabs.linkwalker.task.model.EntryReport;
 import no.fintlabs.linkwalker.task.model.RelationError;
 import no.fintlabs.linkwalker.task.model.Task;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -78,8 +79,11 @@ public class LinkWalker {
                             processLinks(task);
                         },
                         throwable -> {
-                            if (throwable instanceof WebClientResponseException) {
-                                WebClientResponseException webClientResponseException = (WebClientResponseException) throwable;
+                            if (throwable instanceof WebClientResponseException webClientResponseException) {
+                                if(webClientResponseException.getStatusCode().equals(HttpStatusCode.valueOf(401))){
+                                    task.setStatus(Task.Status.FAILED);
+                                    task.setErrorMessage("Client is not authorized");
+                                }
                                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
                                 task.setErrorMessage(webClientResponseException.getStatusCode().toString());
 
