@@ -80,23 +80,22 @@ public class LinkWalker {
                             processLinks(task);
                         },
                         throwable -> {
-                            if (throwable instanceof WebClientResponseException webClientResponseException) {
-                                if(webClientResponseException.getStatusCode().equals(HttpStatus.FORBIDDEN)){
-                                    task.setStatus(Task.Status.FAILED);
-                                    task.setErrorMessage("Client is not authorized");
-                                }
-                                log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
-                                task.setErrorMessage(webClientResponseException.getStatusCode().toString());
-
-                            } else {
-                                log.error("Error fetching resources for task: " + throwable.getMessage(), throwable);
-                            }
-
-                            task.setStatus(Task.Status.FAILED);
+                            handleError(task, throwable);
                         }
                 );
     }
 
+    private void handleError(Task task, Throwable throwable) {
+        if (throwable instanceof WebClientResponseException webClientResponseException) {
+            if (webClientResponseException.getStatusCode().equals(HttpStatus.FORBIDDEN)) {
+                task.setStatus(Task.Status.FAILED);
+                task.setErrorMessage("Client is not authorized");
+            } else {
+                log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
+            }
+
+        }
+    }
 
     private void processLinks(Task task) {
         task.setStatus(Task.Status.PROCESSING_LINKS);
