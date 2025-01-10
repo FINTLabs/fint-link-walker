@@ -6,3 +6,7 @@ fint:
 spring:
   webflux:
     base-path: /link-walker
+
+logging:
+  level:
+    no.fintlabs.linkwalker.task: DEBUG

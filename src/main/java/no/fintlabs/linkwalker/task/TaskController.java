@@ -31,6 +31,7 @@ public class TaskController {
                                       @RequestBody Task task,
                                       @RequestHeader(value = "Authorization", required = false) String authHeader,
                                       ServerWebExchange webExchange) {
+        log.debug("Received task from {}, for {}, with client {}", organization, task.getUrl(), task.getClient());
         taskService.startTask(task, organization, authHeader);
         return ResponseEntity.created(createIdUri(webExchange, task.getId())).body(task);
     }
