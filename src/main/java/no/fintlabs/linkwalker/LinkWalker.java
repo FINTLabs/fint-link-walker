@@ -101,8 +101,8 @@ public class LinkWalker {
     private void processLinks(Task task) {
         if (task.getEntryReports() == null || task.getEntryReports().isEmpty()) {
             task.setStatus(Task.Status.FAILED);
-            task.setErrorMessage("Entry reports is null");
-            log.error("Entrys is null for task: {}", task.getId());
+            task.setErrorMessage("Entries is null");
+            log.error("Entrys is empty for task: {}", task.getId());
         } else {
             task.setStatus(Task.Status.PROCESSING_LINKS);
             log.debug("processing links: {}", task.getEntryReports());
