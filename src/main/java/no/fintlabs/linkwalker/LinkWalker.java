@@ -105,6 +105,7 @@ public class LinkWalker {
             log.error("Entrys is null for task: {}", task.getId());
         } else {
             task.setStatus(Task.Status.PROCESSING_LINKS);
+            log.debug("processing links: {}", task.getEntryReports());
             task.getEntryReports().forEach(entryReport -> {
                 if (task.getFilter() != null && task.getFilter().contains("self")) {
                     checkStatusCodes(entryReport.getSelfLinks(), entryReport, task);

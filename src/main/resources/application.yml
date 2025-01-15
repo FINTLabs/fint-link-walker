@@ -9,4 +9,4 @@ spring:
 
 logging:
   level:
-    no.fintlabs.linkwalker.task: INFO
+    no.fintlabs.linkwalker.task: Debug
