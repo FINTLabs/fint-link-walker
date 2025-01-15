@@ -101,6 +101,7 @@ public class LinkWalker {
 
     private void processLinks(Task task) {
         task.setStatus(Task.Status.PROCESSING_LINKS);
+        log.info("Entry reports:{}", task.getEntryReports().toString());
         task.getEntryReports().forEach(entryReport -> {
             if (task.getFilter() != null && task.getFilter().contains("self")) {
                 checkStatusCodes(entryReport.getSelfLinks(), entryReport, task);
