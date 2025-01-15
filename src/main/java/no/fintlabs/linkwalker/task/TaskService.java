@@ -1,11 +1,9 @@
 package no.fintlabs.linkwalker.task;
 
-import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.linkwalker.LinkWalker;
 import no.fintlabs.linkwalker.task.model.Task;
-import org.apache.poi.util.StringUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;

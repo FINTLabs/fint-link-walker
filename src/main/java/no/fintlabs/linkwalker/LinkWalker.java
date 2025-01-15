@@ -11,7 +11,6 @@ import no.fintlabs.linkwalker.task.model.EntryReport;
 import no.fintlabs.linkwalker.task.model.RelationError;
 import no.fintlabs.linkwalker.task.model.Task;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -100,14 +99,19 @@ public class LinkWalker {
     }
 
     private void processLinks(Task task) {
-        task.setStatus(Task.Status.PROCESSING_LINKS);
-        log.info("Entry reports:{}", task.getEntryReports().toString());
-        task.getEntryReports().forEach(entryReport -> {
-            if (task.getFilter() != null && task.getFilter().contains("self")) {
-                checkStatusCodes(entryReport.getSelfLinks(), entryReport, task);
-            }
-            checkStatusCodes(entryReport.getRelationLinks(), entryReport, task);
-        });
+        if (task.getEntryReports() == null) {
+            task.setStatus(Task.Status.FAILED);
+            task.setErrorMessage("Entry reports is null");
+            log.error("Entrys is null for task: {}", task.getId());
+        } else {
+            task.setStatus(Task.Status.PROCESSING_LINKS);
+            task.getEntryReports().forEach(entryReport -> {
+                if (task.getFilter() != null && task.getFilter().contains("self")) {
+                    checkStatusCodes(entryReport.getSelfLinks(), entryReport, task);
+                }
+                checkStatusCodes(entryReport.getRelationLinks(), entryReport, task);
+            });
+        }
     }
 
     private void checkStatusCodes(Set<String> links, EntryReport entryReport, Task task) {
