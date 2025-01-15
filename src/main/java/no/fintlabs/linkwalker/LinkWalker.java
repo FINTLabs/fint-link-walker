@@ -99,7 +99,7 @@ public class LinkWalker {
     }
 
     private void processLinks(Task task) {
-        if (task.getEntryReports() == null) {
+        if (task.getEntryReports() == null || task.getEntryReports().isEmpty()) {
             task.setStatus(Task.Status.FAILED);
             task.setErrorMessage("Entry reports is null");
             log.error("Entrys is null for task: {}", task.getId());
