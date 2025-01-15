@@ -91,6 +91,8 @@ public class LinkWalker {
                 task.setStatus(Task.Status.FAILED);
                 task.setErrorMessage("Client is not authorized");
             } else {
+                task.setStatus(Task.Status.FAILED);
+                task.setErrorMessage("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
             }
 
