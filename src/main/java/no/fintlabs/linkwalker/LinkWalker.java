@@ -85,16 +85,17 @@ public class LinkWalker {
     }
 
     private void handleError(Task task, Throwable throwable) {
+        task.setStatus(Task.Status.FAILED);
         if (throwable instanceof WebClientResponseException webClientResponseException) {
             if (webClientResponseException.getStatusCode().equals(HttpStatus.FORBIDDEN)) {
-                task.setStatus(Task.Status.FAILED);
                 task.setErrorMessage("Client is not authorized");
             } else {
-                task.setStatus(Task.Status.FAILED);
                 task.setErrorMessage("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
                 log.error("Error fetching resources for task: Status " + webClientResponseException.getStatusCode());
             }
-
+        } else {
+            task.setErrorMessage("Unexpected error fetching resources: " + throwable.getMessage());
+            log.error("Unexpected error fetching resources", throwable);
         }
     }
 
@@ -102,7 +103,7 @@ public class LinkWalker {
         if (task.getEntryReports() == null || task.getEntryReports().isEmpty()) {
             task.setStatus(Task.Status.FAILED);
             task.setErrorMessage("Entries is null");
-            log.error("Entrys is empty for task: {}", task.getId());
+            log.error("Entries is empty for task: {}", task.getId());
         } else {
             task.setStatus(Task.Status.PROCESSING_LINKS);
             log.debug("processing links: {}", task.getEntryReports());
