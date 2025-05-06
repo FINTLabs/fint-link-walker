@@ -18,12 +18,12 @@ spec:
   image: ghcr.io/fintlabs/fint-link-walker:latest
   env:
     - name: JAVA_TOOL_OPTIONS
-      value: "-XX:+ExitOnOutOfMemoryError -Xmx9G"
+      value: "-XX:+ExitOnOutOfMemoryError -Xmx19G"
   onePassword:
     itemPath: pass
   resources:
     limits:
-      memory: "10Gi"
+      memory: "20Gi"
       cpu: "2"
     requests:
       memory: "512Mi"
