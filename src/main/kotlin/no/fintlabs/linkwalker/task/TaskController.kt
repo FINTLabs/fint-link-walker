@@ -1,13 +1,8 @@
 package no.fintlabs.linkwalker.task
 
 import no.fintlabs.linkwalker.task.model.TaskRequest
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestHeader
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-import java.lang.String
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/tasks/{orgId}")
@@ -20,7 +15,9 @@ class TaskController(
         @PathVariable orgId: String,
         @RequestBody taskRequest: TaskRequest,
         @RequestHeader(value = "Authorization", required = false) authHeader: String?
-    ) =
+    ) = taskService.initialiseTask(taskRequest, authHeader)
+        ?.let { ResponseEntity.accepted().body(it) }
+        ?: ResponseEntity.badRequest().build()
 
 //    @GetMapping
 //    fun getTasks(@PathVariable organization: String?): ResponseEntity<MutableCollection<Task?>?> {
