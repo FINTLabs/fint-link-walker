@@ -12,7 +12,7 @@ import java.time.Duration
 class WebClientConfig {
 
     @Bean
-    fun webClientBuilder(): WebClient.Builder =
+    fun webclient(): WebClient =
         WebClient.builder()
             .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "gzip")
             .clientConnector(
@@ -20,6 +20,6 @@ class WebClientConfig {
                     HttpClient.create()
                         .responseTimeout(Duration.ofMinutes(5))
                 )
-            )
+            ).build()
 
 }
