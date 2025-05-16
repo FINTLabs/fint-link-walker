@@ -28,8 +28,8 @@ class TaskService(
             .values
             .filter { it.orgId.equals(orgId, ignoreCase = true) }
 
-    fun updateRelationsCount(task: Task, linkInfos: Collection<LinkInfo>) =
-        linkInfos.sumOf { it.entries.sumOf { it.idCount } }.let { task.relations = it }
+    fun updateRelationsCount(task: Task, relationCount: Int) =
+        relationCount.let { task.totalRequests = it }
 
     fun addRelationError(task: Task, relationErrorCount: Int) =
         relationErrorCount.let { task.relationErrors.addAndGet(it) }
