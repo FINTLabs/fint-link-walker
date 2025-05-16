@@ -18,7 +18,7 @@ class LinkParserService {
         val unknownLinks = linkedSetOf<RelationEntry>()
 
         info.entries.forEach { entry ->
-            collectRelationErrors(entry, seenIds, relationErrors)
+            collectRelationErrors(info.url, entry, seenIds, relationErrors)
             collectUnknownLinks(entry, unknownLinks)
         }
 
@@ -30,13 +30,14 @@ class LinkParserService {
     }
 
     private fun collectRelationErrors(
+        baseUrl: String,
         entry: Entry,
         seen: Map<String, MutableSet<String>>,
         relationErrors: LinkedHashSet<RelationEntry>
     ) = entry.ids.forEach { (field, values) ->
         values.forEach { value ->
             if (seen[field]?.contains(value) != true) {
-                relationErrors += RelationEntry("$field/$value", entry.selfLink)
+                relationErrors += RelationEntry("$baseUrl/$field/$value", entry.selfLink)
             }
         }
     }
