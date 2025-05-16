@@ -6,7 +6,6 @@ import no.fintlabs.linkwalker.auth.AuthService
 import no.fintlabs.linkwalker.model.LinkInfo
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 
 @Service
@@ -40,6 +39,10 @@ class TaskService(
 
     fun clearTask(id: String): Task? =
         cache.asMap().remove(id)
+
+    fun clearTasks(orgId: String) =
+        cache.asMap().values
+            .removeIf { it.orgId.equals(orgId, ignoreCase = true) }
 
 
 }

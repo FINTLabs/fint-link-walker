@@ -56,12 +56,10 @@ class TaskController(
         taskService.clearTask(id)
             ?.let { ResponseEntity.ok().build() }
             ?: ResponseEntity.notFound().build()
-//
-//
-//    @PutMapping
-//    fun clearTasks(@PathVariable organization: kotlin.String?): ResponseEntity<*> {
-//        taskService.clearCache(organization)
-//        return ResponseEntity.ok().build<Any?>()
-//    }
+
+
+    @PutMapping
+    fun clearTasks(@PathVariable orgId: String): ResponseEntity<Any> =
+        taskService.clearTasks(orgId).let { ResponseEntity.ok().build() }
 
 }
