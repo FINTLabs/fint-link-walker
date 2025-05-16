@@ -42,9 +42,9 @@ class LinkWalkerService(
 
     suspend fun processTask(task: Task, bearer: String) = coroutineScope {
         val rootEntries = fintClient.getEmbeddedResources(task.url, bearer)
-
         val linkInfos = LinkInfo.fromEntries(rootEntries)
-        taskService.addRelations(task, linkInfos)
+
+        taskService.updateRelationsCount(task, linkInfos)
 
         linkInfos.map { linkInfo ->
             async {
