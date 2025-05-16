@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
 @Service
-class LinkwalkerService(
+class LinkWalkerService(
     applicationScope: CoroutineScope,
     private val fintClient: FintClient,
     private val taskService: TaskService,
@@ -41,35 +41,24 @@ class LinkwalkerService(
     }
 
     suspend fun processTask(task: Task, bearer: String) = coroutineScope {
-        val selfEntries = fintClient.getEmbeddedResources(task.url, bearer)
-        val linkInfos: MutableList<LinkInfo> = linkParser.collectLinkInfos(selfEntries).toMutableList()
+        val entries = fintClient.getEmbeddedResources(task.url, bearer)
+        val entriesMap = mutableMapOf(task.url to entries)
+        val linkInfos = LinkInfo.fromEntries(entries)
+
         taskService.addRelations(task, linkInfos)
 
-        validateSelfLinks(task, linkInfos, selfEntries)
-        linkInfos.map { info ->
+        linkInfos.map { linkInfo ->
             async {
-                val entries = fintClient.getEmbeddedResources(info.url, bearer)
-                info.validateAgainst(entries)
-                taskService.addRelationError(task, info)
+                entriesMap[linkInfo.url]
+                    ?.let { processLinks(task, linkInfo, it) }
+                    ?: processLinks(task, linkInfo, fintClient.getEmbeddedResources(linkInfo.url, bearer))
             }
         }.awaitAll()
-
-        val errors = linkInfos.filter { it.relationError }
-            .flatMap { linkInfo -> linkInfo.ids.flatMap { it.value } }
-
-        println("Errors: ${errors.size}")
     }
 
-
-    private fun validateSelfLinks(
-        task: Task,
-        linkInfos: MutableList<LinkInfo>,
-        selfEntries: List<JsonNode>
-    ) =
-        linkInfos.first { it.url == task.url }.let { selfLinkInfo ->
-            selfLinkInfo.validateAgainst(selfEntries)
-            taskService.addRelationError(task, selfLinkInfo)
-            linkInfos.remove(selfLinkInfo)
-        }
+    private fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
+        val relationReport = linkParser.parseRelations(linkInfo, entries)
+        taskService.addRelationError(task, relationReport.errorCount)
+    }
 
 }
