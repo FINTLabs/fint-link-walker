@@ -1,6 +1,7 @@
 package no.fintlabs.linkwalker.task.model
 
-import no.fintlabs.linkwalker.model.Status
+import java.net.URI
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -9,8 +10,15 @@ data class Task(
     val orgId: String,
     var relations: Int = 0,
     var relationErrors: AtomicInteger = AtomicInteger(0),
-    var status: Status = Status.IN_QUEUE
+    var status: Status = Status.IN_QUEUE,
 ) {
-    val id = UUID.randomUUID().toString()
+
+    private val parsed = URI(url)
+
+    val id: String = UUID.randomUUID().toString()
+    val env: String = parsed.host.substringBefore('.')
+    val uri: String = parsed.path.removePrefix("/")
+    val time: String = SimpleDateFormat("dd/MM HH:mm").format(Date())
+
     val healthyRelations get() = relations - relationErrors.get()
 }
