@@ -5,22 +5,25 @@ import com.fasterxml.jackson.databind.JsonNode
 data class LinkInfo(
     val url: String,
     val ids: MutableMap<String, MutableSet<String>>,
-    var relationError: Boolean = false
+    val relationErrors: MutableMap<String, String> = mutableMapOf(),
 ) {
-    val idCount: Int
-        get() = ids.values.sumOf { it.size }
+    val errorCount get() = ids.values.sumOf { it.size }
+    val hasRelationError get() = relationErrors.isNotEmpty()
 
     fun validateAgainst(entries: List<JsonNode>) {
         entries.forEach { entry ->
-            ids.forEach { (field, wantedIds) ->
+            val selfLink = entry["_links"]?.get("self")?.firstOrNull()?.get("href")?.asText()
+            ids.forEach { (field, wanted) ->
                 entry.getIgnoreCase(field)
                     ?.get("identifikatorverdi")
                     ?.takeIf(JsonNode::isTextual)
                     ?.asText()
-                    ?.let(wantedIds::remove)
+                    ?.let { id ->
+                        if (id in wanted && selfLink != null)
+                            relationErrors.putIfAbsent("$field/$id", selfLink)
+                    }
             }
         }
-        relationError = ids.values.any { it.isNotEmpty() }
     }
 
     private fun JsonNode.getIgnoreCase(key: String): JsonNode? =
