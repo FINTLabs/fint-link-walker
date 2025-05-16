@@ -5,6 +5,7 @@ import java.util.*
 
 data class Task(
     val url: String,
+    val orgId: String,
     var relations: Int = 0,
     var relationErrors: Int = 0,
     var status: Status = Status.STARTED
