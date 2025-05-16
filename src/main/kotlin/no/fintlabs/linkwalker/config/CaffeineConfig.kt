@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.config
 
+import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import no.fintlabs.linkwalker.model.RelationReport
@@ -17,10 +18,10 @@ class CaffeineConfig {
             .build()
 
     @Bean
-    fun relationErrorCache(): Cache<String, MutableList<RelationReport>> =
+    fun relationErrorCache(): AsyncCache<String, MutableList<RelationReport>> =
         Caffeine.newBuilder()
-            .maximumSize(1_000)
-            .expireAfterWrite(Duration.ofHours(1))
-            .build()
+            .expireAfterWrite(Duration.ofHours(4))
+            .maximumSize(10_000)
+            .buildAsync()
 
 }
