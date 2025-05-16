@@ -5,6 +5,7 @@ data class RelationReport(
     val relationErrors: MutableList<RelationEntry>,
     val unknownLinks: MutableList<RelationEntry>
 ) {
-    val errorCount get() = relationErrors.size
     val hasErrors get() = relationErrors.isNotEmpty() || unknownLinks.isNotEmpty()
+    val errorCount get() = relationErrors.size
+    val unknownSize get() = unknownLinks.size
 }
