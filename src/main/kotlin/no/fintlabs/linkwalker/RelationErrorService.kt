@@ -1,22 +1,21 @@
-package no.fintlabs.linkwalker
-
-import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.AsyncCache
+import kotlinx.coroutines.future.await
 import no.fintlabs.linkwalker.model.RelationReport
 import org.springframework.stereotype.Service
+import java.util.concurrent.CopyOnWriteArrayList
 
 @Service
 class RelationErrorService(
-    private val cache: Cache<String, MutableList<RelationReport>>
+    private val cache: AsyncCache<String, CopyOnWriteArrayList<RelationReport>>
 ) {
 
-    fun put(taskId: String, errors: List<RelationReport>) {
-        if (errors.isEmpty()) return
-        cache.asMap().compute(taskId) { _, existing ->
-            (existing ?: mutableListOf()).apply { addAll(errors) }
-        }
+    suspend fun add(taskId: String, report: RelationReport) {
+        if (report.hasErrors.not()) return
+        cache.get(taskId) { CopyOnWriteArrayList() }.await()
+            .add(report)
     }
 
-    fun get(taskId: String): List<RelationReport> =
-        cache.getIfPresent(taskId) ?: emptyList()
-
+    suspend fun get(taskId: String): List<RelationReport> =
+        cache.get(taskId) { CopyOnWriteArrayList() }.await()
+            .toList()
 }
