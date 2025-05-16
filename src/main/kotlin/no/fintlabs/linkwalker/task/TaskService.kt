@@ -1,39 +1,27 @@
 package no.fintlabs.linkwalker.task
 
 import com.github.benmanes.caffeine.cache.Cache
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import no.fintlabs.linkwalker.LinkwalkerService
+import kotlinx.coroutines.channels.Channel
 import no.fintlabs.linkwalker.auth.AuthService
-import no.fintlabs.linkwalker.model.Status
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
 @Service
 class TaskService(
     private val authService: AuthService,
     private val cache: Cache<String, Task>,
-    private val linkwalker: LinkwalkerService,
-    private val applicationScope: CoroutineScope,
-    @Qualifier("taskProcessorDispatcher")
-    private val taskProcessor: CoroutineDispatcher
+    private val taskChannel: Channel<Pair<Task, String>>
 ) {
 
+    private val inbox = Channel<Pair<Task, String>>(Channel.UNLIMITED)
+
     fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
-        authService.getBearerToken(authHeader, taskRequest.client)?.let { bearerToken ->
-            val task = Task(taskRequest.url, orgId)
-
-            cache.put(task.id, task)
-            applicationScope.launch(taskProcessor) {
-                task.status = Status.PROCESSING
-                linkwalker.processTask(task, bearerToken)
-                task.status = Status.FINISHED
+        authService.getBearerToken(authHeader, taskRequest.client)?.let { bearer ->
+            Task(taskRequest.url, orgId).also { task ->
+                cache.put(task.id, task)
+                taskChannel.trySend(task to bearer)
             }
-
-            task
         }
 
     fun getTasks(orgId: String): Collection<Task> =
