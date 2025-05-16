@@ -18,9 +18,11 @@ class LinkParserService {
         val unknownLinks = linkedSetOf<RelationEntry>()
 
         info.entries.forEach { entry ->
-            collectRelationErrors(entry, seenIds, unknownLinks)
+            collectRelationErrors(entry, seenIds, relationErrors)
             collectUnknownLinks(entry, unknownLinks)
         }
+
+        println(relationErrors.size)
 
         return RelationReport(
             info.url,
