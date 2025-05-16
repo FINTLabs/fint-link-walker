@@ -4,46 +4,55 @@ import com.fasterxml.jackson.databind.JsonNode
 
 data class LinkInfo(
     val url: String,
-    val ids: Map<String, Set<String>>
+    val entries: MutableList<Entry>
 ) {
-    val idCount: Int
-        get() = ids.values.sumOf { it.size }
-
     companion object {
         private val hrefRegex =
-            Regex("""(https?://[^/]+/(?:[^/]+/)*[^/]+)/([^/]+)/([^/?#]+)""")
+            Regex("""(https?://[^/]+/(?:[^/]+/){2}[^/]+)/([^/]+)/([^/?#]+)""")
 
-        fun fromEntries(entries: List<JsonNode>): MutableList<LinkInfo> =
-            getLinkParts(entries)
-                .groupBy { it.baseUrl }
-                .map { (url, parts) ->
-                    val ids = parts
-                        .groupBy { it.field }
-                        .mapValues { (_, list) -> list.map { it.value }.toSet() }
-                    LinkInfo(url, ids)
-                }.toMutableList()
+        fun fromEntries(entries: List<JsonNode>): MutableList<LinkInfo> {
 
-        private fun getLinkParts(entries: List<JsonNode>) =
-            entries.asSequence()
-                .flatMap { entry ->
-                    entry.path("_links").fields().asSequence()
-                        .flatMap { (field, arrNode) ->
-                            arrNode.asSequence()
-                                .mapNotNull { linkNode ->
-                                    linkNode["href"]?.asText()
-                                        ?.let(hrefRegex::find)
-                                        ?.destructured
-                                        ?.let { (baseUrl, f, v) ->
-                                            LinkPart(baseUrl, f, v)
-                                        }
-                                }
-                        }
+            val linkInfoByUrl = mutableMapOf<String, LinkInfo>()
+
+            entries.forEach { entry ->
+                val linksNode = entry.path("_links")
+
+                // grab the *first* self link safely
+                val selfLink = linksNode.path("self")
+                    .elements()
+                    .asSequence()
+                    .mapNotNull { it.get("href")?.asText() }
+                    .firstOrNull() ?: "<no-self-link>"
+
+                /*  Gather the ids we found in this resource,
+                    grouped by the urlKey they belong to.           */
+                val tmpIdsByUrl =
+                    mutableMapOf<String, MutableMap<String, MutableSet<String>>>()
+
+                linksNode.fields().forEach { (_, relArray) ->
+                    relArray.elements().forEach { linkNode ->
+                        val href = linkNode.path("href").asText(null) ?: return@forEach
+                        val m = hrefRegex.matchEntire(href) ?: return@forEach
+
+                        val urlKey = m.groupValues[1]   // https://…/seg1/seg2/seg3
+                        val field = m.groupValues[2]   // systemid / personid / …
+                        val value = m.groupValues[3]   // 246167480 / …
+
+                        val fieldMap = tmpIdsByUrl.getOrPut(urlKey) { mutableMapOf() }
+                        fieldMap.getOrPut(field) { mutableSetOf() }.add(value)
+                    }
                 }
 
-        private data class LinkPart(
-            val baseUrl: String,
-            val field: String,
-            val value: String
-        )
+                // convert that tmp structure into real Entry objects
+                tmpIdsByUrl.forEach { (urlKey, fieldMap) ->
+                    val linkInfo = linkInfoByUrl.getOrPut(urlKey) {
+                        LinkInfo(urlKey, mutableListOf())
+                    }
+                    linkInfo.entries += Entry(selfLink, fieldMap)
+                }
+            }
+
+            return linkInfoByUrl.values.toMutableList()
+        }
     }
 }
