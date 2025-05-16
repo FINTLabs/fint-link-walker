@@ -46,7 +46,7 @@ class LinkWalkerService(
 
         taskService.updateRelationsCount(
             task,
-            linkInfos.sumOf { it.entries.flatMap { it.ids.values }.size }
+            linkInfos.sumOf { i -> i.entries.sumOf { it.idCount } }
         )
 
         linkInfos.map { linkInfo ->
@@ -60,7 +60,7 @@ class LinkWalkerService(
 
     private suspend fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
         val relationReport = linkParser.parseRelations(linkInfo, entries)
-        taskService.addRelationError(task, relationReport.relationErrors.size)
+        taskService.addRelationError(task, relationReport.errorCount)
         relationErrorService.add(task.id, relationReport)
     }
 
