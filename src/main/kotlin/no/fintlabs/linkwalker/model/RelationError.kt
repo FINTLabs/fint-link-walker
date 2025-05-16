@@ -1,5 +1,7 @@
 package no.fintlabs.linkwalker.model
 
 data class RelationError(
-    val url: String
+    val baseUrl: String,
+    val count: Int,
+    val errors: Map<String, String>
 )
