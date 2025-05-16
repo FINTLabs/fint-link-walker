@@ -12,13 +12,13 @@ class LinkParserService {
 
     fun parseRelations(info: LinkInfo, entries: Collection<JsonNode>): RelationReport {
         val wantedFields = info.entries.flatMap { it.ids.keys }.toSet()
-        val seen = collectSeen(entries, wantedFields)
+        val seenIds = seenIdentificators(entries, wantedFields)
 
         val relationErrors = linkedSetOf<RelationEntry>()
         val unknownLinks = linkedSetOf<RelationEntry>()
 
         info.entries.forEach { entry ->
-            collectRelationErrors(entry, seen, unknownLinks)
+            collectRelationErrors(entry, seenIds, unknownLinks)
             collectUnknownLinks(entry, unknownLinks)
         }
 
@@ -46,7 +46,7 @@ class LinkParserService {
             unknownLinks.add(RelationEntry(badHref, entry.selfLink))
         }
 
-    private fun collectSeen(
+    private fun seenIdentificators(
         resources: Collection<JsonNode>,
         wantedFields: Set<String>
     ): Map<String, MutableSet<String>> = buildMap {
