@@ -31,11 +31,10 @@ class TaskService(
             .filter { it.orgId.equals(orgId, ignoreCase = true) }
 
     fun addRelations(task: Task, linkInfos: Collection<LinkInfo>) =
-        linkInfos.sumOf { it.idCount }
-            .let { task.relations = it }
+        linkInfos.sumOf { it.idCount }.let { task.relations = it }
 
     fun addRelationError(task: Task, linkInfo: LinkInfo) =
-        linkInfo.idCount.let { task.relationErrors += it }
+        linkInfo.errorCount.let { task.relationErrors += it }
 
 
 }
