@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.task
 
+import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -15,14 +16,13 @@ class TaskController(
         @PathVariable orgId: String,
         @RequestBody taskRequest: TaskRequest,
         @RequestHeader(value = "Authorization", required = false) authHeader: String?
-    ) = taskService.initialiseTask(taskRequest, authHeader)
+    ) = taskService.initialiseTask(orgId, taskRequest, authHeader)
         ?.let { ResponseEntity.accepted().body(it) }
         ?: ResponseEntity.badRequest().build()
 
-//    @GetMapping
-//    fun getTasks(@PathVariable organization: String?): ResponseEntity<MutableCollection<Task?>?> {
-//        return ResponseEntity.ok<T?>(taskService.getTasks(organization))
-//    }
+    @GetMapping
+    fun getTasks(@PathVariable orgId: String): ResponseEntity<Collection<Task>> =
+        taskService.getTasks(orgId).let { ResponseEntity.ok(it) }
 //
 //    @GetMapping("/{id}")
 //    fun getTask(@PathVariable organization: String?, @PathVariable id: String?): ResponseEntity<Task?> {
