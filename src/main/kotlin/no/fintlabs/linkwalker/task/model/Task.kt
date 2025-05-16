@@ -8,7 +8,7 @@ data class Task(
     val orgId: String,
     var relations: Int = 0,
     var relationErrors: Int = 0,
-    var status: Status = Status.STARTED
+    var status: Status = Status.IN_QUEUE
 ) {
     val id = UUID.randomUUID().toString()
 }
