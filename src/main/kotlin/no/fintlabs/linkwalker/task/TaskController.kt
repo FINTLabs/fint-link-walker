@@ -39,16 +39,17 @@ class TaskController(
 
     @GetMapping("/{id}/download")
     suspend fun downloadExcelReport(@PathVariable id: String): ResponseEntity<ByteArray?> =
-        relationErrorService.get(id)?.let {
+        taskService.getTask(id)?.let { task ->
             ResponseEntity(
-                excelService.createSpreadSheet(it),
+                excelService.createSpreadSheet(relationErrorService.get(id)),
                 HttpHeaders().apply {
                     contentType = MediaType.APPLICATION_OCTET_STREAM
-                    setContentDispositionFormData("attachment", "relasjonstest")
+                    setContentDispositionFormData("attachment", "relasjonstest-${task.time}.xlsx")
                 },
                 HttpStatus.OK
             )
         } ?: ResponseEntity.notFound().build()
+
 
     @PutMapping("/{id}")
     fun clearTask(@PathVariable id: String): ResponseEntity<Any> =
