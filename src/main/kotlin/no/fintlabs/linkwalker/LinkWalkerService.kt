@@ -58,7 +58,6 @@ class LinkWalkerService(
 
     private fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
         val relationReport = linkParser.parseRelations(linkInfo, entries)
-        println("errors: ${relationReport.errorCount}")
         taskService.addRelationError(task, relationReport.errorCount)
     }
 
