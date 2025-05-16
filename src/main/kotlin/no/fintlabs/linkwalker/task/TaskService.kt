@@ -15,8 +15,6 @@ class TaskService(
     private val taskChannel: Channel<Pair<Task, String>>
 ) {
 
-    private val inbox = Channel<Pair<Task, String>>(Channel.UNLIMITED)
-
     fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
         authService.getBearerToken(authHeader, taskRequest.client)?.let { bearer ->
             Task(taskRequest.url, orgId).also { task ->
@@ -33,8 +31,8 @@ class TaskService(
     fun addRelations(task: Task, linkInfos: Collection<LinkInfo>) =
         linkInfos.sumOf { it.idCount }.let { task.relations = it }
 
-    fun addRelationError(task: Task, linkInfo: LinkInfo) =
-        linkInfo.errorCount.let { task.relationErrors += it }
+    fun addRelationError(task: Task, relationErrorCount: Int) =
+        relationErrorCount.let { task.relations += it }
 
 
 }
