@@ -1,3 +1,9 @@
 spring:
   webflux:
     base-path: link-walker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
