@@ -8,9 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger
 data class Task(
     val url: String,
     val orgId: String,
-    var relations: Int = 0,
+    var totalRequests: Int = 0,
     var relationErrors: AtomicInteger = AtomicInteger(0),
     var status: Status = Status.IN_QUEUE,
+    var errorMessage: String?
 ) {
 
     private val parsed = URI(url)
@@ -20,5 +21,5 @@ data class Task(
     val uri: String = parsed.path.removePrefix("/")
     val time: String = SimpleDateFormat("dd/MM HH:mm").format(Date())
 
-    val healthyRelations get() = relations - relationErrors.get()
+    val healthyRelations get() = totalRequests - relationErrors.get()
 }
