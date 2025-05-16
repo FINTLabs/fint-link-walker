@@ -1,14 +1,21 @@
 package no.fintlabs.linkwalker.task
 
+import no.fintlabs.linkwalker.ExcelService
+import no.fintlabs.linkwalker.RelationErrorService
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/tasks/{orgId}")
 class TaskController(
-    private val taskService: TaskService
+    private val taskService: TaskService,
+    private val excelService: ExcelService,
+    private val relationErrorService: RelationErrorService
 ) {
 
     @PostMapping
@@ -30,27 +37,19 @@ class TaskController(
             ?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
 
-    //    @GetMapping("/{id}/download")
-//    fun downloadRelationErrors(
-//        @PathVariable organization: String?,
-//        @PathVariable id: String?
-//    ): ResponseEntity<ByteArray?> {
-//        val optionalTask: Optional<Task> = taskService.getTask(organization, id)
-//
-//        if (optionalTask.isPresent()) {
-//            val task: Task = optionalTask.get()
-//            val spreadsheet: ByteArray? = spreadsheetService.createSpreadSheet(task.getEntryReports())
-//
-//            val headers = HttpHeaders()
-//            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM)
-//            headers.setContentDispositionFormData("attachment", String.format("relasjonstest-%s.xlsx", task.getTime()))
-//
-//            return ResponseEntity<ByteArray?>(spreadsheet, headers, HttpStatus.OK)
-//        }
-//
-//        return ResponseEntity.notFound().build<ByteArray?>()
-//    }
-//
+    @GetMapping("/{id}/download")
+    suspend fun downloadExcelReport(@PathVariable id: String): ResponseEntity<ByteArray?> =
+        relationErrorService.get(id)?.let {
+            ResponseEntity(
+                excelService.createSpreadSheet(it),
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_OCTET_STREAM
+                    setContentDispositionFormData("attachment", "relasjonstest")
+                },
+                HttpStatus.OK
+            )
+        } ?: ResponseEntity.notFound().build()
+
     @PutMapping("/{id}")
     fun clearTask(@PathVariable id: String): ResponseEntity<Any> =
         taskService.clearTask(id)
