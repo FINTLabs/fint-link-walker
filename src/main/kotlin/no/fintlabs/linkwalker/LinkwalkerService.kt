@@ -1,9 +1,10 @@
 package no.fintlabs.linkwalker
 
+import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import no.fintlabs.linkwalker.model.RelationError
+import no.fintlabs.linkwalker.model.LinkInfo
 import no.fintlabs.linkwalker.task.model.Task
 import org.springframework.stereotype.Service
 
@@ -16,10 +17,9 @@ class LinkwalkerService(
 
     suspend fun processTask(task: Task, bearer: String) = coroutineScope {
         val selfEntries = fintClient.getEmbeddedResources(task.url, bearer)
-        val linkInfos = linkParser.collectLinkInfos(selfEntries).toMutableList()
-        val selfLink = linkInfos.first { it.url == task.url }.also(linkInfos::remove)
+        val linkInfos: MutableList<LinkInfo> = linkParser.collectLinkInfos(selfEntries).toMutableList()
 
-        selfLink.validateAgainst(selfEntries)
+        validateSelfLinks(linkInfos, task.url, selfEntries)
         linkInfos.map { info ->
             async {
                 val entries = fintClient.getEmbeddedResources(info.url, bearer)
@@ -27,12 +27,19 @@ class LinkwalkerService(
             }
         }.awaitAll()
 
-        val errors = (listOf(selfLink) + linkInfos)
-            .filter { it.relationError }
-            .map { RelationError(url = it.url) }
+        val errors = linkInfos.filter { it.relationError }
+            .flatMap { linkInfo -> linkInfo.ids.flatMap { it.value } }
 
-        println("relation error count: ${errors.size}")
+        println("Errors: ${errors.size}")
 
-        relationErrorService.put(task.id, errors)
+//        relationErrorService.put(task.id, errors)
     }
+
+
+    private fun validateSelfLinks(linkInfos: MutableList<LinkInfo>, selfUrl: String, selfEntries: List<JsonNode>) =
+        linkInfos.first { it.url == selfUrl }.let { selfLinkInfo ->
+            selfLinkInfo.validateAgainst(selfEntries)
+            linkInfos.remove(selfLinkInfo)
+        }
+
 }
