@@ -2,7 +2,7 @@ package no.fintlabs.linkwalker.config
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import no.fintlabs.linkwalker.model.RelationError
+import no.fintlabs.linkwalker.model.RelationEntry
 import no.fintlabs.linkwalker.task.model.Task
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -17,7 +17,7 @@ class CaffeineConfig {
             .build()
 
     @Bean
-    fun relationErrorCache(): Cache<String, MutableList<RelationError>> =
+    fun relationErrorCache(): Cache<String, MutableList<RelationEntry>> =
         Caffeine.newBuilder()
             .maximumSize(1_000)
             .expireAfterWrite(Duration.ofHours(1))

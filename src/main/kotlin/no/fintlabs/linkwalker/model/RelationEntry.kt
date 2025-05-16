@@ -1,6 +1,6 @@
 package no.fintlabs.linkwalker.model
 
-data class RelationError(
+data class RelationEntry(
     val relation: String,
     val selfLink: String
 )

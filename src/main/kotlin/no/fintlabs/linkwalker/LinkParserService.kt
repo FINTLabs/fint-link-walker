@@ -3,7 +3,7 @@ package no.fintlabs.linkwalker
 import com.fasterxml.jackson.databind.JsonNode
 import no.fintlabs.linkwalker.model.Entry
 import no.fintlabs.linkwalker.model.LinkInfo
-import no.fintlabs.linkwalker.model.RelationError
+import no.fintlabs.linkwalker.model.RelationEntry
 import no.fintlabs.linkwalker.model.RelationReport
 import org.springframework.stereotype.Service
 
@@ -14,8 +14,8 @@ class LinkParserService {
         val wantedFields = info.entries.flatMap { it.ids.keys }.toSet()
         val seen = collectSeen(entries, wantedFields)
 
-        val relationErrors = linkedSetOf<RelationError>()
-        val unknownLinks = linkedSetOf<RelationError>()
+        val relationErrors = linkedSetOf<RelationEntry>()
+        val unknownLinks = linkedSetOf<RelationEntry>()
 
         info.entries.forEach { entry ->
             collectRelationErrors(entry, seen, unknownLinks)
@@ -32,18 +32,18 @@ class LinkParserService {
     private fun collectRelationErrors(
         entry: Entry,
         seen: Map<String, MutableSet<String>>,
-        relationErrors: LinkedHashSet<RelationError>
+        relationErrors: LinkedHashSet<RelationEntry>
     ) = entry.ids.forEach { (field, values) ->
         values.forEach { value ->
             if (seen[field]?.contains(value) != true) {
-                relationErrors += RelationError("$field/$value", entry.selfLink)
+                relationErrors += RelationEntry("$field/$value", entry.selfLink)
             }
         }
     }
 
-    private fun collectUnknownLinks(entry: Entry, unknownLinks: LinkedHashSet<RelationError>) =
+    private fun collectUnknownLinks(entry: Entry, unknownLinks: LinkedHashSet<RelationEntry>) =
         entry.malformedHrefs.forEach { badHref ->
-            unknownLinks.add(RelationError(badHref, entry.selfLink))
+            unknownLinks.add(RelationEntry(badHref, entry.selfLink))
         }
 
     private fun collectSeen(
