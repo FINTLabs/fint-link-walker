@@ -50,6 +50,7 @@ class LinkwalkerService(
             async {
                 val entries = fintClient.getEmbeddedResources(info.url, bearer)
                 info.validateAgainst(entries)
+                taskService.addRelationError(task, info)
             }
         }.awaitAll()
 
