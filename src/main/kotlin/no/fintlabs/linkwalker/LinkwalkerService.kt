@@ -45,7 +45,7 @@ class LinkwalkerService(
         val linkInfos: MutableList<LinkInfo> = linkParser.collectLinkInfos(selfEntries).toMutableList()
         taskService.addRelations(task, linkInfos)
 
-        validateSelfLinks(linkInfos, task.url, selfEntries)
+        validateSelfLinks(task, linkInfos, selfEntries)
         linkInfos.map { info ->
             async {
                 val entries = fintClient.getEmbeddedResources(info.url, bearer)
@@ -60,9 +60,14 @@ class LinkwalkerService(
     }
 
 
-    private fun validateSelfLinks(linkInfos: MutableList<LinkInfo>, selfUrl: String, selfEntries: List<JsonNode>) =
-        linkInfos.first { it.url == selfUrl }.let { selfLinkInfo ->
+    private fun validateSelfLinks(
+        task: Task,
+        linkInfos: MutableList<LinkInfo>,
+        selfEntries: List<JsonNode>
+    ) =
+        linkInfos.first { it.url == task.url }.let { selfLinkInfo ->
             selfLinkInfo.validateAgainst(selfEntries)
+            taskService.addRelationError(task, selfLinkInfo)
             linkInfos.remove(selfLinkInfo)
         }
 

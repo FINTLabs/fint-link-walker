@@ -34,9 +34,8 @@ class TaskService(
         linkInfos.sumOf { it.idCount }
             .let { task.relations = it }
 
-    fun addRelationError(task: Task, linkInfo: LinkInfo) {
-        task.relationErrors += linkInfo.idCount
-    }
+    fun addRelationError(task: Task, linkInfo: LinkInfo) =
+        linkInfo.idCount.let { task.relationErrors += it }
 
 
 }
