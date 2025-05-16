@@ -13,9 +13,13 @@ class RelationErrorService(
 
     suspend fun add(taskId: String, report: RelationReport) {
         if (report.hasErrors.not()) return
-        cache.get(taskId) { CopyOnWriteArrayList() }.await()
+
+        cache
+            .get(taskId) { _: String -> CopyOnWriteArrayList<RelationReport>() }  // 1-param λ ⇒ Function<K,V>
+            .await()
             .add(report)
     }
+
 
     suspend fun get(taskId: String): List<RelationReport>? =
         cache.getIfPresent(taskId)
