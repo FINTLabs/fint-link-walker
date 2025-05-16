@@ -3,6 +3,7 @@ package no.fintlabs.linkwalker.task
 import com.github.benmanes.caffeine.cache.Cache
 import kotlinx.coroutines.channels.Channel
 import no.fintlabs.linkwalker.auth.AuthService
+import no.fintlabs.linkwalker.model.LinkInfo
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
 import org.springframework.stereotype.Service
@@ -28,5 +29,14 @@ class TaskService(
         cache.asMap()
             .values
             .filter { it.orgId.equals(orgId, ignoreCase = true) }
+
+    fun addRelations(task: Task, linkInfos: Collection<LinkInfo>) =
+        linkInfos.sumOf { it.idCount }
+            .let { task.relations = it }
+
+    fun addRelationError(task: Task, linkInfo: LinkInfo) {
+        task.relationErrors += linkInfo.idCount
+    }
+
 
 }
