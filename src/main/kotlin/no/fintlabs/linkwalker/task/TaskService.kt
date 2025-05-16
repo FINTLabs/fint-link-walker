@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service
 class TaskService(
     private val authService: AuthService,
     private val cache: Cache<String, Task>,
-    private val taskChannel: Channel<Pair<Task, String>>
+    private val queue: Channel<Pair<Task, String>>
 ) {
 
     fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
         authService.getBearerToken(authHeader, taskRequest.client)?.let { bearer ->
             Task(taskRequest.url, orgId).also { task ->
                 cache.put(task.id, task)
-                taskChannel.trySend(task to bearer)
+                queue.trySend(task to bearer)
             }
         }
 
