@@ -10,64 +10,85 @@ import java.io.ByteArrayOutputStream
 class ExcelService {
 
     fun createSpreadSheet(relationErrors: Collection<RelationReport>): ByteArray =
-        XSSFWorkbook().use { workbook ->
+        XSSFWorkbook().use { wb ->
             ByteArrayOutputStream().use { out ->
-                val sheet = workbook.createSheet("Report")
+                val sheet = wb.createSheet("Report")
 
-                createRelationErrorCells(sheet, relationErrors)
-                createUnknownLinkCells(sheet, relationErrors)
-                createOverviewCells(sheet, relationErrors)
+                var nextRow = 0
+                nextRow = createOverviewSection(sheet, relationErrors, nextRow)
+                nextRow += 2
 
-                workbook.write(out)
+                if (relationErrors.any { it.unknownSize > 0 }) {
+                    nextRow = createUnknownLinkSection(sheet, relationErrors, nextRow)
+                    nextRow += 2
+                }
+
+                createRelationErrorSection(sheet, relationErrors, nextRow)
+
+                (0..8).forEach(sheet::autoSizeColumn)
+
+                wb.write(out)
                 out.toByteArray()
             }
         }
 
-    private fun createUnknownLinkCells(sheet: XSSFSheet, relationErrors: Collection<RelationReport>) {
-        sheet.createRow(0).apply {
-            createCell(3).setCellValue("Ukjent lenke")
-            createCell(4).setCellValue("id til ressursen")
-        }
+    /* -------- sections ---------- */
 
-        var rowNum = 1
-        relationErrors.flatMap { it.unknownLinks }.forEach { unknownEntry ->
-            sheet.createRow(rowNum++).apply {
-                createCell(3).setCellValue(unknownEntry.relation)
-                createCell(4).setCellValue(unknownEntry.selfLink)
+    private fun createOverviewSection(
+        sheet: XSSFSheet,
+        reports: Collection<RelationReport>,
+        startRow: Int
+    ): Int {
+        var row = startRow
+        sheet.createRow(row++).apply {
+            createCell(0).setCellValue("Relasjon endepunkt")
+            createCell(1).setCellValue("Antall relasjon feil")
+            createCell(2).setCellValue("Antall ukjente lenker")
+        }
+        reports.forEach {
+            sheet.createRow(row++).apply {
+                createCell(0).setCellValue(it.baseUrl)
+                createCell(1).setCellValue(it.relationErrors.size.toString())
+                createCell(2).setCellValue(it.unknownLinks.size.toString())
             }
         }
+        return row
     }
 
-    private fun createOverviewCells(sheet: XSSFSheet, relationErrors: Collection<RelationReport>) {
-        sheet.createRow(0).apply {
-            createCell(6).setCellValue("Relasjon endepunkt")
-            createCell(7).setCellValue("Antall relasjon feil")
-            createCell(8).setCellValue("Antall ukjente lenker")
+    private fun createUnknownLinkSection(
+        sheet: XSSFSheet,
+        reports: Collection<RelationReport>,
+        startRow: Int
+    ): Int {
+        var row = startRow
+        sheet.createRow(row++).apply {
+            createCell(0).setCellValue("Ukjent lenke")
+            createCell(1).setCellValue("id til ressursen")
         }
-
-        var rowNum = 1
-        relationErrors.forEach { report ->
-            sheet.createRow(rowNum++).apply {
-                createCell(6).setCellValue(report.baseUrl)
-                createCell(7).setCellValue(report.relationErrors.size.toString())
-                createCell(8).setCellValue(report.unknownLinks.size.toString())
+        reports.flatMap { it.unknownLinks }.forEach {
+            sheet.createRow(row++).apply {
+                createCell(3).setCellValue(it.relation)
+                createCell(4).setCellValue(it.selfLink)
             }
         }
+        return row
     }
 
-    private fun createRelationErrorCells(sheet: XSSFSheet, relationErrors: Collection<RelationReport>) {
-        sheet.createRow(0).apply {
+    private fun createRelationErrorSection(
+        sheet: XSSFSheet,
+        reports: Collection<RelationReport>,
+        startRow: Int
+    ) {
+        var row = startRow
+        sheet.createRow(row++).apply {
             createCell(0).setCellValue("Relasjon feil")
             createCell(1).setCellValue("id til ressursen")
         }
-
-        var rowNum = 1
-        relationErrors.flatMap { it.relationErrors }.forEach { errorEntry ->
-            sheet.createRow(rowNum++).apply {
-                createCell(0).setCellValue(errorEntry.relation)
-                createCell(1).setCellValue(errorEntry.selfLink)
+        reports.flatMap { it.relationErrors }.forEach {
+            sheet.createRow(row++).apply {
+                createCell(0).setCellValue(it.relation)
+                createCell(1).setCellValue(it.selfLink)
             }
         }
     }
-
 }
