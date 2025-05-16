@@ -3,6 +3,7 @@ package no.fintlabs.linkwalker
 import com.fasterxml.jackson.databind.JsonNode
 import no.fintlabs.linkwalker.model.LinkInfo
 import no.fintlabs.linkwalker.model.RelationError
+import no.fintlabs.linkwalker.model.RelationReport
 import org.springframework.stereotype.Service
 
 @Service

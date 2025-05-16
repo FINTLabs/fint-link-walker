@@ -1,6 +1,4 @@
-package no.fintlabs.linkwalker
-
-import no.fintlabs.linkwalker.model.RelationError
+package no.fintlabs.linkwalker.model
 
 data class RelationReport(
     val baseUrl: String,
