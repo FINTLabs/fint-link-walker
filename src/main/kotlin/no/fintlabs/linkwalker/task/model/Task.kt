@@ -10,8 +10,7 @@ data class Task(
     val orgId: String,
     var totalRequests: Int = 0,
     var relationErrors: AtomicInteger = AtomicInteger(0),
-    var status: Status = Status.IN_QUEUE,
-    var errorMessage: String?
+    var status: Status = Status.IN_QUEUE
 ) {
 
     private val parsed = URI(url)
@@ -20,6 +19,7 @@ data class Task(
     val env: String = parsed.host.substringBefore('.')
     val uri: String = parsed.path.removePrefix("/")
     val time: String = SimpleDateFormat("dd/MM HH:mm").format(Date())
+    var errorMessage: String? = null
 
     val healthyRelations get() = totalRequests - relationErrors.get()
 }
