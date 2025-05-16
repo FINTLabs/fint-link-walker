@@ -1,3 +1,5 @@
+package no.fintlabs.linkwalker
+
 import com.github.benmanes.caffeine.cache.AsyncCache
 import kotlinx.coroutines.future.await
 import no.fintlabs.linkwalker.model.RelationReport
@@ -15,7 +17,8 @@ class RelationErrorService(
             .add(report)
     }
 
-    suspend fun get(taskId: String): List<RelationReport> =
-        cache.get(taskId) { CopyOnWriteArrayList() }.await()
-            .toList()
+    suspend fun get(taskId: String): List<RelationReport>? =
+        cache.getIfPresent(taskId)
+            ?.await()
+            ?.toList()
 }
