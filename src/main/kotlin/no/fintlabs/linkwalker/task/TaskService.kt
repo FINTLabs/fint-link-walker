@@ -1,6 +1,7 @@
 package no.fintlabs.linkwalker.task
 
 import com.github.benmanes.caffeine.cache.Cache
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import no.fintlabs.linkwalker.LinkwalkerService
@@ -8,6 +9,7 @@ import no.fintlabs.linkwalker.auth.AuthService
 import no.fintlabs.linkwalker.model.Status
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 
 @Service
@@ -15,7 +17,9 @@ class TaskService(
     private val authService: AuthService,
     private val cache: Cache<String, Task>,
     private val linkwalker: LinkwalkerService,
-    private val applicationScope: CoroutineScope
+    private val applicationScope: CoroutineScope,
+    @Qualifier("taskProcessorDispatcher")
+    private val taskProcessor: CoroutineDispatcher
 ) {
 
     fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
@@ -23,7 +27,7 @@ class TaskService(
             val task = Task(taskRequest.url, orgId)
 
             cache.put(task.id, task)
-            applicationScope.launch {
+            applicationScope.launch(taskProcessor) {
                 task.status = Status.PROCESSING
                 linkwalker.processTask(task, bearerToken)
                 task.status = Status.FINISHED
