@@ -58,16 +58,18 @@ class LinkParserServiceTest {
     @Test
     fun `multiple expected ids → correct errorCount when some are missing`() = runTest {
         val resources = listOf(
-            node("""{ 
+            node(
+                """{ 
                    "systemId": { "identifikatorverdi": "111" },
                    "personId": { "identifikatorverdi": "222" }
-            }""")
+            }"""
+            )
         )
 
         val info = linkInfoFor(
             "systemId" to "111",
             "personId" to "222",
-            "fooId"    to "BAR"
+            "fooId" to "BAR"
         )
 
         val report = parser.parseRelations(info, resources)
@@ -100,7 +102,7 @@ class LinkParserServiceTest {
         val info = linkInfoFor(
             "systemId" to "AAA",
             "personId" to "BBB",
-            "extraId"  to "CCC"
+            "extraId" to "CCC"
         )
 
         val report = parser.parseRelations(info, resources)
