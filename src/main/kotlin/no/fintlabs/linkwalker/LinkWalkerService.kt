@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker
 
+import RelationErrorService
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -48,18 +49,17 @@ class LinkWalkerService(
 
         linkInfos.map { linkInfo ->
             async {
-                val entries = when (linkInfo.url) {
-                    task.url -> rootEntries
-                    else -> fintClient.getEmbeddedResources(linkInfo.url, bearer)
-                }
+                val entries = if (linkInfo.url == task.url) rootEntries
+                else fintClient.getEmbeddedResources(linkInfo.url, bearer)
                 processLinks(task, linkInfo, entries)
             }
         }.awaitAll()
     }
 
-    private fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
+    private suspend fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
         val relationReport = linkParser.parseRelations(linkInfo, entries)
         taskService.addRelationError(task, relationReport.errorCount)
+        relationErrorService.add(task.id, relationReport)
     }
 
 }
