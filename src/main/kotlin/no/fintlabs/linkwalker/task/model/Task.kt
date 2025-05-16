@@ -11,4 +11,5 @@ data class Task(
     var status: Status = Status.IN_QUEUE
 ) {
     val id = UUID.randomUUID().toString()
+    val healthyRelations get() = relations - relationErrors
 }
