@@ -22,8 +22,6 @@ class LinkParserService {
             collectUnknownLinks(entry, unknownLinks)
         }
 
-        println(relationErrors.size)
-
         return RelationReport(
             info.url,
             relationErrors.toMutableList(),
