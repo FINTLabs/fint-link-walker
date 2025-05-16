@@ -30,7 +30,7 @@ class TaskController(
             ?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
 
-//    @GetMapping("/{id}/download")
+    //    @GetMapping("/{id}/download")
 //    fun downloadRelationErrors(
 //        @PathVariable organization: String?,
 //        @PathVariable id: String?
@@ -51,11 +51,11 @@ class TaskController(
 //        return ResponseEntity.notFound().build<ByteArray?>()
 //    }
 //
-//    @PutMapping("/{id}")
-//    fun clearTask(@PathVariable organization: kotlin.String?, @PathVariable id: kotlin.String?): ResponseEntity<*> {
-//        taskService.clearTask(organization, id)
-//        return ResponseEntity.ok().build<Any?>()
-//    }
+    @PutMapping("/{id}")
+    fun clearTask(@PathVariable id: String): ResponseEntity<Any> =
+        taskService.clearTask(id)
+            ?.let { ResponseEntity.ok().build() }
+            ?: ResponseEntity.notFound().build()
 //
 //
 //    @PutMapping
