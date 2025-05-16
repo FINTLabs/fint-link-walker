@@ -2,6 +2,7 @@ package no.fintlabs.linkwalker
 
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.reactor.awaitSingle
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -15,14 +16,20 @@ class FintClient(
     private val webClient: WebClient
 ) {
 
-    private companion object {
-        private val RETRY_SPEC = Retry
-            .backoff(3, Duration.ofMillis(250))
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    private val retrySpec =
+        Retry
+            .backoff(Long.MAX_VALUE, Duration.ofMillis(250))
+            .maxBackoff(Duration.ofSeconds(20))
+            .jitter(0.25)
             .filter { t ->
                 t is IOException ||
                         (t is WebClientResponseException && t.statusCode.is5xxServerError)
             }
-    }
+            .doBeforeRetry { sig ->
+                logger.warn("Retry #{} – {}", sig.totalRetries() + 1, sig.failure().message)
+            }
 
     suspend fun getHateosResources(url: String, bearer: String): JsonNode =
         webClient.get()
@@ -31,7 +38,7 @@ class FintClient(
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .bodyToMono(JsonNode::class.java)
-            .retryWhen(RETRY_SPEC)
+            .retryWhen(retrySpec)
             .awaitSingle()
 
     suspend fun getEmbeddedResources(url: String, bearer: String) =
