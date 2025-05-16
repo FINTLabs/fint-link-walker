@@ -22,7 +22,7 @@ class RelationErrorService(
 
 
     suspend fun get(taskId: String): List<RelationReport> =
-        cache.get(taskId) { CopyOnWriteArrayList() }
+        cache.get(taskId) { _: String -> CopyOnWriteArrayList<RelationReport>() }
             .await()
             .toList()
 }
