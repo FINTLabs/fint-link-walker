@@ -34,5 +34,8 @@ class TaskService(
     fun addRelationError(task: Task, relationErrorCount: Int) =
         relationErrorCount.let { task.relationErrors.addAndGet(it) }
 
+    fun getTask(taskId: String): Task? =
+        cache.getIfPresent(taskId)
+
 
 }

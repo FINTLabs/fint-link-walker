@@ -23,14 +23,13 @@ class TaskController(
     @GetMapping
     fun getTasks(@PathVariable orgId: String): ResponseEntity<Collection<Task>> =
         taskService.getTasks(orgId).let { ResponseEntity.ok(it) }
-//
-//    @GetMapping("/{id}")
-//    fun getTask(@PathVariable organization: String?, @PathVariable id: String?): ResponseEntity<Task?> {
-//        return taskService.getTask(organization, id)
-//            .map(ResponseEntity::ok)
-//            .orElseGet({ ResponseEntity.notFound().build<T?>() })
-//    }
-//
+
+    @GetMapping("/{id}")
+    fun getTask(@PathVariable orgId: String, @PathVariable id: String): ResponseEntity<Task> =
+        taskService.getTask(id)
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
+
 //    @GetMapping("/{id}/download")
 //    fun downloadRelationErrors(
 //        @PathVariable organization: String?,
