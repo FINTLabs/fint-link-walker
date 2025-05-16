@@ -38,7 +38,7 @@ class LinkParserServiceTest {
         val report = parser.parseRelations(info, resources)
 
         assertEquals(1, report.errorCount)
-        assertEquals("systemId/XYZ", report.relationErrors.single().relation)
+        assertEquals("https://host/a/b/c/systemId/XYZ", report.relationErrors.single().relation)
         assertTrue(report.hasErrors)
     }
 
@@ -75,7 +75,7 @@ class LinkParserServiceTest {
         val report = parser.parseRelations(info, resources)
 
         assertEquals(1, report.errorCount)
-        assertEquals("fooId/BAR", report.relationErrors.single().relation)
+        assertEquals("https://host/a/b/c/fooId/BAR", report.relationErrors.single().relation)
     }
 
     @Test
@@ -89,7 +89,7 @@ class LinkParserServiceTest {
         val report = parser.parseRelations(info, resources)
 
         assertEquals(1, report.errorCount)
-        assertEquals("systemId/42", report.relationErrors.single().relation)
+        assertEquals("https://host/a/b/c/systemId/42", report.relationErrors.single().relation)
     }
 
     @Test
@@ -108,7 +108,10 @@ class LinkParserServiceTest {
         val report = parser.parseRelations(info, resources)
 
         assertEquals(1, report.errorCount)
-        assertEquals(listOf("extraId/CCC"), report.relationErrors.map { it.relation })
+        assertEquals(
+            listOf("https://host/a/b/c/extraId/CCC"),
+            report.relationErrors.map { it.relation }
+        )
     }
 
     private fun linkInfoFor(vararg pairs: Pair<String, String>) =
