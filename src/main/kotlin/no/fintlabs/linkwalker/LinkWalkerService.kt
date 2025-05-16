@@ -1,12 +1,11 @@
 package no.fintlabs.linkwalker
 
-import RelationErrorService
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import no.fintlabs.linkwalker.model.LinkInfo
-import no.fintlabs.linkwalker.model.Status
 import no.fintlabs.linkwalker.task.TaskService
+import no.fintlabs.linkwalker.task.model.Status
 import no.fintlabs.linkwalker.task.model.Task
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
@@ -32,7 +31,7 @@ class LinkWalkerService(
                 try {
                     task.status = Status.PROCESSING
                     processTask(task, bearer)
-                    task.status = Status.FINISHED
+                    task.status = Status.COMPLETED
                 } catch (ex: Throwable) {
                     task.status = Status.FAILED
                     logger.error("Task: ${task.id} failed due to: ${ex.message}")
@@ -45,7 +44,10 @@ class LinkWalkerService(
         val rootEntries = fintClient.getEmbeddedResources(task.url, bearer)
         val linkInfos = LinkInfo.fromEntries(rootEntries)
 
-        taskService.updateRelationsCount(task, linkInfos)
+        taskService.updateRelationsCount(
+            task,
+            linkInfos.sumOf { it.entries.flatMap { it.ids.values }.size }
+        )
 
         linkInfos.map { linkInfo ->
             async {
@@ -58,7 +60,7 @@ class LinkWalkerService(
 
     private suspend fun processLinks(task: Task, linkInfo: LinkInfo, entries: Collection<JsonNode>) {
         val relationReport = linkParser.parseRelations(linkInfo, entries)
-        taskService.addRelationError(task, relationReport.errorCount)
+        taskService.addRelationError(task, relationReport.relationErrors.size)
         relationErrorService.add(task.id, relationReport)
     }
 
