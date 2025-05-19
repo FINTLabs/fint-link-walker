@@ -14,8 +14,8 @@ class FlaisGateway(
     private val webClient: WebClient
 ) {
 
-    suspend fun getAuthObject(orgId: String, clientName: String): AuthObject? =
-        determineFintType(clientName)?.let { username ->
+    suspend fun getAuthObject(client: String, orgId: String): AuthObject? =
+        determineFintType(client)?.let { username ->
             getEncryptedAuthObject(orgId, username)
                 ?.let { resetPassword(it) }
                 ?.let { decryptAuthResponse(it) }

@@ -12,7 +12,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 
 @Component
-class AuthClient(
+class IdpClient(
     @Qualifier("authWebClient")
     private val webClient: WebClient
 ) {
