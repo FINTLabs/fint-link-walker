@@ -1,1 +1,1 @@
-rootProject.name = "fint-core-linkwalker"
+rootProject.name = "fint-link-walker"
