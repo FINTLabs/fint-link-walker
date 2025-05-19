@@ -17,7 +17,7 @@ class IdpClient(
     private val webClient: WebClient
 ) {
 
-    suspend fun getTokenResponse(authObject: AuthObject) =
+    suspend fun getTokenResponse(authObject: AuthObject): TokenResponse? =
         webClient.post()
             .contentType(MediaType.APPLICATION_FORM_URLENCODED)
             .body(BodyInserters.fromFormData(createFormData(authObject)))
