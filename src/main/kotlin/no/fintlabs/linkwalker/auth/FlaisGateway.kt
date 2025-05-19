@@ -3,12 +3,14 @@ package no.fintlabs.linkwalker.auth
 import kotlinx.coroutines.reactor.awaitSingle
 import no.fintlabs.linkwalker.auth.model.AuthObject
 import no.fintlabs.linkwalker.auth.model.AuthResponse
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 
 @Component
 class FlaisGateway(
+    @Qualifier("flaisWebClient")
     private val webClient: WebClient
 ) {
 
