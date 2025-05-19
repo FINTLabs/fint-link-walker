@@ -24,6 +24,12 @@ class WebClientConfig(
             .baseUrl(authProperties.idpUri)
             .build()
 
+    @Bean("flaisWebClient")
+    fun flaisWebClient() =
+        WebClient.builder()
+            .baseUrl(authProperties.flaisGateway)
+            .build()
+
     @Bean
     fun webClient(): WebClient {
         val provider = ConnectionProvider.builder("linkwalker-pool")
