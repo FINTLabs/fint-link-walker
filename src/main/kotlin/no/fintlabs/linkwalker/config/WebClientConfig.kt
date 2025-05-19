@@ -19,8 +19,8 @@ class WebClientConfig {
     fun webClient(): WebClient {
         val provider = ConnectionProvider.builder("linkwalker-pool")
             .maxConnections(200)
-            .maxIdleTime(Duration.ofSeconds(15))   // ✱ kill idle sockets quickly
-            .maxLifeTime(Duration.ofMinutes(2))    // ✱ even busy sockets are recycled
+            .maxIdleTime(Duration.ofSeconds(15))
+            .maxLifeTime(Duration.ofMinutes(2))
             .pendingAcquireTimeout(Duration.ofSeconds(30))
             .evictInBackground(Duration.ofSeconds(30))
             .build()
@@ -29,7 +29,7 @@ class WebClientConfig {
             .compress(true)
             .responseTimeout(Duration.ofSeconds(60))
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5_000)
-            .doOnConnected { c ->                  // hard read/write deadlines
+            .doOnConnected { c ->
                 c.addHandlerLast(ReadTimeoutHandler(60))
                     .addHandlerLast(WriteTimeoutHandler(60))
             }
