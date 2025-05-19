@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Component
 class IdpClient(
-    @Qualifier("authWebClient")
+    @Qualifier("idpWebClient")
     private val webClient: WebClient
 ) {
 
