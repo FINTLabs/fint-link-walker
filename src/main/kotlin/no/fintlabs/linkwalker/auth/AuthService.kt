@@ -10,9 +10,9 @@ class AuthService(
 
     suspend fun getBearerToken(authHeader: String?, client: String?, orgId: String): String? =
         authHeader?.removePrefix("Bearer ")
-            ?: client?.let { getBearerToken(orgId, it) }
+            ?: client?.let { getAccessToken(orgId, it) }
 
-    private suspend fun getBearerToken(client: String, orgId: String): String? =
+    private suspend fun getAccessToken(client: String, orgId: String): String? =
         flaisGateway.getAuthObject(orgId, client)
             ?.let { idpClient.getTokenResponse(it) }
             ?.accessToken

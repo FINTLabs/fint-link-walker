@@ -3,7 +3,6 @@ package no.fintlabs.linkwalker.task
 import com.github.benmanes.caffeine.cache.Cache
 import kotlinx.coroutines.channels.Channel
 import no.fintlabs.linkwalker.auth.AuthService
-import no.fintlabs.linkwalker.model.LinkInfo
 import no.fintlabs.linkwalker.task.model.Task
 import no.fintlabs.linkwalker.task.model.TaskRequest
 import org.springframework.stereotype.Service
@@ -15,8 +14,8 @@ class TaskService(
     private val queue: Channel<Pair<Task, String>>
 ) {
 
-    fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
-        authService.getBearerToken(authHeader, taskRequest.client)?.let { bearer ->
+    suspend fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
+        authService.getBearerToken(taskRequest.client, authHeader, orgId)?.let { bearer ->
             Task(taskRequest.url, orgId).also { task ->
                 cache.put(task.id, task)
                 queue.trySend(task to bearer)

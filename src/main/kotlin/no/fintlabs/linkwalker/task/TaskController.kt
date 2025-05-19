@@ -19,7 +19,7 @@ class TaskController(
 ) {
 
     @PostMapping
-    fun createTask(
+    suspend fun createTask(
         @PathVariable orgId: String,
         @RequestBody taskRequest: TaskRequest,
         @RequestHeader(value = "Authorization", required = false) authHeader: String?
