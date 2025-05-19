@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "no.fintlabs"
-version = "0.0.1-SNAPSHOT"
+version = project.findProperty("version") ?: "0.0.1-SNAPSHOT"
 
 java {
     toolchain {
