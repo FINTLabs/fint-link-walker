@@ -15,7 +15,7 @@ class TaskService(
 ) {
 
     suspend fun initialiseTask(orgId: String, taskRequest: TaskRequest, authHeader: String?): Task? =
-        authService.getBearerToken(taskRequest.client, authHeader, orgId)?.let { bearer ->
+        authService.getBearerToken(authHeader, taskRequest.client, orgId)?.let { bearer ->
             Task(taskRequest.url, orgId).also { task ->
                 cache.put(task.id, task)
                 queue.trySend(task to bearer)
