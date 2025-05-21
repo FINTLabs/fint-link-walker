@@ -1,5 +1,6 @@
 package no.fintlabs.linkwalker.auth
 
+import no.fintlabs.linkwalker.task.model.TaskRequest
 import org.springframework.stereotype.Service
 
 @Service
@@ -8,9 +9,9 @@ class AuthService(
     private val idpClient: IdpClient
 ) {
 
-    suspend fun getBearerToken(authHeader: String?, client: String?, orgId: String): String? =
+    suspend fun getBearerToken(orgId: String, taskRequest: TaskRequest, authHeader: String?): String? =
         authHeader?.removePrefix("Bearer ")
-            ?: client?.let { getAccessToken(orgId, it) }
+            ?: taskRequest.client?.let { getAccessToken(orgId, it) }
 
     private suspend fun getAccessToken(client: String, orgId: String): String? =
         flaisGateway.getAuthObject(orgId, client)
