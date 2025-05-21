@@ -50,7 +50,7 @@ class FlaisGateway(
             .awaitSingle()
 
     private fun createUri(orgName: String, clientName: String): String =
-        orgName.replace('.', '_')
+        orgName.replace('.', '_').replace("-", "_")
             .let { "/client/cn=$clientName,ou=clients,ou=$it,ou=organisations,o=fint" }
 
 }
