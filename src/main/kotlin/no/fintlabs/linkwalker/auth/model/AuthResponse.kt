@@ -7,5 +7,5 @@ data class AuthResponse(
     val authObject: AuthObject,
     val orgId: String,
     val operation: String,
-    val errorMessage: String
+    val errorMessage: String?
 )
