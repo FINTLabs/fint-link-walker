@@ -10,8 +10,11 @@ class AuthService(
 ) {
 
     suspend fun getBearerToken(orgId: String, taskRequest: TaskRequest, authHeader: String?): String? =
-        authHeader?.removePrefix("Bearer ")
-            ?: taskRequest.client?.let { getAccessToken(orgId, it) }
+        listOfNotNull(
+            taskRequest.url.takeIf { it.contains("pwf", true) }?.let { "" },
+            authHeader?.removePrefix("Bearer ")?.trim(),
+            taskRequest.client?.let { getAccessToken(orgId, it) }
+        ).firstOrNull()
 
     private suspend fun getAccessToken(client: String, orgId: String): String? =
         flaisGateway.getAuthObject(orgId, client)
