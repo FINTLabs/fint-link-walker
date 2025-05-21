@@ -3,6 +3,7 @@ package no.fintlabs.linkwalker.auth
 import kotlinx.coroutines.reactor.awaitSingle
 import no.fintlabs.linkwalker.auth.model.AuthObject
 import no.fintlabs.linkwalker.auth.model.AuthResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -13,6 +14,8 @@ class FlaisGateway(
     @Qualifier("flaisWebClient")
     private val webClient: WebClient
 ) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     suspend fun getAuthObject(client: String, orgId: String): AuthObject? =
         determineFintType(client)?.let { username ->
@@ -26,11 +29,16 @@ class FlaisGateway(
         else null
 
     private suspend fun getEncryptedAuthObject(orgName: String, clientName: String): AuthResponse? =
-        webClient.get()
-            .uri(createUri(orgName, clientName))
-            .retrieve()
-            .bodyToMono(AuthResponse::class.java)
-            .awaitSingle()
+        try {
+            webClient.get()
+                .uri(createUri(orgName, clientName))
+                .retrieve()
+                .bodyToMono(AuthResponse::class.java)
+                .awaitSingle()
+        } catch(e: Exception) {
+            logger.error("Failed getting AuthObject from Customer Object gateway: ${e.message}")
+            null
+        }
 
     private suspend fun resetPassword(authResponse: AuthResponse): AuthResponse =
         webClient.post()
