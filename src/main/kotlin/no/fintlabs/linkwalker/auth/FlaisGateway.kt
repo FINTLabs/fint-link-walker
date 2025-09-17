@@ -25,8 +25,8 @@ class FlaisGateway(
         }
 
     fun determineFintType(username: String) =
-        if (username.contains("@client")) username.lowercase()
-        else null
+        username.takeIf { it.contains("@client") }
+            ?.lowercase()
 
     private suspend fun getEncryptedAuthObject(orgName: String, clientName: String): AuthResponse? =
         try {
@@ -35,7 +35,7 @@ class FlaisGateway(
                 .retrieve()
                 .bodyToMono(AuthResponse::class.java)
                 .awaitSingle()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             logger.error("Failed getting AuthObject from Customer Object gateway: ${e.message}")
             null
         }
