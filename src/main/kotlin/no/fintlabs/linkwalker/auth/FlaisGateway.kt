@@ -17,13 +17,13 @@ class FlaisGateway(
 ) {
 
     suspend fun getAuthObject(orgId: String): AuthObject? =
-        getEncryptedAuthObject(orgId, CLIENT_NAME).takeIf { clientExists(it) }
+        getEncryptedAuthObject(orgId).takeIf { clientExists(it) }
             ?.let { decryptAuthResponse(it) }
             ?: decryptAuthResponse(createNewClient(ClientRequest(orgId = orgId)))
 
-    private suspend fun getEncryptedAuthObject(orgName: String, clientName: String): AuthResponse =
+    private suspend fun getEncryptedAuthObject(orgName: String): AuthResponse =
         webClient.get()
-            .uri(createUri(orgName, clientName))
+            .uri(createUri(orgName))
             .retrieve()
             .bodyToMono(AuthResponse::class.java)
             .awaitSingle()
@@ -47,8 +47,8 @@ class FlaisGateway(
             .bodyToMono(AuthResponse::class.java)
             .awaitSingle()
 
-    private fun createUri(orgName: String, clientName: String): String =
+    private fun createUri(orgName: String): String =
         orgName.replace('.', '_').replace("-", "_")
-            .let { "/client/cn=$clientName,ou=clients,ou=$it,ou=organisations,o=fint" }
+            .let { "/client/cn=$CLIENT_NAME,ou=clients,ou=$it,ou=organisations,o=fint" }
 
 }

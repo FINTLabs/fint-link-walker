@@ -1,6 +1,7 @@
 package no.fintlabs.linkwalker.auth.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import no.fintlabs.linkwalker.auth.AuthConstants.CLIENT_NAME
 import java.util.UUID
 
 class ClientRequest(
@@ -16,7 +17,7 @@ class ClientRequest(
 
 class ClientData {
 
-    val name: String = UUID.randomUUID().toString()
+    val name: String = CLIENT_NAME
     val shortDescription: String = "Autogenerert relasjontester"
     val note: String = "En generert klient for relasjon testing"
 
