@@ -5,7 +5,6 @@ import no.fintlabs.linkwalker.auth.AuthConstants.CLIENT_NAME
 import no.fintlabs.linkwalker.auth.model.AuthObject
 import no.fintlabs.linkwalker.auth.model.AuthResponse
 import no.fintlabs.linkwalker.auth.model.ClientRequest
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -17,21 +16,17 @@ class FlaisGateway(
     private val webClient: WebClient
 ) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
     suspend fun getAuthObject(orgId: String): AuthObject? =
         getEncryptedAuthObject(orgId, CLIENT_NAME).takeIf { clientExists(it) }
             ?.let { decryptAuthResponse(it) }
             ?: decryptAuthResponse(createNewClient(ClientRequest(orgId = orgId)))
 
     private suspend fun getEncryptedAuthObject(orgName: String, clientName: String): AuthResponse =
-        run {
-            webClient.get()
-                .uri(createUri(orgName, clientName))
-                .retrieve()
-                .bodyToMono(AuthResponse::class.java)
-                .awaitSingle()
-        }
+        webClient.get()
+            .uri(createUri(orgName, clientName))
+            .retrieve()
+            .bodyToMono(AuthResponse::class.java)
+            .awaitSingle()
 
     private fun clientExists(authResponse: AuthResponse): Boolean = authResponse.authObject != null
 
