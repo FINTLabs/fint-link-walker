@@ -17,7 +17,7 @@ class AuthService(
         ).firstOrNull()
 
     private suspend fun getAccessToken(client: String, orgId: String): String? =
-        flaisGateway.getAuthObject(orgId, client)
+        flaisGateway.getAuthObject(orgId)
             ?.let { idpClient.getTokenResponse(it) }
             ?.accessToken
 
