@@ -7,3 +7,5 @@ management:
     web:
       exposure:
         include: prometheus
+
+maxRetryAtempts: 30
