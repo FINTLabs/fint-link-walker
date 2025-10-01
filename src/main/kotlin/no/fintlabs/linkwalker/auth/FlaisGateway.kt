@@ -47,8 +47,11 @@ class FlaisGateway(
             .bodyToMono(AuthResponse::class.java)
             .awaitSingle()
 
-    private fun createUri(orgName: String): String =
-        orgName.replace('.', '_').replace("-", "_")
-            .let { "/client/cn=$CLIENT_NAME,ou=clients,ou=$it,ou=organisations,o=fint" }
+    private fun createUri(orgId: String): String =
+        orgId.replace('.', '_').replace("-", "_")
+            .let { "/client/cn=${createCn(orgId)},ou=clients,ou=$it,ou=organisations,o=fint" }
+
+    private fun createCn(orgId: String) =
+        "$CLIENT_NAME@client.${orgId.replace("-", ".").replace("_", ".")}"
 
 }
