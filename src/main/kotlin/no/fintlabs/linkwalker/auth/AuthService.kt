@@ -13,11 +13,11 @@ class AuthService(
         listOfNotNull(
             taskRequest.url.takeIf { it.contains("pwf", true) }?.let { "" },
             authHeader?.removePrefix("Bearer ")?.trim(),
-            taskRequest.client?.let { getAccessToken(orgId, it) }
+            getAccessToken(orgId)
         ).firstOrNull()
 
-    private suspend fun getAccessToken(client: String, orgId: String): String? =
-        flaisGateway.getAuthObject(orgId, client)
+    private suspend fun getAccessToken(orgId: String): String? =
+        flaisGateway.getAuthObject(orgId)
             ?.let { idpClient.getTokenResponse(it) }
             ?.accessToken
 
