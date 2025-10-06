@@ -3,6 +3,7 @@ package no.fintlabs.linkwalker
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.reactor.awaitSingle
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -16,9 +17,12 @@ class FintClient(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
+    @Value("\${linkwalker.max-attempts}")
+    private val maxRetries: Long = 0
+
     private val retrySpec =
         Retry
-            .backoff(Long.MAX_VALUE, Duration.ofMillis(250))  // how many times
+            .backoff(maxRetries, Duration.ofMillis(250))  // how many times
             .maxBackoff(Duration.ofSeconds(20))
             .jitter(0.25)
             .doBeforeRetry { sig ->
