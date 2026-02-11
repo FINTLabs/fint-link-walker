@@ -2,6 +2,7 @@ package no.fintlabs.linkwalker
 
 import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.reactor.awaitSingle
+import no.fintlabs.linkwalker.config.LinkWalkerConfig
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
@@ -12,25 +13,26 @@ import java.time.Duration
 
 @Component
 class FintClient(
-    private val webClient: WebClient
+    private val webClient: WebClient,
+    config: LinkWalkerConfig,
 ) {
-
     private val logger = LoggerFactory.getLogger(javaClass)
-
-    @Value("\${linkwalker.max-attempts}")
-    private val maxRetries: Long = 0
 
     private val retrySpec =
         Retry
-            .backoff(maxRetries, Duration.ofMillis(250))  // how many times
+            .backoff(config.maxAttempts, Duration.ofMillis(250)) // how many times
             .maxBackoff(Duration.ofSeconds(20))
             .jitter(0.25)
             .doBeforeRetry { sig ->
                 logger.warn("Retry #{} – {}", sig.totalRetries() + 1, sig.failure().message)
             }
 
-    suspend fun getHateosResources(url: String, bearer: String): JsonNode =
-        webClient.get()
+    suspend fun getHateosResources(
+        url: String,
+        bearer: String,
+    ): JsonNode =
+        webClient
+            .get()
             .uri(url)
             .headers { h -> h.setBearerAuth(bearer) }
             .accept(MediaType.APPLICATION_JSON)
@@ -39,7 +41,8 @@ class FintClient(
             .retryWhen(retrySpec)
             .awaitSingle()
 
-    suspend fun getEmbeddedResources(url: String, bearer: String) =
-        getHateosResources(url, bearer).path("_embedded").path("_entries").toList()
-
+    suspend fun getEmbeddedResources(
+        url: String,
+        bearer: String,
+    ) = getHateosResources(url, bearer).path("_embedded").path("_entries").toList()
 }
