@@ -1,52 +1,42 @@
 package no.fintlabs.linkwalker.auth
 
 import kotlinx.coroutines.reactor.awaitSingle
+import no.fintlabs.linkwalker.auth.AuthConstants.CLIENT_NAME
 import no.fintlabs.linkwalker.auth.model.AuthObject
 import no.fintlabs.linkwalker.auth.model.AuthResponse
-import org.slf4j.LoggerFactory
+import no.fintlabs.linkwalker.auth.model.ClientRequest
+import no.fintlabs.linkwalker.config.LinkWalkerConfig
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToMono
 
 @Component
 class FlaisGateway(
     @Qualifier("flaisWebClient")
-    private val webClient: WebClient
+    private val webClient: WebClient,
+    private val config: LinkWalkerConfig
 ) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    /**
+     * Retrieves authentication object for the given organization ID.
+     * If the client exists, decrypts the encrypted auth response.
+     * If the client does not exist, creates a new client and decrypts the response.
+     */
+    suspend fun getAuthObject(orgId: String): AuthObject? =
+        getEncryptedAuthObject(orgId).takeIf { clientExists(it) }
+            ?.let { decryptAuthResponse(it) }
+            ?: decryptAuthResponse(createNewClient(ClientRequest(config.components, orgId)))
 
-    suspend fun getAuthObject(client: String, orgId: String): AuthObject? =
-        determineFintType(client)?.let { username ->
-            getEncryptedAuthObject(orgId, username)
-                ?.let { resetPassword(it) }
-                ?.let { decryptAuthResponse(it) }
-        }
-
-    fun determineFintType(username: String) =
-        username.takeIf { it.contains("@client") }
-            ?.lowercase()
-
-    private suspend fun getEncryptedAuthObject(orgName: String, clientName: String): AuthResponse? =
-        try {
-            webClient.get()
-                .uri(createUri(orgName, clientName))
-                .retrieve()
-                .bodyToMono(AuthResponse::class.java)
-                .awaitSingle()
-        } catch (e: Exception) {
-            logger.error("Failed getting AuthObject from Customer Object gateway: ${e.message}")
-            null
-        }
-
-    private suspend fun resetPassword(authResponse: AuthResponse): AuthResponse =
-        webClient.post()
-            .uri("/client/password/reset")
-            .bodyValue(authResponse)
+    private suspend fun getEncryptedAuthObject(orgName: String): AuthResponse =
+        webClient.get()
+            .uri(createUri(orgName))
             .retrieve()
-            .bodyToMono(AuthResponse::class.java)
+            .bodyToMono<AuthResponse>()
             .awaitSingle()
+
+    private fun clientExists(authResponse: AuthResponse): Boolean = authResponse.authObject != null
 
     private suspend fun decryptAuthResponse(authResponse: AuthResponse): AuthObject =
         webClient.post()
@@ -54,11 +44,22 @@ class FlaisGateway(
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(authResponse)
             .retrieve()
-            .bodyToMono(AuthObject::class.java)
+            .bodyToMono<AuthObject>()
             .awaitSingle()
 
-    private fun createUri(orgName: String, clientName: String): String =
-        orgName.replace('.', '_').replace("-", "_")
-            .let { "/client/cn=$clientName,ou=clients,ou=$it,ou=organisations,o=fint" }
+    private suspend fun createNewClient(clientRequest: ClientRequest): AuthResponse =
+        webClient.post()
+            .uri("/client")
+            .bodyValue(clientRequest)
+            .retrieve()
+            .bodyToMono<AuthResponse>()
+            .awaitSingle()
+
+    private fun createUri(orgId: String): String =
+        orgId.replace('.', '_').replace("-", "_")
+            .let { "/client/cn=${createCn(orgId)},ou=clients,ou=$it,ou=organisations,o=fint" }
+
+    private fun createCn(orgId: String) =
+        "$CLIENT_NAME@client.${orgId.replace("-", ".").replace("_", ".")}"
 
 }
