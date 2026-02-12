@@ -11,30 +11,30 @@ management:
 
 link-walker:
   components:
-    - "arkiv_kodeverk",
-    - "arkiv_kulturminnevern",
-    - "arkiv_noark",
-    - "arkiv_personal",
-    - "arkiv_samferdsel",
-    - "administrasjon_personal",
-    - "administrasjon_organisasjon",
-    - "administrasjon_okonomi",
-    - "administrasjon_kodeverk",
-    - "administrasjon_fullmakt",
-    - "fint_metamodell",
-    - "okonomi_faktura",
-    - "okonomi_kodeverk",
-    - "okonomi_regnskap",
-    - "profilbilde",
-    - "personvern_samtykke",
-    - "personvern_kodeverk",
-    - "felles_kodeverk",
-    - "utdanning_kodeverk",
-    - "utdanning_larling",
-    - "utdanning_ot",
-    - "utdanning_timeplan",
-    - "utdanning_utdanningsprogram",
-    - "utdanning_vurdering",
-    - "vigokodeverk",
+    - "arkiv_kodeverk"
+    - "arkiv_kulturminnevern"
+    - "arkiv_noark"
+    - "arkiv_personal"
+    - "arkiv_samferdsel"
+    - "administrasjon_personal"
+    - "administrasjon_organisasjon"
+    - "administrasjon_okonomi"
+    - "administrasjon_kodeverk"
+    - "administrasjon_fullmakt"
+    - "fint_metamodell"
+    - "okonomi_faktura"
+    - "okonomi_kodeverk"
+    - "okonomi_regnskap"
+    - "profilbilde"
+    - "personvern_samtykke"
+    - "personvern_kodeverk"
+    - "felles_kodeverk"
+    - "utdanning_kodeverk"
+    - "utdanning_larling"
+    - "utdanning_ot"
+    - "utdanning_timeplan"
+    - "utdanning_utdanningsprogram"
+    - "utdanning_vurdering"
+    - "vigokodeverk"
     - "utdanning_elev"
   max-attempts: 5
