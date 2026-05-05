@@ -8,4 +8,4 @@ FROM gcr.io/distroless/java21
 ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError"
 EXPOSE 8081
 COPY --from=builder /workspace/reader/build/libs/app.jar /app/app.jar
-CMD ["/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

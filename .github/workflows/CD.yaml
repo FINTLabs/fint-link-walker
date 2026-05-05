@@ -35,7 +35,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.module }}
           tags: |
-            type=ref,event=tag
+            type=semver,pattern={{version}}
             type=sha,prefix=sha-,format=short
             type=raw,value=latest
 

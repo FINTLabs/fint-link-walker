@@ -7,4 +7,4 @@ RUN gradle --no-daemon :scanner:bootJar -x test
 FROM gcr.io/distroless/java21
 ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError"
 COPY --from=builder /workspace/scanner/build/libs/app.jar /app/app.jar
-CMD ["/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
