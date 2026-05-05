@@ -4,10 +4,19 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.FilterType
 import org.springframework.scheduling.annotation.EnableScheduling
 
 @SpringBootApplication
-@ComponentScan(basePackages = ["no.novari.linkwalker", "no.novari.metamodel"])
+@ComponentScan(
+    basePackages = ["no.novari.linkwalker", "no.novari.metamodel"],
+    excludeFilters = [
+        ComponentScan.Filter(
+            type = FilterType.REGEX,
+            pattern = ["no\\.novari\\.linkwalker\\.scanner\\..*"],
+        ),
+    ],
+)
 @ConfigurationPropertiesScan(basePackages = ["no.novari.linkwalker"])
 @EnableScheduling
 class ReaderApp
