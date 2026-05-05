@@ -6,7 +6,7 @@ plugins {
 }
 
 allprojects {
-    group = "no.fintlabs"
+    group = "no.novari"
     version = project.findProperty("version") ?: "0.0.1-SNAPSHOT"
 
     repositories {
