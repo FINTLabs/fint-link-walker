@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import no.novari.linkwalker.report.ComponentSummary
-import no.novari.linkwalker.report.LatestReport
+import no.novari.linkwalker.report.LatestReportSummary
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
 import no.novari.linkwalker.report.ScanSummary
@@ -31,7 +31,7 @@ class SummaryMetricsTest {
 
     @Test
     fun `empty store publishes no metrics`() {
-        every { store.list() } returns emptyList()
+        every { store.listSummaries() } returns emptyList()
 
         metrics.refresh()
 
@@ -40,7 +40,7 @@ class SummaryMetricsTest {
 
     @Test
     fun `single tenant report publishes tagged metrics`() {
-        every { store.list() } returns listOf(report("afk-no", integrity = 99.5))
+        every { store.listSummaries() } returns listOf(report("afk-no", integrity = 99.5))
 
         metrics.refresh()
 
@@ -53,7 +53,7 @@ class SummaryMetricsTest {
 
     @Test
     fun `two tenants both appear with correct values`() {
-        every { store.list() } returns listOf(
+        every { store.listSummaries() } returns listOf(
             report("afk-no", integrity = 99.5),
             report("vlfk-no", integrity = 95.0),
         )
@@ -72,14 +72,14 @@ class SummaryMetricsTest {
 
     @Test
     fun `stale tenant rows are dropped on subsequent refresh`() {
-        every { store.list() } returns listOf(report("afk-no", integrity = 99.0))
+        every { store.listSummaries() } returns listOf(report("afk-no", integrity = 99.0))
         metrics.refresh()
         assertNotNull(
             registry.find("link_walker_tenant_integrity_percent").tag("tenant", "afk-no").gauge()
         )
 
         // afk-no removed; only vlfk-no remains
-        every { store.list() } returns listOf(report("vlfk-no", integrity = 90.0))
+        every { store.listSummaries() } returns listOf(report("vlfk-no", integrity = 90.0))
         metrics.refresh()
 
         assertNull(
@@ -104,7 +104,7 @@ class SummaryMetricsTest {
                 ),
             ),
         )
-        every { store.list() } returns listOf(report)
+        every { store.listSummaries() } returns listOf(report)
 
         metrics.refresh()
 
@@ -142,7 +142,7 @@ class SummaryMetricsTest {
                 ),
             ),
         )
-        every { store.list() } returns listOf(report)
+        every { store.listSummaries() } returns listOf(report)
 
         metrics.refresh()
 
@@ -162,7 +162,7 @@ class SummaryMetricsTest {
 
     @Test
     fun `report with empty tenants list falls back to unknown`() {
-        every { store.list() } returns listOf(
+        every { store.listSummaries() } returns listOf(
             report("afk-no", integrity = 99.0).copy(tenants = emptyList()),
         )
 
@@ -176,7 +176,7 @@ class SummaryMetricsTest {
         tenant: String,
         integrity: Double,
         components: List<ComponentSummary> = emptyList(),
-    ): LatestReport = LatestReport(
+    ): LatestReportSummary = LatestReportSummary(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
         tenants = listOf(tenant),
         components = components.map { it.component },
@@ -188,7 +188,6 @@ class SummaryMetricsTest {
             byProblemType = emptyMap(),
             components = components,
         ),
-        rows = emptyList(),
     )
 
     private fun componentSummary(

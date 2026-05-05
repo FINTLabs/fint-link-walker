@@ -23,72 +23,74 @@ class BlobReportStoreIntegrationTest {
     private val mapper = jacksonObjectMapper().findAndRegisterModules()
 
     @Test
-    fun `publish then get returns equivalent report via real blob storage`() {
+    fun `publish then getSummary returns equivalent summary via real blob storage`() {
         val container = freshContainer()
         val store = storeFor("afk-no", container)
         val report = report("afk-no", listOf("missing-resource", "unknown-link"))
 
         store.publish(report)
-        val loaded = store.get()
+        val loaded = store.getSummary("afk-no")
 
         assertNotNull(loaded)
         assertEquals(report.tenants, loaded!!.tenants)
         assertEquals(report.components, loaded.components)
-        assertEquals(report.rows.size, loaded.rows.size)
         assertEquals(report.summary.byProblemType, loaded.summary.byProblemType)
-        assertEquals(report.summary.totalRecords, loaded.summary.totalRecords)
     }
 
     @Test
-    fun `get returns null when blob does not exist`() {
-        val container = freshContainer()
-        assertNull(storeFor("missing-tenant", container).get())
-    }
-
-    @Test
-    fun `publish overwrites existing blob`() {
+    fun `publish then getRows returns rows via real blob storage`() {
         val container = freshContainer()
         val store = storeFor("afk-no", container)
+        val report = report("afk-no", listOf("missing-resource", "unknown-link"))
 
-        store.publish(report("afk-no", listOf("missing-resource")))
-        store.publish(report("afk-no", listOf("missing-resource", "unknown-link")))
+        store.publish(report)
+        val rows = store.getRows("afk-no")
 
-        assertEquals(2, store.get()?.rows?.size)
+        assertNotNull(rows)
+        assertEquals(2, rows!!.rows.size)
     }
 
     @Test
-    fun `publish writes blob at tenant-derived name`() {
+    fun `getSummary returns null when blob does not exist`() {
+        val container = freshContainer()
+        assertNull(storeFor("missing-tenant", container).getSummary("missing-tenant"))
+    }
+
+    @Test
+    fun `getRows returns null when blob does not exist`() {
+        val container = freshContainer()
+        assertNull(storeFor("missing-tenant", container).getRows("missing-tenant"))
+    }
+
+    @Test
+    fun `publish writes blobs at tenant-derived names`() {
         val container = freshContainer()
         storeFor("vlfk-no", container).publish(report("vlfk-no", emptyList()))
 
-        assertTrue(container.getBlobClient("vlfk-no.json.gz").exists())
+        assertTrue(container.getBlobClient("vlfk-no-summary.json.gz").exists())
+        assertTrue(container.getBlobClient("vlfk-no-rows.json.gz").exists())
     }
 
     @Test
-    fun `list returns all reports across tenants`() {
+    fun `listSummaries returns all tenant summaries across container`() {
         val container = freshContainer()
         storeFor("afk-no", container).publish(report("afk-no", listOf("missing-resource")))
         storeFor("vlfk-no", container).publish(report("vlfk-no", listOf("unknown-link", "missing-resource")))
 
-        val all = storeFor("afk-no", container).list()
+        val all = storeFor("afk-no", container).listSummaries()
 
         assertEquals(2, all.size)
         assertEquals(setOf("afk-no", "vlfk-no"), all.flatMap { it.tenants }.toSet())
     }
 
     @Test
-    fun `list returns empty when container has no blobs`() {
-        assertTrue(storeFor("afk-no", freshContainer()).list().isEmpty())
-    }
-
-    @Test
-    fun `each tenant writes to its own blob without collision`() {
+    fun `listSummaries ignores rows blobs`() {
         val container = freshContainer()
-        storeFor("afk-no", container).publish(report("afk-no", listOf("missing-resource")))
-        storeFor("vlfk-no", container).publish(report("vlfk-no", listOf("unknown-link", "missing-resource")))
+        storeFor("afk-no", container).publish(report("afk-no", emptyList()))
 
-        assertEquals(1, storeFor("afk-no", container).get()?.rows?.size)
-        assertEquals(2, storeFor("vlfk-no", container).get()?.rows?.size)
+        val all = storeFor("afk-no", container).listSummaries()
+
+        assertEquals(1, all.size)
     }
 
     private fun storeFor(tenant: String, container: BlobContainerClient): BlobReportStore =

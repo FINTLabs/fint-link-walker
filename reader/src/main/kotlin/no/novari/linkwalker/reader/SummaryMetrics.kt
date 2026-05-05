@@ -3,7 +3,7 @@ package no.novari.linkwalker.reader
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.MultiGauge
 import io.micrometer.core.instrument.Tags
-import no.novari.linkwalker.report.LatestReport
+import no.novari.linkwalker.report.LatestReportSummary
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
 import no.novari.linkwalker.report.ScanSummary
@@ -45,18 +45,18 @@ class SummaryMetrics(
 
     @Scheduled(fixedRate = 60_000, initialDelay = 5_000)
     fun refresh() {
-        val reports = reportStore.list()
-        if (reports.isEmpty()) {
+        val summaries = reportStore.listSummaries()
+        if (summaries.isEmpty()) {
             logger.debug("No reports available — skipping metrics refresh")
             return
         }
-        publishAll(reports)
+        publishAll(summaries)
     }
 
-    private fun publishAll(reports: List<LatestReport>) {
-        val perTenant: List<Pair<String, ScanSummary>> = reports.map { report ->
-            val tenant = report.tenants.firstOrNull() ?: "unknown"
-            tenant to report.summary
+    private fun publishAll(summaries: List<LatestReportSummary>) {
+        val perTenant: List<Pair<String, ScanSummary>> = summaries.map { doc ->
+            val tenant = doc.tenants.firstOrNull() ?: "unknown"
+            tenant to doc.summary
         }
 
         tenantIntegrity.register(

@@ -20,3 +20,16 @@ data class LatestReport(
     val summary: ScanSummary,
     val rows: List<ReportRow>,
 )
+
+data class LatestReportSummary(
+    val scanCompletedAt: Instant,
+    val tenants: List<String>,
+    val components: List<String>,
+    val summary: ScanSummary,
+)
+
+data class LatestReportRows(
+    val scanCompletedAt: Instant,
+    val tenants: List<String>,
+    val rows: List<ReportRow>,
+)

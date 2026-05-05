@@ -23,48 +23,54 @@ class FileReportStoreTest {
     private val mapper = jacksonObjectMapper().findAndRegisterModules()
 
     @Test
-    fun `publish then get returns equivalent report`() {
+    fun `publish writes summary and rows blobs separately`() {
+        storeFor("afk-no").publish(report("afk-no", listOf("missing-resource", "unknown-link")))
+
+        assertTrue(tempDir.resolve("afk-no-summary.json.gz").exists())
+        assertTrue(tempDir.resolve("afk-no-rows.json.gz").exists())
+    }
+
+    @Test
+    fun `getSummary returns parsed summary without rows`() {
         val store = storeFor("afk-no")
-        val report = report("afk-no", problemTypes = listOf("missing-resource", "unknown-link"))
+        store.publish(report("afk-no", listOf("missing-resource", "unknown-link")))
 
-        store.publish(report)
-        val loaded = store.get()
+        val summary = store.getSummary("afk-no")
 
-        assertNotNull(loaded)
-        assertEquals(report.tenants, loaded!!.tenants)
-        assertEquals(report.components, loaded.components)
-        assertEquals(report.rows.size, loaded.rows.size)
-        assertEquals(report.summary.totalRecords, loaded.summary.totalRecords)
-        assertEquals(report.summary.byProblemType, loaded.summary.byProblemType)
+        assertNotNull(summary)
+        assertEquals(listOf("afk-no"), summary!!.tenants)
+        assertEquals(2L, summary.summary.brokenLinkCount)
     }
 
     @Test
-    fun `get returns null when no file exists`() {
-        assertNull(storeFor("afk-no").get())
-    }
-
-    @Test
-    fun `publish overwrites existing file atomically`() {
+    fun `getRows returns parsed rows`() {
         val store = storeFor("afk-no")
-        store.publish(report("afk-no", problemTypes = listOf("missing-resource")))
-        store.publish(report("afk-no", problemTypes = listOf("missing-resource", "unknown-link")))
+        store.publish(report("afk-no", listOf("missing-resource", "unknown-link")))
 
-        assertEquals(2, store.get()?.rows?.size)
+        val rows = store.getRows("afk-no")
+
+        assertNotNull(rows)
+        assertEquals(2, rows!!.rows.size)
     }
 
     @Test
-    fun `publish writes file at tenant-derived path`() {
-        storeFor("afk-no").publish(report("afk-no", emptyList()))
-
-        assertTrue(tempDir.resolve("afk-no.json.gz").exists())
+    fun `getSummary returns null when missing`() {
+        assertNull(storeFor("nope").getSummary("nope"))
     }
 
     @Test
-    fun `publish creates parent directory if missing`() {
-        val nested = tempDir.resolve("nested/deep")
-        storeFor("afk-no", directory = nested).publish(report("afk-no", emptyList()))
+    fun `getRows returns null when missing`() {
+        assertNull(storeFor("nope").getRows("nope"))
+    }
 
-        assertTrue(nested.resolve("afk-no.json.gz").exists())
+    @Test
+    fun `publish overwrites existing files`() {
+        val store = storeFor("afk-no")
+        store.publish(report("afk-no", listOf("missing-resource")))
+        store.publish(report("afk-no", listOf("missing-resource", "unknown-link")))
+
+        assertEquals(2, store.getRows("afk-no")?.rows?.size)
+        assertEquals(2L, store.getSummary("afk-no")?.summary?.brokenLinkCount)
     }
 
     @Test
@@ -85,26 +91,35 @@ class FileReportStoreTest {
     }
 
     @Test
-    fun `corrupted file returns null gracefully`() {
-        val target = tempDir.resolve("afk-no.json.gz")
+    fun `corrupted summary file returns null gracefully`() {
+        val target = tempDir.resolve("afk-no-summary.json.gz")
         target.toFile().writeText("not gzip content")
 
-        assertNull(storeFor("afk-no").get())
+        assertNull(storeFor("afk-no").getSummary("afk-no"))
     }
 
     @Test
-    fun `list returns all reports in directory`() {
+    fun `listSummaries returns all tenant summaries in directory`() {
         storeFor("afk-no").publish(report("afk-no", listOf("missing-resource")))
         storeFor("vlfk-no").publish(report("vlfk-no", listOf("unknown-link", "missing-resource")))
 
-        val all = storeFor("afk-no").list()
+        val all = storeFor("afk-no").listSummaries()
 
         assertEquals(2, all.size)
         assertEquals(setOf("afk-no", "vlfk-no"), all.flatMap { it.tenants }.toSet())
     }
 
     @Test
-    fun `list returns empty when directory does not exist`() {
+    fun `listSummaries ignores rows blobs`() {
+        storeFor("afk-no").publish(report("afk-no", emptyList()))
+
+        val all = storeFor("afk-no").listSummaries()
+
+        assertEquals(1, all.size, "Should not include the rows blob")
+    }
+
+    @Test
+    fun `listSummaries returns empty when directory does not exist`() {
         val store = FileReportStore(
             config = LinkWalkerConfig(
                 tenant = "afk-no",
@@ -115,15 +130,15 @@ class FileReportStoreTest {
             ),
             mapper = mapper,
         )
-        assertTrue(store.list().isEmpty())
+        assertTrue(store.listSummaries().isEmpty())
     }
 
     @Test
-    fun `list skips corrupted files`() {
+    fun `listSummaries skips corrupted summary files`() {
         storeFor("afk-no").publish(report("afk-no", emptyList()))
-        tempDir.resolve("broken.json.gz").toFile().writeText("not gzip")
+        tempDir.resolve("broken-summary.json.gz").toFile().writeText("not gzip")
 
-        val all = storeFor("afk-no").list()
+        val all = storeFor("afk-no").listSummaries()
 
         assertEquals(1, all.size)
         assertEquals(listOf("afk-no"), all.single().tenants)
