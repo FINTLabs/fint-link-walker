@@ -67,7 +67,7 @@ class IndexValidator(
                     component = record.component,
                     resource = record.resourceName,
                     problemType = if (isAutoRelation) MISSING_BACK_LINK_AUTORELATION
-                                  else MISSING_BACK_LINK_PROVIDER,
+                                  else MISSING_BACK_LINK_ADAPTER,
                     sourceSelf = sanitizer.safeHref(record, record.displaySelf),
                     targetHref = sanitizer.safeHref(target, target.displaySelf),
                     relationName = ref.relationName,
@@ -103,6 +103,6 @@ class IndexValidator(
         const val MISSING_RESOURCE = "missing-resource"
         const val UNKNOWN_LINK = "unknown-link"
         const val MISSING_BACK_LINK_AUTORELATION = "missing-back-link-autorelation"
-        const val MISSING_BACK_LINK_PROVIDER = "missing-back-link-provider"
+        const val MISSING_BACK_LINK_ADAPTER = "missing-back-link-adapter"
     }
 }

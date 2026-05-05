@@ -42,8 +42,8 @@ class SummaryBuilderTest {
         )
         val rows = listOf(
             row("utdanning_elev", "elev", "missing-resource"),
-            row("utdanning_vurdering", "fag", "missing-back-link-provider"),
-            row("utdanning_vurdering", "fag", "missing-back-link-provider"),
+            row("utdanning_vurdering", "fag", "missing-back-link-adapter"),
+            row("utdanning_vurdering", "fag", "missing-back-link-adapter"),
         )
 
         val summary = builder.build(indexOf(records), rows)

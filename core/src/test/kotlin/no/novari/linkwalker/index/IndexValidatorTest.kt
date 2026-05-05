@@ -44,7 +44,7 @@ class IndexValidatorTest {
     }
 
     @Test
-    fun `missing back-link without an auto-relation rule → missing-back-link-provider`() {
+    fun `missing back-link without an auto-relation rule → missing-back-link-adapter`() {
         val source = recordOf(
             component = "utdanning_vurdering",
             resource = "elevfravar",
@@ -65,7 +65,7 @@ class IndexValidatorTest {
         val rows = validator(metamodel).validate("afk-no", index)
 
         val row = rows.single()
-        assertEquals("missing-back-link-provider", row.problemType)
+        assertEquals("missing-back-link-adapter", row.problemType)
         assertEquals("elev", row.relationName)
         assertEquals("fravarsregistrering", row.expectedInverseName)
     }

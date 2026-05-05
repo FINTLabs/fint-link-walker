@@ -182,7 +182,7 @@
             "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-blue"}}]
           },
           {
-            "matcher": {"id": "byName", "options": "missing-back-link-provider"},
+            "matcher": {"id": "byName", "options": "missing-back-link-adapter"},
             "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-orange"}}]
           },
           {
@@ -407,7 +407,7 @@
             "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-blue"}}]
           },
           {
-            "matcher": {"id": "byName", "options": "missing-back-link-provider"},
+            "matcher": {"id": "byName", "options": "missing-back-link-adapter"},
             "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-orange"}}]
           },
           {
