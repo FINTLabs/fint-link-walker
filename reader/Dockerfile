@@ -5,7 +5,7 @@ COPY . .
 RUN gradle --no-daemon :reader:bootJar -x test
 
 FROM gcr.io/distroless/java25
-ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -Xmx4g"
+ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError"
 EXPOSE 8080
 COPY --from=builder /workspace/reader/build/libs/app.jar /app/app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
