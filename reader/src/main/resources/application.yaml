@@ -1,0 +1,26 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: 8081
+  servlet:
+    context-path: /link-walker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health
+
+link-walker:
+  # Reader is multi-tenant: it lists all reports in storage. No `tenant` needed here —
+  # only the scanner uses it to decide which tenant's report to write.
+  storage:
+    type: file     # local-friendly default; prod overrides to "blob" via env / ConfigMap
+    file:
+      directory: /tmp/link-walker-reports
+    blob:
+      endpoint: "https://fintlink.blob.core.windows.net"
+      container: link-walker-reports
