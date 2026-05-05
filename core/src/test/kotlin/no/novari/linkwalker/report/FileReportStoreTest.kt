@@ -1,6 +1,6 @@
 package no.novari.linkwalker.report
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.novari.linkwalker.config.FileStorageConfig
 import no.novari.linkwalker.config.LinkWalkerConfig
 import no.novari.linkwalker.config.StorageConfig
@@ -20,7 +20,7 @@ class FileReportStoreTest {
     @TempDir
     lateinit var tempDir: Path
 
-    private val mapper = jacksonObjectMapper().findAndRegisterModules()
+    private val mapper = jacksonObjectMapper()
 
     @Test
     fun `publish writes summary and rows blobs separately`() {

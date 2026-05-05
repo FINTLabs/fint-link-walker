@@ -1,7 +1,7 @@
 package no.novari.linkwalker.auth
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.runBlocking
 import no.novari.linkwalker.auth.model.AuthObject
 import no.novari.linkwalker.auth.model.AuthResponse
@@ -18,7 +18,7 @@ import org.springframework.web.client.RestClient
 
 class FlaisGatewayTest {
 
-    private val mapper: ObjectMapper = jacksonObjectMapper().findAndRegisterModules()
+    private val mapper: ObjectMapper = jacksonObjectMapper()
 
     private lateinit var server: MockWebServer
     private lateinit var gateway: FlaisGateway

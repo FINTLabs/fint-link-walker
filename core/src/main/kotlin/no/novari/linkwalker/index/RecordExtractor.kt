@@ -1,9 +1,9 @@
 package no.novari.linkwalker.index
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.core.JsonParser
+import tools.jackson.core.JsonToken
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
 import no.novari.linkwalker.config.LinkWalkerConfig
 import org.springframework.stereotype.Component
 import org.springframework.web.util.UriUtils
@@ -23,7 +23,7 @@ class RecordExtractor(
     fun extractFromFile(path: Path, component: String, resourceName: String): List<MinimalRecord> {
         val records = mutableListOf<MinimalRecord>()
         path.inputStream().use { input ->
-            mapper.factory.createParser(input).use { parser ->
+            mapper.createParser(input).use { parser ->
                 advanceToEntries(parser)
                 if (parser.currentToken() != JsonToken.START_ARRAY) return emptyList()
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
@@ -47,16 +47,16 @@ class RecordExtractor(
             )
         }
 
-        val canonicalKeys = links["self"]?.mapNotNull { it["href"]?.asText()?.let(::canonicalize) }
+        val canonicalKeys = links["self"]?.mapNotNull { it["href"]?.asString()?.let(::canonicalize) }
             ?: emptyList()
         val outboundRefs = mutableListOf<OutboundRef>()
         val malformedHrefs = mutableListOf<String>()
 
-        links.fields().forEach { (relName, rels) ->
+        links.properties().forEach { (relName, rels) ->
             if (relName.equals("self", ignoreCase = true)) return@forEach
             if (isExcluded(relName)) return@forEach
             rels.forEach { linkNode ->
-                val href = linkNode["href"]?.asText() ?: return@forEach
+                val href = linkNode["href"]?.asString() ?: return@forEach
                 if (HREF_REGEX.matches(href)) {
                     outboundRefs.add(OutboundRef(relName, canonicalize(href)))
                 } else {
@@ -95,11 +95,11 @@ class RecordExtractor(
     private fun advanceToEntries(parser: JsonParser) {
         if (parser.nextToken() != JsonToken.START_OBJECT) return
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            val name = parser.currentName ?: return
+            val name = parser.currentName() ?: return
             parser.nextToken()
             if (name == "_embedded") {
                 while (parser.nextToken() != JsonToken.END_OBJECT) {
-                    val embName = parser.currentName ?: return
+                    val embName = parser.currentName() ?: return
                     parser.nextToken()
                     if (embName == "_entries") return
                     parser.skipChildren()

@@ -1,6 +1,6 @@
 package no.novari.linkwalker.report
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import no.novari.linkwalker.config.LinkWalkerConfig
 import org.slf4j.LoggerFactory
 import java.nio.file.Files

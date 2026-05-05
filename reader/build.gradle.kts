@@ -7,12 +7,15 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
 }
 
 dependencies {
     implementation(project(":core"))
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -24,6 +27,7 @@ dependencies {
 
 kotlin {
     compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24)
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }

@@ -7,8 +7,10 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
 }
 
 dependencyManagement {
@@ -32,7 +34,8 @@ dependencies {
 
     api("no.novari:fint-core-metamodel:3.0.0")
 
-    api("com.fasterxml.jackson.module:jackson-module-kotlin")
+    api("io.swagger.core.v3:swagger-annotations:2.2.25")
+    api("tools.jackson.module:jackson-module-kotlin:3.1.3")
     api("org.jetbrains.kotlin:kotlin-reflect")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
@@ -52,6 +55,7 @@ dependencies {
 
 kotlin {
     compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24)
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }
