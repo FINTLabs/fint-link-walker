@@ -69,8 +69,10 @@ Key properties under `link-walker`:
 ### Scanner (one-shot)
 
 ```sh
-./gradlew :scanner:bootRun --args='--link-walker.tenant=afk-no'
+./gradlew :scanner:bootRun --args='--spring.profiles.active=local --link-walker.tenant=afk-no'
 ```
+
+The `local` profile (`application-local.yaml`) points the FLAIS gateway at `http://localhost:56417` — port-forward the cluster service there before running. In production the in-cluster default from `AuthProperties.kt` applies.
 
 Reports are written to `/tmp/link-walker-reports/<tenant>.json.gz`.
 

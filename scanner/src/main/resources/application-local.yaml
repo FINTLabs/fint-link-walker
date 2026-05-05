@@ -1,0 +1,4 @@
+fint:
+  linkwalker:
+    auth:
+      flais-gateway: "http://localhost:56417"

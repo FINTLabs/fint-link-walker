@@ -40,8 +40,3 @@ link-walker:
     - "utdanning_timeplan"
     - "utdanning_kodeverk"
   max-attempts: 5
-
-fint:
-  linkwalker:
-    auth:
-      flais-gateway: "http://localhost:56417"
