@@ -79,11 +79,13 @@ Reports are written to `/tmp/link-walker-reports/<tenant>.json.gz`.
 ### Reader (always-on)
 
 ```sh
-./gradlew :reader:bootRun
+./gradlew :reader:bootRun --args='--spring.profiles.active=local'
 ```
 
-- `http://localhost:8080/report/latest` — full report JSON.
-- `http://localhost:8080/actuator/prometheus` — `link_walker_*` metrics.
+The `local` profile pins the reader to `8081` to avoid clashing with anything else on `8080` during dev. Production uses `8080` (default).
+
+- `http://localhost:8081/link-walker/report/latest` — full report JSON.
+- `http://localhost:8081/link-walker/actuator/prometheus` — `link_walker_*` metrics.
 
 ### Monitoring stack
 
@@ -114,6 +116,6 @@ Note for Docker Engine ≥ 29: a system property `api.version=1.45` is set on th
 ## Deployment
 
 - **Scanner** runs as a Kubernetes `CronJob` per tenant. The pod exits zero on success and the JSON report lands in Azure Blob storage; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang.
-- **Reader** runs as a `Deployment` with a `Service` exposing `:8080`. Prometheus scrapes `/actuator/prometheus`; the latest report is fetched from the same blob the scanner writes.
+- **Reader** runs as a `Deployment` with a `Service` exposing `:8080`. Prometheus scrapes `/link-walker/actuator/prometheus`; the latest report is fetched from the same blob the scanner writes.
 
 Storage is configured per-environment via Spring profile / env vars; local dev defaults to file storage so no Azure credentials are needed.
