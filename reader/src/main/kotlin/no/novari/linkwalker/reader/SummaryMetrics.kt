@@ -3,15 +3,15 @@ package no.novari.linkwalker.reader
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.MultiGauge
 import io.micrometer.core.instrument.Tags
+import io.quarkus.scheduler.Scheduled
+import jakarta.enterprise.context.ApplicationScoped
 import no.novari.linkwalker.report.LatestReportSummary
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
 import no.novari.linkwalker.report.ScanSummary
 import org.slf4j.LoggerFactory
-import org.springframework.scheduling.annotation.Scheduled
-import org.springframework.stereotype.Component
 
-@Component
+@ApplicationScoped
 class SummaryMetrics(
     private val reportStore: ReportStore,
     registry: MeterRegistry,
@@ -43,7 +43,7 @@ class SummaryMetrics(
             .description("Overall integrity percent per orgId")
             .register(registry)
 
-    @Scheduled(fixedRate = 60_000, initialDelay = 5_000)
+    @Scheduled(every = "60s", delayed = "5s")
     fun refresh() {
         val summaries = reportStore.listSummaries()
         if (summaries.isEmpty()) {

@@ -8,24 +8,23 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Pattern
-import no.novari.linkwalker.report.LatestReportSummary
+import jakarta.ws.rs.DefaultValue
+import jakarta.ws.rs.GET
+import jakarta.ws.rs.Path
+import jakarta.ws.rs.PathParam
+import jakarta.ws.rs.Produces
+import jakarta.ws.rs.QueryParam
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
 import no.novari.linkwalker.report.ReportRow
 import no.novari.linkwalker.report.ReportStore
-import org.springframework.http.ResponseEntity
-import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
 
 private const val ORG_ID_PATTERN = "^[a-z0-9_]+$"
 private const val ORG_ID_PATTERN_MESSAGE =
     "org-id must be lowercase alphanumeric with underscores only (e.g. agderfk_no)"
 
-@RestController
-@RequestMapping("/report")
-@Validated
+@Path("/report")
+@Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Reports", description = "Per-org link-integrity scan reports")
 class ReportController(
     private val reportStore: ReportStore,
@@ -44,16 +43,17 @@ class ReportController(
             content = [Content()],
         ),
     )
-    @GetMapping("/{orgId}/summary")
+    @GET
+    @Path("/{orgId}/summary")
     fun summary(
         @Parameter(description = "Org id (lowercase, underscore-separated), e.g. `agderfk_no`")
-        @PathVariable
+        @PathParam("orgId")
         @Pattern(regexp = ORG_ID_PATTERN, message = ORG_ID_PATTERN_MESSAGE)
         orgId: String,
-    ): ResponseEntity<LatestReportSummary> =
+    ): Response =
         reportStore.getSummary(orgId)
-            ?.let { ResponseEntity.ok(it) }
-            ?: ResponseEntity.notFound().build()
+            ?.let { Response.ok(it).build() }
+            ?: Response.status(Response.Status.NOT_FOUND).build()
 
     @Operation(
         summary = "Paginated, filterable broken-link rows for an org",
@@ -73,27 +73,29 @@ class ReportController(
             content = [Content()],
         ),
     )
-    @GetMapping("/{orgId}/rows")
+    @GET
+    @Path("/{orgId}/rows")
     fun rows(
         @Parameter(description = "Org id (lowercase, underscore-separated), e.g. `agderfk_no`")
-        @PathVariable
+        @PathParam("orgId")
         @Pattern(regexp = ORG_ID_PATTERN, message = ORG_ID_PATTERN_MESSAGE)
         orgId: String,
         @Parameter(description = "Filter by component (e.g. `utdanning_elev`)")
-        @RequestParam(required = false) component: String?,
+        @QueryParam("component") component: String?,
         @Parameter(description = "Filter by resource within the component (e.g. `elevforhold`)")
-        @RequestParam(required = false) resource: String?,
+        @QueryParam("resource") resource: String?,
         @Parameter(
             description = "Filter by problem type. One of: `missing-resource`, `unknown-link`, " +
                 "`missing-back-link-adapter`, `missing-back-link-autorelation`."
         )
-        @RequestParam(required = false, name = "problemType") problemType: String?,
+        @QueryParam("problemType") problemType: String?,
         @Parameter(description = "Zero-based page index. Defaults to 0.")
-        @RequestParam(defaultValue = "0") page: Int,
+        @QueryParam("page") @DefaultValue("0") page: Int,
         @Parameter(description = "Page size. Defaults to 100, capped at 1000.")
-        @RequestParam(defaultValue = "100") size: Int,
-    ): ResponseEntity<PagedRows> {
-        val doc = reportStore.getRows(orgId) ?: return ResponseEntity.notFound().build()
+        @QueryParam("size") @DefaultValue("100") size: Int,
+    ): Response {
+        val doc = reportStore.getRows(orgId)
+            ?: return Response.status(Response.Status.NOT_FOUND).build()
 
         val filtered: List<ReportRow> = doc.rows
             .asSequence()
@@ -108,7 +110,7 @@ class ReportController(
         val from = (pageIndex * pageSize).coerceAtMost(total)
         val to = (from + pageSize).coerceAtMost(total)
 
-        return ResponseEntity.ok(
+        return Response.ok(
             PagedRows(
                 rows = filtered.subList(from, to),
                 page = pageIndex,
@@ -116,7 +118,7 @@ class ReportController(
                 totalRows = total,
                 totalPages = if (total == 0) 0 else (total + pageSize - 1) / pageSize,
             )
-        )
+        ).build()
     }
 
     companion object {

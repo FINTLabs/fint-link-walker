@@ -1,30 +1,45 @@
-spring:
-  threads:
-    virtual:
-      enabled: true
+quarkus:
+  http:
+    port: 8080
+    root-path: /link-walker
+    non-application-root-path: actuator
+  smallrye-health:
+    root-path: health
+    liveness-path: liveness
+    readiness-path: readiness
+  micrometer:
+    export:
+      prometheus:
+        path: prometheus
 
-server:
-  port: 8080
-  servlet:
-    context-path: /link-walker
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: prometheus,health
-  endpoint:
-    health:
-      probes:
-        enabled: true
+  # Map our existing env var (LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING) onto the
+  # Quarkiverse extension's expected key. Default to Azurite shorthand so the
+  # extension can wire a BlobServiceClient bean even when no real storage is
+  # configured (file mode never actually calls the client).
+  azure:
+    storage:
+      blob:
+        connection-string: "${link-walker.storage.blob.connection-string:UseDevelopmentStorage=true}"
 
 link-walker:
-  # Reader is multi-tenant: it lists all reports in storage. No `tenant` needed here —
-  # only the scanner uses it to decide which tenant's report to write.
   storage:
-    type: file     # local-friendly default; prod overrides to "blob" via env / ConfigMap
+    type: file
     file:
       directory: /tmp/link-walker-reports
     blob:
-      endpoint: "https://fintlink.blob.core.windows.net"
       container: link-walker-reports
+
+"%local":
+  quarkus:
+    http:
+      port: 8081
+
+"%test":
+  quarkus:
+    scheduler:
+      enabled: false
+  link-walker:
+    storage:
+      type: file
+      file:
+        directory: /tmp/link-walker-reports-test

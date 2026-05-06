@@ -2,6 +2,7 @@ package no.novari.linkwalker.reader
 
 import io.mockk.every
 import io.mockk.mockk
+import jakarta.ws.rs.core.Response
 import no.novari.linkwalker.report.LatestReportRows
 import no.novari.linkwalker.report.LatestReportSummary
 import no.novari.linkwalker.report.ReportRow
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpStatus
 import java.time.Instant
 
 class ReportControllerTest {
@@ -25,9 +25,10 @@ class ReportControllerTest {
 
         val response = controller.summary("afk-no")
 
-        assertEquals(HttpStatus.OK, response.statusCode)
-        assertNotNull(response.body)
-        assertEquals(99.5, response.body!!.summary.integrityPercent)
+        assertEquals(Response.Status.OK.statusCode, response.status)
+        val body = response.entity as LatestReportSummary
+        assertNotNull(body)
+        assertEquals(99.5, body.summary.integrityPercent)
     }
 
     @Test
@@ -36,7 +37,7 @@ class ReportControllerTest {
 
         val response = controller.summary("missing")
 
-        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
     @Test
@@ -45,7 +46,7 @@ class ReportControllerTest {
 
         val response = controller.rows("missing", null, null, null, 0, 100)
 
-        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
     @Test
@@ -54,8 +55,8 @@ class ReportControllerTest {
 
         val response = controller.rows("afk-no", null, null, null, page = 0, size = 100)
 
-        assertEquals(HttpStatus.OK, response.statusCode)
-        val body = response.body!!
+        assertEquals(Response.Status.OK.statusCode, response.status)
+        val body = response.entity as PagedRows
         assertEquals(100, body.rows.size)
         assertEquals(250, body.totalRows)
         assertEquals(0, body.page)
@@ -77,7 +78,7 @@ class ReportControllerTest {
 
         val response = controller.rows("afk-no", component = "utdanning_elev", null, null, 0, 100)
 
-        val body = response.body!!
+        val body = response.entity as PagedRows
         assertEquals(2, body.totalRows)
         assertTrue(body.rows.all { it.component == "utdanning_elev" })
     }
@@ -96,8 +97,9 @@ class ReportControllerTest {
 
         val response = controller.rows("afk-no", null, null, problemType = "missing-resource", 0, 100)
 
-        assertEquals(2, response.body!!.totalRows)
-        assertTrue(response.body!!.rows.all { it.problemType == "missing-resource" })
+        val body = response.entity as PagedRows
+        assertEquals(2, body.totalRows)
+        assertTrue(body.rows.all { it.problemType == "missing-resource" })
     }
 
     @Test
@@ -106,7 +108,7 @@ class ReportControllerTest {
 
         val response = controller.rows("afk-no", null, null, null, page = 10, size = 100)
 
-        val body = response.body!!
+        val body = response.entity as PagedRows
         assertEquals(0, body.rows.size)
         assertEquals(5, body.totalRows)
     }
@@ -117,7 +119,8 @@ class ReportControllerTest {
 
         val response = controller.rows("afk-no", null, null, null, page = 0, size = 999_999)
 
-        assertTrue(response.body!!.size <= 1000)
+        val body = response.entity as PagedRows
+        assertTrue(body.size <= 1000)
     }
 
     private fun summaryDoc(tenant: String, integrity: Double) = LatestReportSummary(

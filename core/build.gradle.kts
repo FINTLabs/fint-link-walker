@@ -7,10 +7,10 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(21)
     }
-    sourceCompatibility = JavaVersion.VERSION_24
-    targetCompatibility = JavaVersion.VERSION_24
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 dependencyManagement {
@@ -22,8 +22,11 @@ dependencyManagement {
 val fintVersion = "4.0.10"
 
 dependencies {
-    api("org.springframework.boot:spring-boot-starter-web")
-    api("org.springframework.boot:spring-boot-starter-actuator")
+    // Core has Spring annotations baked into its bytecode (@Component, @ConfigurationProperties, etc.),
+    // but consumers must bring their own Spring runtime — that way reader (Quarkus) can use core's
+    // framework-neutral classes (ReportStore, FileReportStore, …) without pulling Spring along.
+    compileOnly("org.springframework.boot:spring-boot-starter-web")
+    compileOnly("org.springframework.boot:spring-boot-starter-actuator")
 
     api("no.novari:fint-utdanning-resource-model-java:${fintVersion}")
     api("no.novari:fint-administrasjon-resource-model-java:${fintVersion}")
@@ -55,7 +58,7 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
 }

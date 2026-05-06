@@ -1,0 +1,53 @@
+apiVersion: fintlabs.no/v1alpha1
+kind: Application
+metadata:
+  name: fint-link-walker-reader
+  namespace: fint-core
+  labels:
+    app.kubernetes.io/name: fint-link-walker-reader
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  orgId: fintlabs-no
+  replicas: 1
+  port: 8080
+  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.11
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "100m"
+    limits:
+      memory: "2Gi"
+  observability:
+    metrics:
+      path: /link-walker/actuator/prometheus
+      port: "8080"
+  probes:
+    startup:
+      path: /link-walker/actuator/health/liveness
+      port: 8080
+      failureThreshold: 30
+      periodSeconds: 5
+      timeoutSeconds: 5
+    liveness:
+      path: /link-walker/actuator/health/liveness
+      port: 8080
+      periodSeconds: 30
+      timeoutSeconds: 5
+    readiness:
+      path: /link-walker/actuator/health/readiness
+      port: 8080
+      periodSeconds: 10
+      timeoutSeconds: 5
+  env:
+    - name: JAVA_TOOL_OPTIONS
+      value: "-Xmx1g -XX:+ExitOnOutOfMemoryError"
+    - name: LINK_WALKER_STORAGE_TYPE
+      value: "blob"
+    - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-blob-storage
+          key: connection-string

@@ -1,11 +1,13 @@
-FROM gradle:9.5.0-jdk25 AS builder
-USER root
+FROM ghcr.io/graalvm/graalvm-community:21-ol9 AS builder
 WORKDIR /workspace
 COPY . .
-RUN gradle --no-daemon :reader:bootJar -x test
+RUN ./gradlew --no-daemon :reader:build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false -x test \
+ && find /workspace/reader/build -maxdepth 1 -name "*-runner" -type f -exec cp {} /reader-binary \;
 
-FROM gcr.io/distroless/java25
-ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError"
+FROM debian:12-slim AS libs
+
+FROM gcr.io/distroless/cc-debian12
 EXPOSE 8080
-COPY --from=builder /workspace/reader/build/libs/app.jar /app/app.jar
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+COPY --from=libs /usr/lib/x86_64-linux-gnu/libz.so.1* /usr/lib/x86_64-linux-gnu/
+COPY --from=builder /reader-binary /app/reader
+ENTRYPOINT ["/app/reader"]
