@@ -1,9 +1,10 @@
-FROM eclipse-temurin:21-jdk AS builder
+FROM gradle:9.5.0-jdk25 AS builder
+USER root
 WORKDIR /workspace
 COPY . .
-RUN ./gradlew --no-daemon :scanner:bootJar -x test
+RUN gradle --no-daemon :scanner:bootJar -x test
 
-FROM eclipse-temurin:21-jre
+FROM gcr.io/distroless/java25
 ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=85.0"
 COPY --from=builder /workspace/scanner/build/libs/app.jar /app/app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
