@@ -21,7 +21,7 @@ class IndexBuilderTest {
     private val extractor = mockk<RecordExtractor>(relaxed = true)
 
     private val config = LinkWalkerConfig(
-        tenant = "test",
+        orgId = "test",
         baseUrl = "https://api.test",
         fetchConcurrency = 2,
     )

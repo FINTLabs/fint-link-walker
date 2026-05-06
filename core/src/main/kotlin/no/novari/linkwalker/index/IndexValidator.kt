@@ -13,7 +13,7 @@ class IndexValidator(
     private val sanitizer: HrefSanitizer,
 ) {
 
-    fun validate(tenant: String, index: TenantIndex): List<ReportRow> {
+    fun validate(orgId: String, index: TenantIndex): List<ReportRow> {
         val rows = mutableListOf<ReportRow>()
         val resourceCache = mutableMapOf<Pair<String, String>, ResourceInfo?>()
 
@@ -21,13 +21,13 @@ class IndexValidator(
             val info = resourceCache.getOrPut(record.component to record.resourceName) {
                 buildResourceInfo(record.component, record.resourceName)
             }
-            validateRecord(tenant, record, info, index, rows)
+            validateRecord(orgId, record, info, index, rows)
         }
         return rows
     }
 
     private fun validateRecord(
-        tenant: String,
+        orgId: String,
         record: MinimalRecord,
         info: ResourceInfo?,
         index: TenantIndex,
@@ -39,7 +39,7 @@ class IndexValidator(
             val target = index.recordAt(ref.targetCanonical)
             if (target == null) {
                 rows += ReportRow(
-                    tenant = tenant,
+                    orgId = orgId,
                     component = record.component,
                     resource = record.resourceName,
                     problemType = MISSING_RESOURCE,
@@ -63,7 +63,7 @@ class IndexValidator(
                     relationName = ref.relationName,
                 )
                 rows += ReportRow(
-                    tenant = tenant,
+                    orgId = orgId,
                     component = record.component,
                     resource = record.resourceName,
                     problemType = if (isAutoRelation) MISSING_BACK_LINK_AUTORELATION
@@ -78,7 +78,7 @@ class IndexValidator(
 
         record.malformedHrefs.forEach { badHref ->
             rows += ReportRow(
-                tenant = tenant,
+                orgId = orgId,
                 component = record.component,
                 resource = record.resourceName,
                 problemType = UNKNOWN_LINK,

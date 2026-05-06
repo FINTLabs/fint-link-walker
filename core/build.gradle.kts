@@ -34,7 +34,7 @@ dependencies {
 
     api("no.novari:fint-core-metamodel:3.0.0")
 
-    api("io.swagger.core.v3:swagger-annotations:2.2.25")
+    api("io.swagger.core.v3:swagger-annotations-jakarta:2.2.47")
     api("tools.jackson.module:jackson-module-kotlin:3.1.3")
     api("org.jetbrains.kotlin:kotlin-reflect")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")

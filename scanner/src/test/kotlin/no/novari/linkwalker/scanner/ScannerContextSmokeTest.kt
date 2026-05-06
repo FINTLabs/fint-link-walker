@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
 
 @SpringBootTest
-@TestPropertySource(properties = ["link-walker.tenant=test"])
+@TestPropertySource(properties = ["link-walker.org-id=test"])
 class ScannerContextSmokeTest {
 
     @MockkBean(relaxed = true)

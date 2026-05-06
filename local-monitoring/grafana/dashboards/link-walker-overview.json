@@ -32,7 +32,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sum(link_walker_records_count{tenant=~\"$tenant\", component=~\"$component\"})",
+          "expr": "sum(link_walker_records_count{orgId=~\"$orgId\", component=~\"$component\"})",
           "instant": true,
           "legendFormat": "Records",
           "range": false,
@@ -69,7 +69,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sum(link_walker_refs_count{tenant=~\"$tenant\", component=~\"$component\"})",
+          "expr": "sum(link_walker_refs_count{orgId=~\"$orgId\", component=~\"$component\"})",
           "instant": true,
           "legendFormat": "Refs",
           "range": false,
@@ -106,7 +106,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sum(link_walker_broken_links{tenant=~\"$tenant\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "expr": "sum(link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
           "instant": true,
           "legendFormat": "Broken",
           "range": false,
@@ -154,7 +154,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "avg(link_walker_tenant_integrity_percent{tenant=~\"$tenant\"})",
+          "expr": "avg(link_walker_org_integrity_percent{orgId=~\"$orgId\"})",
           "instant": true,
           "legendFormat": "Integrity",
           "range": false,
@@ -210,7 +210,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sum by (problem_type) (link_walker_broken_links{tenant=~\"$tenant\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "expr": "sum by (problem_type) (link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
           "instant": true,
           "legendFormat": "{{problem_type}}",
           "range": false,
@@ -260,7 +260,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sort(avg by (component) (link_walker_integrity_percent{tenant=~\"$tenant\", component=~\"$component\"}))",
+          "expr": "sort(avg by (component) (link_walker_integrity_percent{orgId=~\"$orgId\", component=~\"$component\"}))",
           "instant": true,
           "legendFormat": "{{component}}",
           "range": false,
@@ -317,9 +317,9 @@
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "tenant"},
+            "matcher": {"id": "byName", "options": "orgId"},
             "properties": [
-              {"id": "displayName", "value": "Tenant"},
+              {"id": "displayName", "value": "Org"},
               {"id": "custom.width", "value": 110}
             ]
           },
@@ -351,7 +351,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "bottomk(20, avg by (component, resource) (link_walker_integrity_percent{tenant=~\"$tenant\", component=~\"$component\"}))",
+          "expr": "bottomk(20, avg by (component, resource) (link_walker_integrity_percent{orgId=~\"$orgId\", component=~\"$component\"}))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -441,7 +441,7 @@
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "editorMode": "code",
-          "expr": "sum by (component, problem_type) (link_walker_broken_links{tenant=~\"$tenant\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "expr": "sum by (component, problem_type) (link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
           "format": "table",
           "instant": true,
           "legendFormat": "{{problem_type}}",
@@ -459,14 +459,14 @@
   "templating": {
     "list": [
       {
-        "name": "tenant",
+        "name": "orgId",
         "label": "Tenant",
         "type": "query",
         "datasource": {"type": "prometheus", "uid": "prometheus"},
-        "definition": "label_values(link_walker_tenant_integrity_percent, tenant)",
+        "definition": "label_values(link_walker_org_integrity_percent, orgId)",
         "query": {
           "qryType": 1,
-          "query": "label_values(link_walker_tenant_integrity_percent, tenant)",
+          "query": "label_values(link_walker_org_integrity_percent, orgId)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "current": {"selected": true, "text": ["All"], "value": ["$__all"]},

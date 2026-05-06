@@ -23,16 +23,16 @@ class FileReportStore(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun publish(report: LatestReport) {
-        val tenant = requireTenant()
-        write(summaryPath(tenant), report.toSummary(), "${report.rows.size} rows")
-        write(rowsPath(tenant), report.toRows(), "${report.rows.size} rows")
+        val orgId = requireOrgId()
+        write(summaryPath(orgId), report.toSummary(), "${report.rows.size} rows")
+        write(rowsPath(orgId), report.toRows(), "${report.rows.size} rows")
     }
 
-    override fun getSummary(tenant: String): LatestReportSummary? =
-        read(summaryPath(tenant), LatestReportSummary::class.java)
+    override fun getSummary(orgId: String): LatestReportSummary? =
+        read(summaryPath(orgId), LatestReportSummary::class.java)
 
-    override fun getRows(tenant: String): LatestReportRows? =
-        read(rowsPath(tenant), LatestReportRows::class.java)
+    override fun getRows(orgId: String): LatestReportRows? =
+        read(rowsPath(orgId), LatestReportRows::class.java)
 
     override fun listSummaries(): List<LatestReportSummary> {
         val dir = directory()
@@ -79,15 +79,15 @@ class FileReportStore(
 
     private fun directory(): Path = Path(config.storage.file.directory)
 
-    private fun summaryPath(tenant: String): Path =
-        directory().resolve("${tenant}${SUMMARY_SUFFIX}")
+    private fun summaryPath(orgId: String): Path =
+        directory().resolve("${orgId}${SUMMARY_SUFFIX}")
 
-    private fun rowsPath(tenant: String): Path =
-        directory().resolve("${tenant}${ROWS_SUFFIX}")
+    private fun rowsPath(orgId: String): Path =
+        directory().resolve("${orgId}${ROWS_SUFFIX}")
 
-    private fun requireTenant(): String =
-        requireNotNull(config.tenant?.takeIf { it.isNotBlank() }) {
-            "link-walker.tenant must be set for file storage"
+    private fun requireOrgId(): String =
+        requireNotNull(config.orgId?.takeIf { it.isNotBlank() }) {
+            "link-walker.org-id must be set for file storage"
         }
 
     companion object {
@@ -98,13 +98,13 @@ class FileReportStore(
 
 internal fun LatestReport.toSummary(): LatestReportSummary = LatestReportSummary(
     scanCompletedAt = scanCompletedAt,
-    tenants = tenants,
+    orgId = orgId,
     components = components,
     summary = summary,
 )
 
 internal fun LatestReport.toRows(): LatestReportRows = LatestReportRows(
     scanCompletedAt = scanCompletedAt,
-    tenants = tenants,
+    orgId = orgId,
     rows = rows,
 )

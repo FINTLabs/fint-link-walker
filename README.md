@@ -12,7 +12,7 @@ For each configured FINT component (e.g. `utdanning_elev`, `arkiv_noark`, `admin
    - `missing-resource` — referenced resource not found in the index.
    - `missing-back-link-adapter` / `missing-back-link-autorelation` — adapter or autorelation expected a back-reference that wasn't there.
    - `unknown-link` — reference points outside the indexed component set.
-4. Publishes per-tenant `<tenant>-summary.json.gz` (small aggregates) and `<tenant>-rows.json.gz` (broken-link rows) to file or Azure Blob storage, plus per-tenant `link_walker_*` Prometheus metrics surfaced by the reader.
+4. Publishes per-tenant `<orgId>-summary.json.gz` (small aggregates) and `<orgId>-rows.json.gz` (broken-link rows) to file or Azure Blob storage, plus per-tenant `link_walker_*` Prometheus metrics surfaced by the reader.
 
 PII identifiers (`fodselsnummer`, `feidenavn` by default) are masked at report-emit time so reports are safe to share. Validation itself runs against the unmasked index, so accuracy is preserved.
 
@@ -24,7 +24,7 @@ Three Gradle modules:
 |-----------|-----------------------------------------------------------------------------------------------------|----------------------------------|
 | `core`    | Shared types, index/validator, report stores (file + blob), HTTP client (`FintClient`).             | Library                          |
 | `scanner` | One-shot `ApplicationRunner` that builds the index, validates, publishes the report, then exits.    | Kubernetes `CronJob`             |
-| `reader`  | Always-on Spring Boot service exposing `/actuator/prometheus`, `/report/{tenant}/summary` and `/report/{tenant}/rows`. | Kubernetes `Deployment`/`Service`|
+| `reader`  | Always-on Spring Boot service exposing `/actuator/prometheus`, `/report/{orgId}/summary` and `/report/{orgId}/rows`. | Kubernetes `Deployment`/`Service`|
 
 The split lets the scanner run heavy, memory-hungry work on a schedule and tear down, while the reader stays cheap and serves Prometheus scrapes from the latest stored report.
 
@@ -38,10 +38,10 @@ The split lets the scanner run heavy, memory-hungry work on a schedule and tear 
 
 ### `scanner`
 - `ScanRunner` — orchestrates auth → index → validate → publish → exit.
-- Configured via `application.yaml` and per-environment overrides (`--link-walker.tenant=…`).
+- Configured via `application.yaml` and per-environment overrides (`--link-walker.org-id=…`).
 
 ### `reader`
-- `ReportController` — `GET /report/{tenant}/summary` (nested aggregate) and `GET /report/{tenant}/rows` (paginated, filterable broken-link list).
+- `ReportController` — `GET /report/{orgId}/summary` (nested aggregate) and `GET /report/{orgId}/rows` (paginated, filterable broken-link list).
 - `SummaryMetrics` — `@Scheduled` Micrometer `MultiGauge` publisher; refreshes every 60s from the latest stored report.
 
 ## Configuration
@@ -50,7 +50,7 @@ Key properties under `link-walker`:
 
 | Property                       | Default                                | Notes                                                                  |
 |--------------------------------|----------------------------------------|------------------------------------------------------------------------|
-| `tenant`                       | _required_                             | E.g. `afk-no`. Used as blob-name prefix (`<tenant>-summary.json.gz`, `<tenant>-rows.json.gz`) and in metric tags. Only the scanner needs this — the reader is multi-tenant. |
+| `org-id`                       | _required_                             | E.g. `afk-no`. Used as blob-name prefix (`<orgId>-summary.json.gz`, `<orgId>-rows.json.gz`) and in metric tags. Only the scanner needs this — the reader is multi-org. |
 | `base-url`                     | `https://api.felleskomponent.no`       | FINT API root.                                                         |
 | `components`                   | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
 | `auto-relation-components`     | empty                                  | Subset of `components` where autorelation back-links are required for the tenant. |
@@ -69,12 +69,12 @@ Key properties under `link-walker`:
 ### Scanner (one-shot)
 
 ```sh
-./gradlew :scanner:bootRun --args='--spring.profiles.active=local --link-walker.tenant=afk-no'
+./gradlew :scanner:bootRun --args='--spring.profiles.active=local --link-walker.org-id=afk-no'
 ```
 
 The `local` profile (`application-local.yaml`) points the FLAIS gateway at `http://localhost:56417` — port-forward the cluster service there before running. In production the in-cluster default from `AuthProperties.kt` applies.
 
-Reports are written to `/tmp/link-walker-reports/<tenant>-summary.json.gz` and `/tmp/link-walker-reports/<tenant>-rows.json.gz`.
+Reports are written to `/tmp/link-walker-reports/<orgId>-summary.json.gz` and `/tmp/link-walker-reports/<orgId>-rows.json.gz`.
 
 ### Reader (always-on)
 
@@ -84,8 +84,8 @@ Reports are written to `/tmp/link-walker-reports/<tenant>-summary.json.gz` and `
 
 The `local` profile pins the reader to `8081` to avoid clashing with anything else on `8080` during dev. Production uses `8080` (default).
 
-- `http://localhost:8081/link-walker/report/{tenant}/summary` — nested `LatestReportSummary` (tenant aggregate + per-component + per-resource integrity). Drives the dashboard's overview and drill-down views.
-- `http://localhost:8081/link-walker/report/{tenant}/rows?component=…&resource=…&problemType=…&page=0&size=100` — paginated `ReportRow`s for the broken-link list. All filters optional; max page size 1000.
+- `http://localhost:8081/link-walker/report/{orgId}/summary` — nested `LatestReportSummary` (tenant aggregate + per-component + per-resource integrity). Drives the dashboard's overview and drill-down views.
+- `http://localhost:8081/link-walker/report/{orgId}/rows?component=…&resource=…&problemType=…&page=0&size=100` — paginated `ReportRow`s for the broken-link list. All filters optional; max page size 1000.
 - `http://localhost:8081/link-walker/actuator/prometheus` — `link_walker_*` metrics.
 
 ### Monitoring stack

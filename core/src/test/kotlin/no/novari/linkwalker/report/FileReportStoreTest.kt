@@ -38,7 +38,7 @@ class FileReportStoreTest {
         val summary = store.getSummary("afk-no")
 
         assertNotNull(summary)
-        assertEquals(listOf("afk-no"), summary!!.tenants)
+        assertEquals("afk-no", summary!!.orgId)
         assertEquals(2L, summary.summary.brokenLinkCount)
     }
 
@@ -77,7 +77,7 @@ class FileReportStoreTest {
     fun `tenant-less config throws on publish`() {
         val store = FileReportStore(
             config = LinkWalkerConfig(
-                tenant = null,
+                orgId = null,
                 storage = StorageConfig(
                     type = "file",
                     file = FileStorageConfig(directory = tempDir.toString()),
@@ -106,7 +106,7 @@ class FileReportStoreTest {
         val all = storeFor("afk-no").listSummaries()
 
         assertEquals(2, all.size)
-        assertEquals(setOf("afk-no", "vlfk-no"), all.flatMap { it.tenants }.toSet())
+        assertEquals(setOf("afk-no", "vlfk-no"), all.map { it.orgId }.toSet())
     }
 
     @Test
@@ -122,7 +122,7 @@ class FileReportStoreTest {
     fun `listSummaries returns empty when directory does not exist`() {
         val store = FileReportStore(
             config = LinkWalkerConfig(
-                tenant = "afk-no",
+                orgId = "afk-no",
                 storage = StorageConfig(
                     type = "file",
                     file = FileStorageConfig(directory = tempDir.resolve("does-not-exist").toString()),
@@ -141,13 +141,13 @@ class FileReportStoreTest {
         val all = storeFor("afk-no").listSummaries()
 
         assertEquals(1, all.size)
-        assertEquals(listOf("afk-no"), all.single().tenants)
+        assertEquals("afk-no", all.single().orgId)
     }
 
     private fun storeFor(tenant: String, directory: Path = tempDir): FileReportStore =
         FileReportStore(
             config = LinkWalkerConfig(
-                tenant = tenant,
+                orgId = tenant,
                 storage = StorageConfig(
                     type = "file",
                     file = FileStorageConfig(directory = directory.toString()),
@@ -158,7 +158,7 @@ class FileReportStoreTest {
 
     private fun report(tenant: String, problemTypes: List<String>) = LatestReport(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        tenants = listOf(tenant),
+        orgId = tenant,
         components = listOf("comp_x"),
         summary = ScanSummary(
             totalRecords = 100,
@@ -173,7 +173,7 @@ class FileReportStoreTest {
         ),
         rows = problemTypes.map { type ->
             ReportRow(
-                tenant = tenant,
+                orgId = tenant,
                 component = "comp_x",
                 resource = "res",
                 problemType = type,

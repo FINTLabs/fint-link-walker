@@ -4,6 +4,7 @@ import no.novari.linkwalker.index.MinimalRecord
 import no.novari.linkwalker.index.OutboundRef
 import no.novari.linkwalker.index.TenantIndex
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class SummaryBuilderTest {
@@ -63,10 +64,10 @@ class SummaryBuilderTest {
     }
 
     @Test
-    fun `100 percent integrity when no refs`() {
+    fun `null integrity when there are no refs to measure`() {
         val records = listOf(recordOf("c", "r", refs = 0))
         val summary = builder.build(indexOf(records), emptyList())
-        assertEquals(100.0, summary.integrityPercent)
+        assertNull(summary.integrityPercent, "An empty / failed scan must not claim 100% integrity")
     }
 
     @Test
@@ -106,7 +107,7 @@ class SummaryBuilderTest {
     )
 
     private fun row(component: String, resource: String, problemType: String) = ReportRow(
-        tenant = "test",
+        orgId = "test",
         component = component,
         resource = resource,
         problemType = problemType,

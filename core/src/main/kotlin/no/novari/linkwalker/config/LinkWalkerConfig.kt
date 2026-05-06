@@ -7,8 +7,7 @@ import java.time.Duration
 data class LinkWalkerConfig(
     val scanInterval: Duration = Duration.ofHours(6),
     val baseUrl: String = "https://api.felleskomponent.no",
-    val tenant: String? = null,
-    val tenants: List<String> = emptyList(),
+    val orgId: String? = null,
     val components: List<String> = ALL_FINT_COMPONENTS,
     val maxAttempts: Long = 5L,
     val fetchConcurrency: Int = 10,

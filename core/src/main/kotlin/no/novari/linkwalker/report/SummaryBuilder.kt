@@ -85,8 +85,8 @@ class SummaryBuilder {
     private fun countByProblemType(rows: List<ReportRow>): Map<String, Long> =
         rows.groupingBy { it.problemType }.eachCount().mapValues { it.value.toLong() }
 
-    private fun integrity(totalRefs: Long, broken: Long): Double {
-        if (totalRefs == 0L) return 100.0
+    private fun integrity(totalRefs: Long, broken: Long): Double? {
+        if (totalRefs == 0L) return null
         val pct = (1.0 - broken.toDouble() / totalRefs) * 100
         return ((pct * 100).toLong() / 100.0).coerceIn(0.0, 100.0)
     }

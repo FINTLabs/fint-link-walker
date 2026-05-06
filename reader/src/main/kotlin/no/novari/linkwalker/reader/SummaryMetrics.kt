@@ -20,27 +20,27 @@ class SummaryMetrics(
 
     private val integrityPercent: MultiGauge =
         MultiGauge.builder("link_walker_integrity_percent")
-            .description("Link integrity percent per (tenant, component, resource)")
+            .description("Link integrity percent per (orgId, component, resource)")
             .register(registry)
 
     private val recordsTotal: MultiGauge =
         MultiGauge.builder("link_walker_records_count")
-            .description("Records scanned per (tenant, component, resource)")
+            .description("Records scanned per (orgId, component, resource)")
             .register(registry)
 
     private val refsTotal: MultiGauge =
         MultiGauge.builder("link_walker_refs_count")
-            .description("Outbound refs per (tenant, component, resource)")
+            .description("Outbound refs per (orgId, component, resource)")
             .register(registry)
 
     private val brokenLinks: MultiGauge =
         MultiGauge.builder("link_walker_broken_links")
-            .description("Broken-link counts per (tenant, component, resource, problem_type)")
+            .description("Broken-link counts per (orgId, component, resource, problem_type)")
             .register(registry)
 
-    private val tenantIntegrity: MultiGauge =
-        MultiGauge.builder("link_walker_tenant_integrity_percent")
-            .description("Overall integrity percent per tenant")
+    private val orgIntegrity: MultiGauge =
+        MultiGauge.builder("link_walker_org_integrity_percent")
+            .description("Overall integrity percent per orgId")
             .register(registry)
 
     @Scheduled(fixedRate = 60_000, initialDelay = 5_000)
@@ -54,49 +54,65 @@ class SummaryMetrics(
     }
 
     private fun publishAll(summaries: List<LatestReportSummary>) {
-        val perTenant: List<Pair<String, ScanSummary>> = summaries.map { doc ->
-            val tenant = doc.tenants.firstOrNull() ?: "unknown"
-            tenant to doc.summary
+        val perOrg: List<Pair<String, ScanSummary>> = summaries.map { doc ->
+            doc.orgId to doc.summary
         }
 
-        tenantIntegrity.register(
-            perTenant.map { (tenant, summary) ->
-                MultiGauge.Row.of(Tags.of("tenant", tenant), summary.integrityPercent)
+        orgIntegrity.register(
+            perOrg.mapNotNull { (orgId, summary) ->
+                summary.integrityPercent?.let {
+                    MultiGauge.Row.of(Tags.of("orgId", orgId), it)
+                }
             },
             true,
         )
 
-        integrityPercent.register(perTenant.flatMap { (tenant, summary) -> resourceRows(tenant, summary) { it.integrityPercent } }, true)
-        recordsTotal.register(perTenant.flatMap { (tenant, summary) -> resourceRows(tenant, summary) { it.totalRecords.toDouble() } }, true)
-        refsTotal.register(perTenant.flatMap { (tenant, summary) -> resourceRows(tenant, summary) { it.totalRefs.toDouble() } }, true)
-        brokenLinks.register(perTenant.flatMap { (tenant, summary) -> brokenRows(tenant, summary) }, true)
+        integrityPercent.register(perOrg.flatMap { (orgId, summary) -> resourceRowsNullable(orgId, summary) { it.integrityPercent } }, true)
+        recordsTotal.register(perOrg.flatMap { (orgId, summary) -> resourceRows(orgId, summary) { it.totalRecords.toDouble() } }, true)
+        refsTotal.register(perOrg.flatMap { (orgId, summary) -> resourceRows(orgId, summary) { it.totalRefs.toDouble() } }, true)
+        brokenLinks.register(perOrg.flatMap { (orgId, summary) -> brokenRows(orgId, summary) }, true)
 
         logger.debug(
-            "Refreshed metrics across {} tenants: {}",
-            perTenant.size, perTenant.joinToString { "${it.first}=${it.second.integrityPercent}%" },
+            "Refreshed metrics across {} orgs: {}",
+            perOrg.size, perOrg.joinToString { "${it.first}=${it.second.integrityPercent}%" },
         )
     }
 
     private fun resourceRows(
-        tenant: String,
+        orgId: String,
         summary: ScanSummary,
         value: (ResourceSummary) -> Double,
     ): List<MultiGauge.Row<Number>> = summary.components.flatMap { comp ->
         comp.resources.map { res ->
             MultiGauge.Row.of(
-                Tags.of("tenant", tenant, "component", comp.component, "resource", res.resource),
+                Tags.of("orgId", orgId, "component", comp.component, "resource", res.resource),
                 value(res),
             )
         }
     }
 
-    private fun brokenRows(tenant: String, summary: ScanSummary): List<MultiGauge.Row<Number>> =
+    private fun resourceRowsNullable(
+        orgId: String,
+        summary: ScanSummary,
+        value: (ResourceSummary) -> Double?,
+    ): List<MultiGauge.Row<Number>> = summary.components.flatMap { comp ->
+        comp.resources.mapNotNull { res ->
+            value(res)?.let {
+                MultiGauge.Row.of(
+                    Tags.of("orgId", orgId, "component", comp.component, "resource", res.resource),
+                    it,
+                )
+            }
+        }
+    }
+
+    private fun brokenRows(orgId: String, summary: ScanSummary): List<MultiGauge.Row<Number>> =
         summary.components.flatMap { comp ->
             comp.resources.flatMap { res ->
                 res.byProblemType.map { (problemType, count) ->
                     MultiGauge.Row.of(
                         Tags.of(
-                            "tenant", tenant,
+                            "orgId", orgId,
                             "component", comp.component,
                             "resource", res.resource,
                             "problem_type", problemType,

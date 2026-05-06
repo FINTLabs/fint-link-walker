@@ -30,20 +30,20 @@ class ScanRunner(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun run(args: ApplicationArguments) = runBlocking {
-        val tenant = requireNotNull(config.tenant?.takeIf { it.isNotBlank() }) {
-            "link-walker.tenant must be set (e.g. --link-walker.tenant=afk-no)"
+        val orgId = requireNotNull(config.orgId?.takeIf { it.isNotBlank() }) {
+            "link-walker.org-id must be set (e.g. --link-walker.org-id=afk-no)"
         }
 
-        logger.info("Scan starting: tenant={} components={}", tenant, config.components.size)
+        logger.info("Scan starting: org-id={} components={}", orgId, config.components.size)
         val started = Instant.now()
 
-        val (index, rows) = scanTenant(tenant)
+        val (index, rows) = scan(orgId)
         val summary = summaryBuilder.build(index, rows)
 
         reportStore.publish(
             LatestReport(
                 scanCompletedAt = Instant.now(),
-                tenants = listOf(tenant),
+                orgId = orgId,
                 components = config.components,
                 summary = summary,
                 rows = rows,
@@ -52,24 +52,24 @@ class ScanRunner(
 
         val duration = Duration.between(started, Instant.now())
         logger.info(
-            "Scan finished: tenant={} integrity={}% rows={} duration={}s",
-            tenant, summary.integrityPercent, rows.size, duration.toSeconds(),
+            "Scan finished: org-id={} integrity={}% rows={} duration={}s",
+            orgId, summary.integrityPercent, rows.size, duration.toSeconds(),
         )
     }
 
-    private suspend fun scanTenant(tenant: String): Pair<TenantIndex, List<ReportRow>> {
-        val bearer = authService.getBearerToken(tenant)
-            ?: error("No bearer token for tenant $tenant — aborting")
+    private suspend fun scan(orgId: String): Pair<TenantIndex, List<ReportRow>> {
+        val bearer = authService.getBearerToken(orgId)
+            ?: error("No bearer token for org-id $orgId — aborting")
 
         val index = indexBuilder.buildIndex(
             components = config.components,
             bearer = bearer,
             onComponentError = { component ->
-                logger.error("Fetch failed for tenant={} component={}", tenant, component)
+                logger.error("Fetch failed for org-id={} component={}", orgId, component)
             },
         )
 
-        val rows = indexValidator.validate(tenant, index)
+        val rows = indexValidator.validate(orgId, index)
         logger.info(
             "Indexed records={} broken-link rows={}",
             index.records.size, rows.size,

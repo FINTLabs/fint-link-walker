@@ -32,7 +32,7 @@ class BlobReportStoreIntegrationTest {
         val loaded = store.getSummary("afk-no")
 
         assertNotNull(loaded)
-        assertEquals(report.tenants, loaded!!.tenants)
+        assertEquals(report.orgId, loaded!!.orgId)
         assertEquals(report.components, loaded.components)
         assertEquals(report.summary.byProblemType, loaded.summary.byProblemType)
     }
@@ -80,7 +80,7 @@ class BlobReportStoreIntegrationTest {
         val all = storeFor("afk-no", container).listSummaries()
 
         assertEquals(2, all.size)
-        assertEquals(setOf("afk-no", "vlfk-no"), all.flatMap { it.tenants }.toSet())
+        assertEquals(setOf("afk-no", "vlfk-no"), all.map { it.orgId }.toSet())
     }
 
     @Test
@@ -95,7 +95,7 @@ class BlobReportStoreIntegrationTest {
 
     private fun storeFor(tenant: String, container: BlobContainerClient): BlobReportStore =
         BlobReportStore(
-            config = LinkWalkerConfig(tenant = tenant),
+            config = LinkWalkerConfig(orgId = tenant),
             mapper = mapper,
             container = container,
         )
@@ -113,7 +113,7 @@ class BlobReportStoreIntegrationTest {
 
     private fun report(tenant: String, problemTypes: List<String>) = LatestReport(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        tenants = listOf(tenant),
+        orgId = tenant,
         components = listOf("comp_x"),
         summary = ScanSummary(
             totalRecords = 100,
@@ -128,7 +128,7 @@ class BlobReportStoreIntegrationTest {
         ),
         rows = problemTypes.map { type ->
             ReportRow(
-                tenant = tenant,
+                orgId = tenant,
                 component = "comp_x",
                 resource = "res",
                 problemType = type,

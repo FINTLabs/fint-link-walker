@@ -31,7 +31,7 @@ class ScanRunnerTest {
 
     @Test
     fun `happy path publishes report with summary and rows`() {
-        val runner = runner(tenant = "afk-no", components = listOf("utdanning_elev"))
+        val runner = runner(orgId = "afk-no", components = listOf("utdanning_elev"))
         val index = emptyIndex()
         val rows = listOf(reportRow("afk-no"))
         val summary = summary(integrity = 99.5)
@@ -47,7 +47,7 @@ class ScanRunnerTest {
         runner.run(args)
 
         coVerify { reportStore.publish(any()) }
-        assertEquals(listOf("afk-no"), captured.captured.tenants)
+        assertEquals("afk-no", captured.captured.orgId)
         assertEquals(listOf("utdanning_elev"), captured.captured.components)
         assertEquals(rows, captured.captured.rows)
         assertEquals(summary, captured.captured.summary)
@@ -55,7 +55,7 @@ class ScanRunnerTest {
 
     @Test
     fun `null tenant throws and never publishes`() {
-        val runner = runner(tenant = null)
+        val runner = runner(orgId = null)
 
         assertThrows(IllegalArgumentException::class.java) { runner.run(args) }
         coVerify(exactly = 0) { reportStore.publish(any()) }
@@ -63,7 +63,7 @@ class ScanRunnerTest {
 
     @Test
     fun `blank tenant throws and never publishes`() {
-        val runner = runner(tenant = "   ")
+        val runner = runner(orgId = "   ")
 
         assertThrows(IllegalArgumentException::class.java) { runner.run(args) }
         coVerify(exactly = 0) { reportStore.publish(any()) }
@@ -71,7 +71,7 @@ class ScanRunnerTest {
 
     @Test
     fun `null bearer token throws and never publishes`() {
-        val runner = runner(tenant = "afk-no")
+        val runner = runner(orgId = "afk-no")
         coEvery { authService.getBearerToken("afk-no") } returns null
 
         assertThrows(IllegalStateException::class.java) { runner.run(args) }
@@ -80,7 +80,7 @@ class ScanRunnerTest {
 
     @Test
     fun `partial component failure still publishes report`() {
-        val runner = runner(tenant = "afk-no", components = listOf("good", "broken"))
+        val runner = runner(orgId = "afk-no", components = listOf("good", "broken"))
         val index = emptyIndex()
         val rows = emptyList<ReportRow>()
 
@@ -101,9 +101,9 @@ class ScanRunnerTest {
         coVerify(exactly = 1) { reportStore.publish(any()) }
     }
 
-    private fun runner(tenant: String?, components: List<String> = emptyList()): ScanRunner =
+    private fun runner(orgId: String?, components: List<String> = emptyList()): ScanRunner =
         ScanRunner(
-            config = LinkWalkerConfig(tenant = tenant, components = components),
+            config = LinkWalkerConfig(orgId = orgId, components = components),
             authService = authService,
             indexBuilder = indexBuilder,
             indexValidator = indexValidator,
@@ -122,8 +122,8 @@ class ScanRunnerTest {
         components = emptyList(),
     )
 
-    private fun reportRow(tenant: String) = ReportRow(
-        tenant = tenant,
+    private fun reportRow(orgId: String) = ReportRow(
+        orgId = orgId,
         component = "utdanning_elev",
         resource = "elev",
         problemType = "missing-resource",

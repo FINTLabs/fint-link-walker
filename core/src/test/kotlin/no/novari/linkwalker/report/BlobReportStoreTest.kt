@@ -57,7 +57,7 @@ class BlobReportStoreTest {
     @Test
     fun `tenant-less config throws on publish`() {
         val store = BlobReportStore(
-            config = LinkWalkerConfig(tenant = null),
+            config = LinkWalkerConfig(orgId = null),
             mapper = mapper,
             container = container,
         )
@@ -86,14 +86,14 @@ class BlobReportStoreTest {
 
     private fun storeFor(tenant: String): BlobReportStore =
         BlobReportStore(
-            config = LinkWalkerConfig(tenant = tenant),
+            config = LinkWalkerConfig(orgId = tenant),
             mapper = mapper,
             container = container,
         )
 
     private fun report(tenant: String, problemTypes: List<String>) = LatestReport(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        tenants = listOf(tenant),
+        orgId = tenant,
         components = listOf("comp_x"),
         summary = ScanSummary(
             totalRecords = 100,
@@ -108,7 +108,7 @@ class BlobReportStoreTest {
         ),
         rows = problemTypes.map { type ->
             ReportRow(
-                tenant = tenant,
+                orgId = tenant,
                 component = "comp_x",
                 resource = "res",
                 problemType = type,

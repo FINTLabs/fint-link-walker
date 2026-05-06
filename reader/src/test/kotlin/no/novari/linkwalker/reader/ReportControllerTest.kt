@@ -67,7 +67,7 @@ class ReportControllerTest {
     fun `rows applies component filter`() {
         every { store.getRows("afk-no") } returns LatestReportRows(
             scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-            tenants = listOf("afk-no"),
+            orgId = "afk-no",
             rows = listOf(
                 row("afk-no", "utdanning_elev", "elev", "missing-resource"),
                 row("afk-no", "utdanning_vurdering", "elevvurdering", "missing-resource"),
@@ -86,7 +86,7 @@ class ReportControllerTest {
     fun `rows applies problemType filter`() {
         every { store.getRows("afk-no") } returns LatestReportRows(
             scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-            tenants = listOf("afk-no"),
+            orgId = "afk-no",
             rows = listOf(
                 row("afk-no", "utdanning_elev", "elev", "missing-resource"),
                 row("afk-no", "utdanning_elev", "elev", "unknown-link"),
@@ -122,7 +122,7 @@ class ReportControllerTest {
 
     private fun summaryDoc(tenant: String, integrity: Double) = LatestReportSummary(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        tenants = listOf(tenant),
+        orgId = tenant,
         components = listOf("comp_x"),
         summary = ScanSummary(
             totalRecords = 0,
@@ -136,13 +136,13 @@ class ReportControllerTest {
 
     private fun rowsDoc(tenant: String, count: Int) = LatestReportRows(
         scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        tenants = listOf(tenant),
+        orgId = tenant,
         rows = (1..count).map { row(tenant, "comp_x", "res", "missing-resource", suffix = it.toString()) },
     )
 
     private fun row(tenant: String, component: String, resource: String, problemType: String, suffix: String = "x") =
         ReportRow(
-            tenant = tenant,
+            orgId = tenant,
             component = component,
             resource = resource,
             problemType = problemType,
