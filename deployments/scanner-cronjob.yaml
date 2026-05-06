@@ -1,0 +1,940 @@
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: fint-link-walker-blob-storage
+  namespace: fint-core
+  labels:
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  itemPath: "vaults/aks-api-vault/items/stfint"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-afk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: afk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: afk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: afk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=afk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-agderfk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: agderfk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "4 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: agderfk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: agderfk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=agderfk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-bfk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: bfk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "8 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: bfk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: bfk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=bfk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-ffk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: ffk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "12 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: ffk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: ffk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=ffk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-innlandetfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: innlandetfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "16 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: innlandetfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: innlandetfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=innlandetfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-mrfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: mrfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "20 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: mrfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: mrfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=mrfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-nfk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: nfk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "24 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: nfk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: nfk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=nfk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-ofk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: ofk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "28 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: ofk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: ofk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=ofk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-rogfk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: rogfk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "32 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: rogfk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: rogfk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=rogfk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-telemarkfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: telemarkfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "36 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: telemarkfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: telemarkfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=telemarkfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-tromsfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: tromsfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "40 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: tromsfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: tromsfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=tromsfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-trondelagfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: trondelagfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "44 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: trondelagfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: trondelagfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=trondelagfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-ude-oslo-kommune-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: ude-oslo-kommune-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "48 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: ude-oslo-kommune-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: ude-oslo-kommune-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=ude_oslo_kommune_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-vestfoldfylke-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: vestfoldfylke-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "52 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: vestfoldfylke-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: vestfoldfylke-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=vestfoldfylke_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-vlfk-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: vlfk-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "56 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: vlfk-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: vlfk-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.13-quarkus
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--link-walker.org-id=vlfk_no"
+                - "--link-walker.storage.type=blob"
+              env:
+                - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-blob-storage
+                      key: connection-string
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "16Gi"
