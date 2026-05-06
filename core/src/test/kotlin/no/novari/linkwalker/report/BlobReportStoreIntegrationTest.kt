@@ -3,7 +3,7 @@ package no.novari.linkwalker.report
 import com.azure.storage.common.StorageSharedKeyCredential
 import com.azure.storage.blob.BlobContainerClient
 import com.azure.storage.blob.BlobServiceClientBuilder
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import no.novari.linkwalker.config.LinkWalkerConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -20,7 +20,7 @@ import java.util.UUID
 @Testcontainers
 class BlobReportStoreIntegrationTest {
 
-    private val mapper = jacksonObjectMapper().findAndRegisterModules()
+    private val mapper = jacksonObjectMapper()
 
     @Test
     fun `publish then getSummary returns equivalent summary via real blob storage`() {
