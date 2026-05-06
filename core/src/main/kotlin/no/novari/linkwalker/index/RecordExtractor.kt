@@ -27,7 +27,11 @@ class RecordExtractor(
                 advanceToEntries(parser)
                 if (parser.currentToken() != JsonToken.START_ARRAY) return emptyList()
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
-                    val node: JsonNode = mapper.readTree(parser)
+                    // parser.readValueAsTree() reads a single value bound to the
+                    // parser's current position; mapper.readTree(parser) in Jackson 3
+                    // additionally enforces FAIL_ON_TRAILING_TOKENS, which trips on
+                    // the next array element while iterating.
+                    val node: JsonNode = parser.readValueAsTree()
                     records += extract(node, component, resourceName)
                 }
             }

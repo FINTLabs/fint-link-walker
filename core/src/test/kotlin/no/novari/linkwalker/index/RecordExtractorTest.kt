@@ -5,6 +5,9 @@ import no.novari.linkwalker.config.LinkWalkerConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
+import kotlin.io.path.writeText
 
 class RecordExtractorTest {
 
@@ -123,6 +126,71 @@ class RecordExtractorTest {
         """.trimIndent()
         val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")
         assertTrue(record.outboundRefs.isEmpty())
+    }
+
+    @Test
+    fun `extractFromFile streams every entry from _embedded _entries array`(@TempDir tmp: Path) {
+        val file = tmp.resolve("page.json")
+        // Three entries: regression test for Jackson 3's FAIL_ON_TRAILING_TOKENS,
+        // which broke iteration after the first element when we used
+        // mapper.readTree(parser) instead of parser.readValueAsTree().
+        file.writeText(
+            """
+            {
+              "_embedded": {
+                "_entries": [
+                  {
+                    "_links": {
+                      "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }],
+                      "person": [{ "href": "https://api.f.no/utdanning/elev/person/systemid/p-1" }]
+                    }
+                  },
+                  {
+                    "_links": {
+                      "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/b" }],
+                      "person": [{ "href": "https://api.f.no/utdanning/elev/person/systemid/p-2" }]
+                    }
+                  },
+                  {
+                    "_links": {
+                      "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/c" }],
+                      "klasse": [{ "href": "https://api.f.no/utdanning/elev/klasse/systemid/k-1" }]
+                    }
+                  }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(3, records.size, "All three entries should have been extracted")
+        assertEquals(
+            listOf("systemid/a", "systemid/b", "systemid/c"),
+            records.map { it.canonicalKeys.single().substringAfterLast('/').let { id -> "systemid/$id" } },
+        )
+        assertEquals(setOf("person", "klasse"), records.flatMap { it.outboundRefs.map { ref -> ref.relationName } }.toSet())
+    }
+
+    @Test
+    fun `extractFromFile returns empty when _embedded _entries is empty`(@TempDir tmp: Path) {
+        val file = tmp.resolve("empty.json")
+        file.writeText("""{"_embedded":{"_entries":[]}}""")
+
+        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertTrue(records.isEmpty())
+    }
+
+    @Test
+    fun `extractFromFile returns empty when _embedded _entries is missing`(@TempDir tmp: Path) {
+        val file = tmp.resolve("no-entries.json")
+        file.writeText("""{"_embedded":{"otherField":[]}}""")
+
+        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertTrue(records.isEmpty())
     }
 
     private fun extractor(excludeRelations: List<String> = emptyList()) =
