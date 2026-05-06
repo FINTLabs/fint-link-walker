@@ -1,7 +1,7 @@
 package no.novari.linkwalker.report
 
 import com.azure.storage.blob.BlobContainerClient
-import tools.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.novari.linkwalker.config.LinkWalkerConfig
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayInputStream

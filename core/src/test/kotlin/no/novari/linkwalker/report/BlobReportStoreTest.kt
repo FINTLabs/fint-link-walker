@@ -2,7 +2,7 @@ package no.novari.linkwalker.report
 
 import com.azure.storage.blob.BlobClient
 import com.azure.storage.blob.BlobContainerClient
-import tools.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -17,7 +17,7 @@ import java.time.Instant
 
 class BlobReportStoreTest {
 
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().findAndRegisterModules()
     private val container = mockk<BlobContainerClient>()
 
     @Test

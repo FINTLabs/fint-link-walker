@@ -1,6 +1,6 @@
 package no.novari.linkwalker.index
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import no.novari.linkwalker.config.LinkWalkerConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -11,7 +11,7 @@ import kotlin.io.path.writeText
 
 class RecordExtractorTest {
 
-    private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper().findAndRegisterModules()
 
     @Test
     fun `extracts canonical keys, outbound refs, and malformed hrefs`() {

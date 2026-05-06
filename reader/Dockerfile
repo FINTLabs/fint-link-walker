@@ -1,11 +1,9 @@
-FROM gradle:9.5.0-jdk25 AS builder
-USER root
+FROM ghcr.io/graalvm/graalvm-community:21-ol9 AS builder
 WORKDIR /workspace
 COPY . .
-RUN gradle --no-daemon :reader:bootJar -x test
+RUN ./gradlew --no-daemon :reader:nativeCompile -x test
 
-FROM gcr.io/distroless/java25
-ENV JAVA_TOOL_OPTIONS="-XX:+ExitOnOutOfMemoryError"
+FROM gcr.io/distroless/cc-debian12
 EXPOSE 8080
-COPY --from=builder /workspace/reader/build/libs/app.jar /app/app.jar
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+COPY --from=builder /workspace/reader/build/native/nativeCompile/reader /app/reader
+ENTRYPOINT ["/app/reader"]
