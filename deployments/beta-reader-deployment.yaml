@@ -1,13 +1,15 @@
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: fint-link-walker-blob-storage
+  name: fint-link-walker-postgres
   namespace: fint-core
   labels:
     fintlabs.no/team: core
     fintlabs.no/org-id: fintlabs-no
 spec:
-  itemPath: "vaults/aks-beta-vault/items/stfint"
+  # TODO: point at the Aiven Postgres item in 1Password (beta).
+  # Item must expose fields named `jdbc-url`, `username`, `password`.
+  itemPath: "vaults/aks-beta-vault/items/fint-link-walker-postgres"
 ---
 apiVersion: fintlabs.no/v1alpha1
 kind: Application
@@ -24,13 +26,13 @@ spec:
   orgId: fintlabs-no
   replicas: 1
   port: 8080
-  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.13-quarkus
+  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.14
   resources:
     requests:
-      memory: "128Mi"
+      memory: "256Mi"
       cpu: "100m"
     limits:
-      memory: "256Mi"
+      memory: "1Gi"
   observability:
     metrics:
       path: /link-walker/actuator/prometheus
@@ -53,10 +55,18 @@ spec:
       periodSeconds: 10
       timeoutSeconds: 5
   env:
-    - name: LINK_WALKER_STORAGE_TYPE
-      value: "blob"
-    - name: LINK_WALKER_STORAGE_BLOB_CONNECTION_STRING
+    - name: SPRING_DATASOURCE_URL
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-blob-storage
-          key: connection-string
+          name: fint-link-walker-postgres
+          key: jdbc-url
+    - name: SPRING_DATASOURCE_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-postgres
+          key: username
+    - name: SPRING_DATASOURCE_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-postgres
+          key: password
