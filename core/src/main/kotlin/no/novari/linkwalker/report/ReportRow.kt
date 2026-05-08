@@ -57,9 +57,3 @@ data class LatestReportSummary(
     val summary: ScanSummary,
 )
 
-@Schema(description = "Rows half of a scan report. Contains the per-broken-link records (one entry per finding).")
-data class LatestReportRows(
-    val scanCompletedAt: Instant,
-    val orgId: String,
-    val rows: List<ReportRow>,
-)

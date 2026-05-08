@@ -13,27 +13,10 @@ data class LinkWalkerConfig(
     val fetchConcurrency: Int = 10,
     val connectTimeout: Duration = Duration.ofSeconds(10),
     val readTimeout: Duration = Duration.ofMinutes(10),
-    val storage: StorageConfig = StorageConfig(),
     val autoRelations: List<AutoRelationRule> = emptyList(),
     val autoRelationComponents: List<String> = emptyList(),
     val piiIdentifiers: List<String> = listOf("fodselsnummer", "feidenavn"),
     val excludeRelations: List<String> = listOf("vigoreferanse", "grepreferanse"),
-)
-
-data class StorageConfig(
-    val type: String = "file",
-    val file: FileStorageConfig = FileStorageConfig(),
-    val blob: BlobStorageConfig = BlobStorageConfig(),
-)
-
-data class FileStorageConfig(
-    val directory: String = System.getProperty("java.io.tmpdir") + "/link-walker-reports",
-)
-
-data class BlobStorageConfig(
-    val endpoint: String? = null,
-    val container: String = "link-walker-reports",
-    val connectionString: String? = null,
 )
 
 data class AutoRelationRule(

@@ -3,14 +3,14 @@ package no.novari.linkwalker.reader
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Pattern
 import no.novari.linkwalker.report.LatestReportSummary
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.PagedRows
 import no.novari.linkwalker.report.ReportStore
+import no.novari.linkwalker.report.RowFilter
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
@@ -40,7 +40,7 @@ class ReportController(
         ApiResponse(responseCode = "200", description = "Summary found and returned."),
         ApiResponse(
             responseCode = "404",
-            description = "No summary blob exists for this org-id (scanner hasn't published yet, or wrong org-id format).",
+            description = "No summary exists for this org-id (scanner hasn't published yet, or wrong org-id format).",
             content = [Content()],
         ),
     )
@@ -69,7 +69,7 @@ class ReportController(
         ),
         ApiResponse(
             responseCode = "404",
-            description = "No rows blob exists for this org-id.",
+            description = "No rows exist for this org-id.",
             content = [Content()],
         ),
     )
@@ -93,47 +93,12 @@ class ReportController(
         @Parameter(description = "Page size. Defaults to 100, capped at 1000.")
         @RequestParam(defaultValue = "100") size: Int,
     ): ResponseEntity<PagedRows> {
-        val doc = reportStore.getRows(orgId) ?: return ResponseEntity.notFound().build()
-
-        val filtered: List<ReportRow> = doc.rows
-            .asSequence()
-            .filter { component == null || it.component == component }
-            .filter { resource == null || it.resource == resource }
-            .filter { problemType == null || it.problemType == problemType }
-            .toList()
-
-        val total = filtered.size
-        val pageSize = size.coerceIn(1, MAX_PAGE_SIZE)
-        val pageIndex = page.coerceAtLeast(0)
-        val from = (pageIndex * pageSize).coerceAtMost(total)
-        val to = (from + pageSize).coerceAtMost(total)
-
-        return ResponseEntity.ok(
-            PagedRows(
-                rows = filtered.subList(from, to),
-                page = pageIndex,
-                size = pageSize,
-                totalRows = total,
-                totalPages = if (total == 0) 0 else (total + pageSize - 1) / pageSize,
-            )
-        )
-    }
-
-    companion object {
-        private const val MAX_PAGE_SIZE = 1000
+        val result = reportStore.findRows(
+            orgId = orgId,
+            filter = RowFilter(component = component, resource = resource, problemType = problemType),
+            page = page,
+            size = size,
+        ) ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(result)
     }
 }
-
-@Schema(description = "A page of broken-link rows together with pagination metadata.")
-data class PagedRows(
-    @field:Schema(description = "Rows in this page (length ≤ `size`).")
-    val rows: List<ReportRow>,
-    @field:Schema(description = "Zero-based index of the page returned.")
-    val page: Int,
-    @field:Schema(description = "Effective page size used for this response (clamped to [1, 1000]).")
-    val size: Int,
-    @field:Schema(description = "Total number of rows matching the filter, across all pages.")
-    val totalRows: Int,
-    @field:Schema(description = "Total number of pages given the filter and `size`.")
-    val totalPages: Int,
-)

@@ -2,6 +2,14 @@ spring:
   threads:
     virtual:
       enabled: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/linkwalker}
+    username: ${SPRING_DATASOURCE_USERNAME:linkwalker}
+    password: ${SPRING_DATASOURCE_PASSWORD:linkwalker}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
 
 server:
   port: 8080
@@ -17,14 +25,3 @@ management:
     health:
       probes:
         enabled: true
-
-link-walker:
-  # Reader is multi-tenant: it lists all reports in storage. No `tenant` needed here —
-  # only the scanner uses it to decide which tenant's report to write.
-  storage:
-    type: file     # local-friendly default; prod overrides to "blob" via env / ConfigMap
-    file:
-      directory: /tmp/link-walker-reports
-    blob:
-      endpoint: "https://fintlink.blob.core.windows.net"
-      container: link-walker-reports

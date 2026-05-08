@@ -2,14 +2,16 @@ package no.novari.linkwalker.reader
 
 import io.mockk.every
 import io.mockk.mockk
-import no.novari.linkwalker.report.LatestReportRows
+import io.mockk.slot
+import io.mockk.verify
 import no.novari.linkwalker.report.LatestReportSummary
+import no.novari.linkwalker.report.PagedRows
 import no.novari.linkwalker.report.ReportRow
 import no.novari.linkwalker.report.ReportStore
+import no.novari.linkwalker.report.RowFilter
 import no.novari.linkwalker.report.ScanSummary
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import java.time.Instant
@@ -40,8 +42,8 @@ class ReportControllerTest {
     }
 
     @Test
-    fun `rows returns 404 when tenant has no rows blob`() {
-        every { store.getRows("missing") } returns null
+    fun `rows returns 404 when store has nothing for that org`() {
+        every { store.findRows(any(), any(), any(), any()) } returns null
 
         val response = controller.rows("missing", null, null, null, 0, 100)
 
@@ -49,75 +51,43 @@ class ReportControllerTest {
     }
 
     @Test
-    fun `rows returns paginated rows`() {
-        every { store.getRows("afk-no") } returns rowsDoc("afk-no", count = 250)
+    fun `rows passes through the store's pagination response`() {
+        val expected = PagedRows(
+            rows = listOf(row("afk-no", "comp", "res", "missing-resource")),
+            page = 0,
+            size = 100,
+            totalRows = 1L,
+            totalPages = 1,
+            scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        every { store.findRows("afk-no", any(), 0, 100) } returns expected
 
         val response = controller.rows("afk-no", null, null, null, page = 0, size = 100)
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        val body = response.body!!
-        assertEquals(100, body.rows.size)
-        assertEquals(250, body.totalRows)
-        assertEquals(0, body.page)
-        assertEquals(100, body.size)
-        assertEquals(3, body.totalPages, "ceil(250/100) = 3 pages")
+        assertEquals(expected, response.body)
     }
 
     @Test
-    fun `rows applies component filter`() {
-        every { store.getRows("afk-no") } returns LatestReportRows(
-            scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
+    fun `rows forwards filter params to the store`() {
+        val filterSlot = slot<RowFilter>()
+        every { store.findRows("afk-no", capture(filterSlot), 2, 50) } returns
+            PagedRows(emptyList(), 2, 50, 0, 0, Instant.parse("2026-01-01T00:00:00Z"))
+
+        controller.rows(
             orgId = "afk-no",
-            rows = listOf(
-                row("afk-no", "utdanning_elev", "elev", "missing-resource"),
-                row("afk-no", "utdanning_vurdering", "elevvurdering", "missing-resource"),
-                row("afk-no", "utdanning_elev", "person", "unknown-link"),
-            ),
+            component = "utdanning_elev",
+            resource = "elev",
+            problemType = "missing-resource",
+            page = 2,
+            size = 50,
         )
 
-        val response = controller.rows("afk-no", component = "utdanning_elev", null, null, 0, 100)
-
-        val body = response.body!!
-        assertEquals(2, body.totalRows)
-        assertTrue(body.rows.all { it.component == "utdanning_elev" })
-    }
-
-    @Test
-    fun `rows applies problemType filter`() {
-        every { store.getRows("afk-no") } returns LatestReportRows(
-            scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-            orgId = "afk-no",
-            rows = listOf(
-                row("afk-no", "utdanning_elev", "elev", "missing-resource"),
-                row("afk-no", "utdanning_elev", "elev", "unknown-link"),
-                row("afk-no", "utdanning_elev", "person", "missing-resource"),
-            ),
+        assertEquals(
+            RowFilter(component = "utdanning_elev", resource = "elev", problemType = "missing-resource"),
+            filterSlot.captured,
         )
-
-        val response = controller.rows("afk-no", null, null, problemType = "missing-resource", 0, 100)
-
-        assertEquals(2, response.body!!.totalRows)
-        assertTrue(response.body!!.rows.all { it.problemType == "missing-resource" })
-    }
-
-    @Test
-    fun `rows handles page beyond total gracefully`() {
-        every { store.getRows("afk-no") } returns rowsDoc("afk-no", count = 5)
-
-        val response = controller.rows("afk-no", null, null, null, page = 10, size = 100)
-
-        val body = response.body!!
-        assertEquals(0, body.rows.size)
-        assertEquals(5, body.totalRows)
-    }
-
-    @Test
-    fun `rows clamps oversized page size to MAX_PAGE_SIZE`() {
-        every { store.getRows("afk-no") } returns rowsDoc("afk-no", count = 5)
-
-        val response = controller.rows("afk-no", null, null, null, page = 0, size = 999_999)
-
-        assertTrue(response.body!!.size <= 1000)
+        verify(exactly = 1) { store.findRows("afk-no", any(), 2, 50) }
     }
 
     private fun summaryDoc(tenant: String, integrity: Double) = LatestReportSummary(
@@ -134,19 +104,13 @@ class ReportControllerTest {
         ),
     )
 
-    private fun rowsDoc(tenant: String, count: Int) = LatestReportRows(
-        scanCompletedAt = Instant.parse("2026-01-01T00:00:00Z"),
-        orgId = tenant,
-        rows = (1..count).map { row(tenant, "comp_x", "res", "missing-resource", suffix = it.toString()) },
-    )
-
-    private fun row(tenant: String, component: String, resource: String, problemType: String, suffix: String = "x") =
+    private fun row(tenant: String, component: String, resource: String, problemType: String) =
         ReportRow(
             orgId = tenant,
             component = component,
             resource = resource,
             problemType = problemType,
-            sourceSelf = "https://host/$component/$resource/systemid/$suffix",
-            targetHref = "https://host/$component/$resource/systemid/$suffix-target",
+            sourceSelf = "https://host/$component/$resource/systemid/x",
+            targetHref = "https://host/$component/$resource/systemid/x-target",
         )
 }

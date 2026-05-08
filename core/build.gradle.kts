@@ -39,16 +39,14 @@ dependencies {
     api("org.jetbrains.kotlin:kotlin-reflect")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
-    implementation(platform("com.azure:azure-sdk-bom:1.2.28"))
-    implementation("com.azure:azure-storage-blob")
-    implementation("com.azure:azure-identity")
+    api("org.springframework.boot:spring-boot-starter-data-jpa")
+    // Compile-time access for PGConnection.copyAPI in JpaReportStore's bulk-load path.
+    implementation("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("io.mockk:mockk:1.13.13")
-    testImplementation("org.testcontainers:testcontainers:1.21.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.21.3")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -62,5 +60,4 @@ kotlin {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    systemProperty("api.version", "1.45")
 }
