@@ -1,3 +1,10 @@
+# Production reader deployment.
+#
+# Database: managed by FLAIS via spec.database.database. When set,
+# FLAIS provisions a user + schema in the named database and creates
+# a secret containing the connection info. The scanner CronJobs in
+# scanner-cronjob.yaml reference the same secret, so writer (scanner)
+# and reader share the schema.
 apiVersion: fintlabs.no/v1alpha1
 kind: Application
 metadata:
@@ -13,47 +20,77 @@ spec:
   orgId: fintlabs-no
   replicas: 1
   port: 8080
-  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.14
+  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.1-go
+
+  # FLAIS-managed Postgres. Creates a user + schema in fint-core and
+  # injects connection info as a secret. See FLAIS Common Properties
+  # for the secret's exact key names if anything below doesn't match.
+  database:
+    database: fint-core
+
   resources:
     requests:
-      memory: "256Mi"
-      cpu: "100m"
+      memory: "64Mi"
+      cpu: "50m"
     limits:
-      memory: "1Gi"
+      memory: "256Mi"
+
   observability:
     metrics:
-      path: /link-walker/actuator/prometheus
+      path: /metrics
       port: "8080"
+
   probes:
     startup:
-      path: /link-walker/actuator/health/liveness
+      path: /healthz
       port: 8080
       failureThreshold: 30
       periodSeconds: 5
       timeoutSeconds: 5
     liveness:
-      path: /link-walker/actuator/health/liveness
+      path: /healthz
       port: 8080
       periodSeconds: 30
       timeoutSeconds: 5
     readiness:
-      path: /link-walker/actuator/health/readiness
+      path: /healthz
       port: 8080
       periodSeconds: 10
       timeoutSeconds: 5
+
+  # Compose DATABASE_URL (pgx-format) from the individual secret keys
+  # FLAIS provisions. If FLAIS injects these directly under different
+  # names, the env var refs need to match those.
+  #
+  # TODO: verify the secret name FLAIS creates for this Application.
+  # Common patterns are <app-name>-<database> or <app-name>-postgres.
   env:
-    - name: SPRING_DATASOURCE_URL
+    - name: DB_USER
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
-          key: jdbc-url
-    - name: SPRING_DATASOURCE_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-reader
           key: username
-    - name: SPRING_DATASOURCE_PASSWORD
+    - name: DB_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-reader
           key: password
+    - name: DB_HOST
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-reader
+          key: host
+    - name: DB_PORT
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-reader
+          key: port
+    - name: DB_NAME
+      valueFrom:
+        secretKeyRef:
+          name: fint-link-walker-reader
+          key: database
+    - name: DATABASE_URL
+      value: "postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=require"
+    - name: READER_ADDR
+      value: ":8080"

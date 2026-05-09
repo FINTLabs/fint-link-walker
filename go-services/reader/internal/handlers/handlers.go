@@ -11,6 +11,9 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/FINTLabs/fint-link-walker/go-services/pkg/report"
 	"github.com/FINTLabs/fint-link-walker/go-services/pkg/store"
 )
@@ -21,8 +24,9 @@ import (
 var orgIDPattern = regexp.MustCompile(`^[a-z0-9_-]+$`)
 
 type Handlers struct {
-	Store  store.Store
-	Logger *slog.Logger
+	Store     store.Store
+	Logger    *slog.Logger
+	Collector prometheus.Collector // optional; if set, /metrics is served from it
 }
 
 func (h *Handlers) Register(mux *http.ServeMux) {
@@ -30,6 +34,17 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /report/{orgId}/rows", h.rows)
 	mux.HandleFunc("GET /reports", h.listSummaries)
 	mux.HandleFunc("GET /healthz", h.health)
+
+	if h.Collector != nil {
+		// Use a private registry so we expose only the link-walker
+		// metrics — none of the default Go runtime / process gauges.
+		// Match the Kotlin reader's /actuator/prometheus output, which
+		// only carried the link_walker_* gauges that mattered to the
+		// dashboards.
+		reg := prometheus.NewRegistry()
+		reg.MustRegister(h.Collector)
+		mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
+	}
 }
 
 func (h *Handlers) summary(w http.ResponseWriter, req *http.Request) {

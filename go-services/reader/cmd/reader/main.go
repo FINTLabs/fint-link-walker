@@ -12,6 +12,7 @@ import (
 
 	"github.com/FINTLabs/fint-link-walker/go-services/pkg/store/postgres"
 	"github.com/FINTLabs/fint-link-walker/go-services/reader/internal/handlers"
+	"github.com/FINTLabs/fint-link-walker/go-services/reader/internal/metrics"
 )
 
 func main() {
@@ -28,7 +29,11 @@ func main() {
 	}
 	defer st.Close()
 
-	h := &handlers.Handlers{Store: st, Logger: logger}
+	h := &handlers.Handlers{
+		Store:     st,
+		Logger:    logger,
+		Collector: metrics.NewCollector(st, logger),
+	}
 	mux := http.NewServeMux()
 	h.Register(mux)
 

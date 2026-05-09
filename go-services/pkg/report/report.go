@@ -9,10 +9,10 @@ import "time"
 // Problem-type constants. Keep in sync with the Kotlin scanner so
 // dashboards work against either implementation.
 const (
-	ProblemMissingResource              = "missing-resource"
-	ProblemUnknownLink                  = "unknown-link"
-	ProblemMissingBackLinkAdapter       = "missing-back-link-adapter"
-	ProblemMissingBackLinkAutorelation  = "missing-back-link-autorelation"
+	ProblemMissingResource             = "missing-resource"
+	ProblemUnknownLink                 = "unknown-link"
+	ProblemMissingBackLinkAdapter      = "missing-back-link-adapter"
+	ProblemMissingBackLinkAutorelation = "missing-back-link-autorelation"
 )
 
 // Row is a single broken-link finding.
@@ -27,14 +27,35 @@ type Row struct {
 	ExpectedInverseName string `json:"expectedInverseName,omitempty"`
 }
 
-// Summary is the aggregate view of one scan.
+// Summary is the aggregate view of one scan, with nested per-component
+// and per-resource breakdowns. Drives both the dashboard's drill-down
+// view and the per-resource Prometheus metrics.
 type Summary struct {
+	TotalRecords     int                `json:"totalRecords"`
+	TotalRefs        int                `json:"totalRefs"`
+	BrokenLinkCount  int                `json:"brokenLinkCount"`
+	IntegrityPercent float64            `json:"integrityPercent"`
+	ByProblemType    map[string]int     `json:"byProblemType"`
+	Components       []ComponentSummary `json:"components"`
+}
+
+type ComponentSummary struct {
+	Component        string            `json:"component"`
+	TotalRecords     int               `json:"totalRecords"`
+	TotalRefs        int               `json:"totalRefs"`
+	BrokenLinkCount  int               `json:"brokenLinkCount"`
+	IntegrityPercent float64           `json:"integrityPercent"`
+	ByProblemType    map[string]int    `json:"byProblemType"`
+	Resources        []ResourceSummary `json:"resources"`
+}
+
+type ResourceSummary struct {
+	Resource         string         `json:"resource"`
 	TotalRecords     int            `json:"totalRecords"`
 	TotalRefs        int            `json:"totalRefs"`
 	BrokenLinkCount  int            `json:"brokenLinkCount"`
 	IntegrityPercent float64        `json:"integrityPercent"`
 	ByProblemType    map[string]int `json:"byProblemType"`
-	Components       []string       `json:"components"`
 }
 
 // Report is the full produced artifact of one scan: summary + every row.
