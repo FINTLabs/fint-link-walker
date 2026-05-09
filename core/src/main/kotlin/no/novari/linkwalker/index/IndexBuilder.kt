@@ -4,8 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import no.novari.linkwalker.FintClient
 import no.novari.linkwalker.NoDataException
@@ -33,7 +31,6 @@ class IndexBuilder(
         bearer: String,
         onComponentError: (component: String) -> Unit,
     ): TenantIndex = coroutineScope {
-        val semaphore = Semaphore(config.fetchConcurrency)
         val targets = mutableListOf<Triple<String, String, String>>()
 
         components.forEach { component ->
@@ -53,9 +50,7 @@ class IndexBuilder(
 
         val perCollection = targets.map { (component, path, resourceName) ->
             async(Dispatchers.IO) {
-                semaphore.withPermit {
-                    fetchAndExtract(component, path, resourceName, bearer, onComponentError)
-                }
+                fetchAndExtract(component, path, resourceName, bearer, onComponentError)
             }
         }.awaitAll()
 
@@ -74,7 +69,7 @@ class IndexBuilder(
         bearer: String,
         onComponentError: (component: String) -> Unit,
     ): List<MinimalRecord> = withContext(Dispatchers.IO) {
-        val url = "${config.baseUrl.trimEnd('/')}/$path"
+        val url = "${config.baseUrl.trimEnd('/')}/$path?size=$PAGE_SIZE"
         val tempFile: Path = Files.createTempFile("link-walker-", "-$resourceName.json")
         try {
             fintClient.streamToFile(url, bearer, tempFile)
@@ -97,4 +92,8 @@ class IndexBuilder(
 
     private fun parseComponent(component: String): Pair<String, String>? =
         component.split('_', limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] }
+
+    private companion object {
+        const val PAGE_SIZE = 100_000
+    }
 }

@@ -23,7 +23,6 @@ class IndexBuilderTest {
     private val config = LinkWalkerConfig(
         orgId = "test",
         baseUrl = "https://api.test",
-        fetchConcurrency = 2,
     )
 
     private val builder = IndexBuilder(config, fintClient, metamodel, extractor)
@@ -105,8 +104,8 @@ class IndexBuilderTest {
             fakeResource("good"),
             fakeResource("bad"),
         )
-        coEvery { fintClient.streamToFile(match { it.endsWith("/good") }, any(), any()) } returns Unit
-        coEvery { fintClient.streamToFile(match { it.endsWith("/bad") }, any(), any()) } throws
+        coEvery { fintClient.streamToFile(match { it.contains("/good?") }, any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(match { it.contains("/bad?") }, any(), any()) } throws
             RuntimeException("boom")
         every { extractor.extractFromFile(any(), "foo_bar", "good") } returns
             listOf(record("https://api.test/foo/bar/good/systemid/g-1"))

@@ -10,7 +10,6 @@ data class LinkWalkerConfig(
     val orgId: String? = null,
     val components: List<String> = ALL_FINT_COMPONENTS,
     val maxAttempts: Long = 5L,
-    val fetchConcurrency: Int = 10,
     val connectTimeout: Duration = Duration.ofSeconds(10),
     val readTimeout: Duration = Duration.ofMinutes(10),
     val autoRelations: List<AutoRelationRule> = emptyList(),
