@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, feature/**, refactor/**]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+          cache-dependency-path: go-services/go.sum
+
+      # The model lib has no external dependencies — vet + build is enough
+      # to catch generated-code regressions.
+      - name: Vet & build model lib
+        working-directory: go
+        run: |
+          go vet ./...
+          go build ./...
+
+      # Services pull pgx/uuid/errgroup — go test runs whatever exists
+      # (currently zero tests; safe no-op until we add some).
+      - name: Vet, test & build services
+        working-directory: go-services
+        run: |
+          go vet ./...
+          go test ./...
+          go build ./...
