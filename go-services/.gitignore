@@ -1,0 +1,10 @@
+# Local environment configs — copy .env.local.example to .env.local
+# and fill in your values. Real .env.local files are kept out of git
+# because they typically contain bearer tokens or per-developer URLs.
+.env
+.env.local
+.env.*.local
+
+# Compiled binaries from `go build`
+/scanner/cmd/scanner/scanner
+/reader/cmd/reader/reader

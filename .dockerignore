@@ -7,3 +7,10 @@
 .github/
 local-monitoring/
 *.md
+
+# Go service local-dev artifacts
+go-services/.env
+go-services/.env.local
+go-services/.env.*.local
+go-services/reports/
+*.prof

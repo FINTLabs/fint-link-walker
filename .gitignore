@@ -1,40 +1,29 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# IDE / editor
+.idea/
+.vscode/
 *.iml
+*.iws
 *.ipr
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+# Go
+# Build outputs (we always run `go build -o /tmp/...` or use Docker)
+/scanner
+/reader
 
-### VS Code ###
-.vscode/
+# Local secrets and per-developer overrides
+.env
+.env.local
+.env.*.local
 
-### Kotlin ###
-.kotlin
+# Heap profiles, coverage, traces from local pprof / go test runs
+*.prof
+*.pprof
+*.out
+coverage.txt
+
+# Reports written by local FileStore-based runs (legacy)
+reports/
+
+# Misc
+.DS_Store
