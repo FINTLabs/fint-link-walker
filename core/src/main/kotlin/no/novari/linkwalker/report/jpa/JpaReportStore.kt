@@ -51,9 +51,19 @@ class JpaReportStore(
             bulkCopyRows(scanId, report)
         }
 
+        // Retire prior scans' rows for this org. The reader only ever serves the
+        // latest snapshot, so old rows are dead weight that bloats indexes and
+        // forces paginated queries to walk past millions of stale rows. The
+        // summary table is left alone — summaries are tiny and useful for
+        // cross-scan trend queries we may add later.
+        val retiredRows = jdbcTemplate.update(
+            "DELETE FROM report_row WHERE org_id = ? AND scan_id <> ?",
+            report.orgId, scanId,
+        )
+
         logger.info(
-            "Persisted scan org-id={} scan-id={} rows={}",
-            report.orgId, scanId, report.rows.size,
+            "Persisted scan org-id={} scan-id={} rows={} retired-old-rows={}",
+            report.orgId, scanId, report.rows.size, retiredRows,
         )
     }
 
@@ -127,22 +137,43 @@ class JpaReportStore(
         val pageSize = size.coerceIn(1, ReportStore.MAX_PAGE_SIZE)
         val pageIndex = page.coerceAtLeast(0)
         val pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id"))
-        val result = rowRepo.findFiltered(
+        val slice = rowRepo.findFiltered(
+            orgId = orgId,
             scanId = latest.scanId,
             component = filter.component,
             resource = filter.resource,
             problemType = filter.problemType,
             pageable = pageable,
         )
+
+        // Empty filter ⇒ totalRows == summary.brokenLinkCount, written at scan time.
+        // Avoids a count(*) across millions of report_row entries on every page request.
+        val totalRows = if (filter.isEmpty()) {
+            mapper.readValue(latest.summaryJson, LatestReportSummary::class.java)
+                .summary.brokenLinkCount
+        } else {
+            rowRepo.countFiltered(
+                orgId = orgId,
+                scanId = latest.scanId,
+                component = filter.component,
+                resource = filter.resource,
+                problemType = filter.problemType,
+            )
+        }
+        val totalPages = if (totalRows == 0L) 0 else ((totalRows + pageSize - 1) / pageSize).toInt()
+
         return PagedRows(
-            rows = result.content.map { it.toRow() },
+            rows = slice.content.map { it.toRow() },
             page = pageIndex,
             size = pageSize,
-            totalRows = result.totalElements,
-            totalPages = result.totalPages,
+            totalRows = totalRows,
+            totalPages = totalPages,
             scanCompletedAt = latest.scanCompletedAt,
         )
     }
+
+    private fun RowFilter.isEmpty(): Boolean =
+        component == null && resource == null && problemType == null
 
     override fun listSummaries(): List<LatestReportSummary> =
         summaryRepo.findLatestPerOrg()

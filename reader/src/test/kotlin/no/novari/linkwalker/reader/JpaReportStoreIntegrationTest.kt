@@ -127,8 +127,48 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         val rows = reportStore.findRows(orgId, RowFilter(), 0, 100)!!
         assertEquals(5L, rows.totalRows)
 
-        // Both scans persisted (history kept), but reader sees only the latest.
+        // Summaries kept for cross-scan history; rows pruned to just the latest scan.
         assertEquals(2, summaryRepo.findAll().count())
+        assertEquals(5L, rowRepo.count())
+    }
+
+    @Test
+    fun `publishing for one org does not retire another org's rows`() {
+        val keepOrg = "keep_org"
+        val replaceOrg = "replace_org"
+        val keepRow = sampleRow(keepOrg, 0, "utdanning_elev")
+        val older = LatestReport(
+            scanCompletedAt = Instant.parse("2026-04-01T00:00:00Z"),
+            orgId = replaceOrg,
+            components = listOf("utdanning_elev"),
+            summary = ScanSummary(10, 100, 1, 99.0, mapOf("missing-resource" to 1L), emptyList()),
+            rows = listOf(sampleRow(replaceOrg, 0, "utdanning_elev")),
+        )
+        val keep = LatestReport(
+            scanCompletedAt = Instant.parse("2026-04-15T00:00:00Z"),
+            orgId = keepOrg,
+            components = listOf("utdanning_elev"),
+            summary = ScanSummary(10, 100, 1, 99.0, mapOf("missing-resource" to 1L), emptyList()),
+            rows = listOf(keepRow),
+        )
+        val newer = LatestReport(
+            scanCompletedAt = Instant.parse("2026-05-01T00:00:00Z"),
+            orgId = replaceOrg,
+            components = listOf("utdanning_elev"),
+            summary = ScanSummary(20, 200, 2, 99.0, mapOf("missing-resource" to 2L), emptyList()),
+            rows = (0..1).map { sampleRow(replaceOrg, it, "utdanning_elev") },
+        )
+
+        reportStore.publish(older)
+        reportStore.publish(keep)
+        reportStore.publish(newer)
+
+        // keep_org's row survives; replace_org has only its newer scan's rows.
+        assertEquals(3L, rowRepo.count())
+        val keepRows = reportStore.findRows(keepOrg, RowFilter(), 0, 10)!!
+        assertEquals(1L, keepRows.totalRows)
+        val replaceRows = reportStore.findRows(replaceOrg, RowFilter(), 0, 10)!!
+        assertEquals(2L, replaceRows.totalRows)
     }
 
     private fun buildRows(orgId: String, components: List<String>): List<ReportRow> {
