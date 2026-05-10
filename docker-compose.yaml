@@ -4,6 +4,10 @@ services:
     container_name: link-walker-postgres
     ports:
       - "5432:5432"
+    # Default Docker /dev/shm is 64MB. Postgres uses shared memory for parallel
+    # workers (parallel VACUUM, hash joins, big sorts); 64MB runs out fast on
+    # multi-million-row tables. 1GB is comfortable headroom for local dev.
+    shm_size: 1gb
     environment:
       POSTGRES_DB: linkwalker
       POSTGRES_USER: linkwalker
