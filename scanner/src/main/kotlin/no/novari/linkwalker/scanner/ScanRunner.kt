@@ -31,7 +31,11 @@ class ScanRunner(
 
     override fun run(args: ApplicationArguments) = runBlocking {
         val orgId = requireNotNull(config.orgId?.takeIf { it.isNotBlank() }) {
-            "link-walker.org-id must be set (e.g. --link-walker.org-id=afk-no)"
+            "link-walker.org-id must be set (e.g. --link-walker.org-id=afk_no)"
+        }
+        require(ORG_ID_REGEX.matches(orgId)) {
+            "link-walker.org-id='$orgId' is invalid — must match $ORG_ID_REGEX. " +
+                "Use underscores, not dashes: e.g. 'afk_no', not 'afk-no'."
         }
 
         logger.info("Scan starting: org-id={} components={}", orgId, config.components.size)
@@ -75,5 +79,18 @@ class ScanRunner(
             index.records.size, rows.size,
         )
         return index to rows
+    }
+
+    private companion object {
+        /**
+         * Allowed shape of `link-walker.org-id`: lowercase letters, digits, and underscores only.
+         *
+         * Mirrors the path-variable regex on the reader (`ReportController.ORG_ID_PATTERN`),
+         * so any orgId the scanner persists is reachable via `GET /report/{orgId}/...`.
+         * Dashes in particular must be normalised to underscores ("afk-no" → "afk_no") —
+         * Spring's path validator rejects dashes, so a scan persisted under "afk-no" would
+         * be unreachable through the reader and silently 404.
+         */
+        val ORG_ID_REGEX = Regex("^[a-z0-9_]+$")
     }
 }

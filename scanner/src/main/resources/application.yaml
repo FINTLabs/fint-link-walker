@@ -17,7 +17,7 @@ spring:
 
 link-walker:
   base-url: "https://api.felleskomponent.no"
-  org-id: afk-no   # default for local dev; in k8s pass --link-walker.org-id=<orgId>
+  org-id: afk_no   # default for local dev; in k8s pass --link-walker.org-id=<orgId>
   # Defaults to all FINT components (see LinkWalkerConfig.ALL_FINT_COMPONENTS).
   # Override per deployment to narrow scope, e.g. only utdanning_*.
   components:

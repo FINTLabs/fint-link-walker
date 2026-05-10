@@ -31,14 +31,14 @@ class ScanRunnerTest {
 
     @Test
     fun `happy path publishes report with summary and rows`() {
-        val runner = runner(orgId = "afk-no", components = listOf("utdanning_elev"))
+        val runner = runner(orgId = "afk_no", components = listOf("utdanning_elev"))
         val index = emptyIndex()
-        val rows = listOf(reportRow("afk-no"))
+        val rows = listOf(reportRow("afk_no"))
         val summary = summary(integrity = 99.5)
 
-        coEvery { authService.getBearerToken("afk-no") } returns "bearer-x"
+        coEvery { authService.getBearerToken("afk_no") } returns "bearer-x"
         coEvery { indexBuilder.buildIndex(listOf("utdanning_elev"), "bearer-x", any()) } returns index
-        every { indexValidator.validate("afk-no", index) } returns rows
+        every { indexValidator.validate("afk_no", index) } returns rows
         every { summaryBuilder.build(index, rows) } returns summary
 
         val captured = slot<LatestReport>()
@@ -47,7 +47,7 @@ class ScanRunnerTest {
         runner.run(args)
 
         coVerify { reportStore.publish(any()) }
-        assertEquals("afk-no", captured.captured.orgId)
+        assertEquals("afk_no", captured.captured.orgId)
         assertEquals(listOf("utdanning_elev"), captured.captured.components)
         assertEquals(rows, captured.captured.rows)
         assertEquals(summary, captured.captured.summary)
@@ -70,9 +70,17 @@ class ScanRunnerTest {
     }
 
     @Test
-    fun `null bearer token throws and never publishes`() {
+    fun `org-id with dash is rejected and never publishes`() {
         val runner = runner(orgId = "afk-no")
-        coEvery { authService.getBearerToken("afk-no") } returns null
+
+        assertThrows(IllegalArgumentException::class.java) { runner.run(args) }
+        coVerify(exactly = 0) { reportStore.publish(any()) }
+    }
+
+    @Test
+    fun `null bearer token throws and never publishes`() {
+        val runner = runner(orgId = "afk_no")
+        coEvery { authService.getBearerToken("afk_no") } returns null
 
         assertThrows(IllegalStateException::class.java) { runner.run(args) }
         coVerify(exactly = 0) { reportStore.publish(any()) }
@@ -80,11 +88,11 @@ class ScanRunnerTest {
 
     @Test
     fun `partial component failure still publishes report`() {
-        val runner = runner(orgId = "afk-no", components = listOf("good", "broken"))
+        val runner = runner(orgId = "afk_no", components = listOf("good", "broken"))
         val index = emptyIndex()
         val rows = emptyList<ReportRow>()
 
-        coEvery { authService.getBearerToken("afk-no") } returns "bearer"
+        coEvery { authService.getBearerToken("afk_no") } returns "bearer"
         coEvery {
             indexBuilder.buildIndex(any(), any(), any())
         } answers {
@@ -93,7 +101,7 @@ class ScanRunnerTest {
             onError("broken")
             index
         }
-        every { indexValidator.validate("afk-no", index) } returns rows
+        every { indexValidator.validate("afk_no", index) } returns rows
         every { summaryBuilder.build(index, rows) } returns summary(integrity = 100.0)
 
         runner.run(args)
