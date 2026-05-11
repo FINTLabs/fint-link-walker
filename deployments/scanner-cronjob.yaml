@@ -42,7 +42,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=afk_no"
@@ -50,24 +50,24 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
                   cpu: "500m"
                 limits:
-                  memory: "16Gi"
+                  memory: "10Gi"
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -113,7 +113,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=agderfk_no"
@@ -121,18 +121,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -184,7 +184,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=bfk_no"
@@ -192,18 +192,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -255,7 +255,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=ffk_no"
@@ -263,18 +263,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -326,7 +326,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=innlandetfylke_no"
@@ -334,18 +334,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -397,7 +397,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=mrfylke_no"
@@ -405,18 +405,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -468,7 +468,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=nfk_no"
@@ -476,18 +476,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -539,7 +539,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=ofk_no"
@@ -547,18 +547,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -610,7 +610,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=rogfk_no"
@@ -618,18 +618,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -681,7 +681,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=telemarkfylke_no"
@@ -689,18 +689,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -752,7 +752,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=tromsfylke_no"
@@ -760,18 +760,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -823,7 +823,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=trondelagfylke_no"
@@ -831,18 +831,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -894,7 +894,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=ude_oslo_kommune_no"
@@ -902,18 +902,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -965,7 +965,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=vestfoldfylke_no"
@@ -973,18 +973,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"
@@ -1036,7 +1036,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.14
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
                 - "--link-walker.org-id=vlfk_no"
@@ -1044,18 +1044,18 @@ spec:
                 - name: FINT_DATABASE_URL
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: jdbc-url
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
                 - name: FINT_DATABASE_USERNAME
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: username
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
                 - name: FINT_DATABASE_PASSWORD
                   valueFrom:
                     secretKeyRef:
-                      name: fint-link-walker-db
-                      key: password
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
               resources:
                 requests:
                   memory: "4Gi"

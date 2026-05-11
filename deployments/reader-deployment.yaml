@@ -5,15 +5,19 @@ metadata:
   namespace: fint-core
   labels:
     app.kubernetes.io/name: fint-link-walker-reader
+    app.kubernetes.io/instance: fint-link-walker-reader_fintlabs-no
+    app.kubernetes.io/version: latest
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: fint-felleskomponent
     fintlabs.no/team: core
     fintlabs.no/org-id: fintlabs-no
 spec:
-  orgId: fintlabs-no
+  orgId: fintlabs.no
   replicas: 1
   port: 8080
-  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.14
+  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.17
+  database:
+    database: fint-core
   resources:
     requests:
       memory: "256Mi"
@@ -41,19 +45,3 @@ spec:
       port: 8080
       periodSeconds: 10
       timeoutSeconds: 5
-  env:
-    - name: FINT_DATABASE_URL
-      valueFrom:
-        secretKeyRef:
-          name: fint-link-walker-db
-          key: jdbc-url
-    - name: FINT_DATABASE_USERNAME
-      valueFrom:
-        secretKeyRef:
-          name: fint-link-walker-db
-          key: username
-    - name: FINT_DATABASE_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: fint-link-walker-db
-          key: password
