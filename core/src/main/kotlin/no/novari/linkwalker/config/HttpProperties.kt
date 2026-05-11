@@ -8,4 +8,5 @@ data class HttpProperties(
     val maxConcurrentFetches: Int = 50,
     val connectTimeout: Duration = Duration.ofSeconds(10),
     val readTimeout: Duration = Duration.ofMinutes(10),
+    val maxAttempts: Int = 5,
 )

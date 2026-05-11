@@ -44,3 +44,4 @@ link-walker:
     - "utdanning_utdanningsprogram"
     - "utdanning_timeplan"
     - "utdanning_kodeverk"
+  max-attempts: 5
