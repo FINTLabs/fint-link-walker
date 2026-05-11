@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestClientResponseException
 import org.springframework.web.client.body
 
 @Component
@@ -38,33 +39,48 @@ class FlaisGateway(
     private fun getEncryptedAuthObject(orgId: String): AuthResponse {
         val uri = createUri(orgId)
         log.info("Flais GET {}", uri)
-        return restClient.get()
-            .uri(uri)
-            .retrieve()
-            .body<AuthResponse>()
-            ?: error("Empty response from flais-gateway for $orgId")
+        return logFailure("Flais GET $uri") {
+            restClient.get()
+                .uri(uri)
+                .retrieve()
+                .body<AuthResponse>()
+                ?: error("Empty response from flais-gateway for $orgId")
+        }.also { log.info("Flais GET {} -> operation={}, clientExists={}", uri, it.operation, it.authObject != null) }
     }
 
     private fun clientExists(authResponse: AuthResponse): Boolean = authResponse.authObject != null
 
-    private fun decryptAuthResponse(authResponse: AuthResponse): AuthObject =
-        restClient.post()
-            .uri("/client/decrypt")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(authResponse)
-            .retrieve()
-            .body<AuthObject>()
-            ?: error("Empty response from flais-gateway decrypt")
+    private fun decryptAuthResponse(authResponse: AuthResponse): AuthObject {
+        log.info("Flais POST /client/decrypt for orgId={}", authResponse.orgId)
+        return logFailure("Flais POST /client/decrypt") {
+            restClient.post()
+                .uri("/client/decrypt")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(authResponse)
+                .retrieve()
+                .body<AuthObject>()
+                ?: error("Empty response from flais-gateway decrypt")
+        }.also { log.info("Flais POST /client/decrypt -> clientId={}, name={}", it.clientId, it.name) }
+    }
 
     private fun createNewClient(orgId: String): AuthResponse {
         val request = ClientRequest(orgId = dotted(orgId), clientData = ClientData.forComponents(config.components))
         log.info("Flais POST /client body={}", request)
-        return restClient.post()
-            .uri("/client")
-            .body(request)
-            .retrieve()
-            .body<AuthResponse>()
-            ?: error("Empty response from flais-gateway client creation")
+        return logFailure("Flais POST /client") {
+            restClient.post()
+                .uri("/client")
+                .body(request)
+                .retrieve()
+                .body<AuthResponse>()
+                ?: error("Empty response from flais-gateway client creation")
+        }.also { log.info("Flais POST /client -> operation={}, clientExists={}", it.operation, it.authObject != null) }
+    }
+
+    private inline fun <T> logFailure(label: String, block: () -> T): T = try {
+        block()
+    } catch (e: RestClientResponseException) {
+        log.error("{} failed: status={} body={}", label, e.statusCode, e.responseBodyAsString)
+        throw e
     }
 
     // OU uses the underscore form (already what OrgId enforces); CN uses dotted DNS-style.
