@@ -3,9 +3,10 @@ package no.novari.linkwalker.auth
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.runBlocking
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.model.AuthObject
 import no.novari.linkwalker.auth.model.AuthResponse
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.ScannerProperties
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
@@ -28,7 +29,7 @@ class FlaisGatewayTest {
         server = MockWebServer().apply { start() }
         gateway = FlaisGateway(
             restClient = RestClient.builder().baseUrl(server.url("/").toString()).build(),
-            config = LinkWalkerConfig(components = listOf("utdanning_elev")),
+            config = ScannerProperties(components = listOf("utdanning_elev")),
         )
     }
 
@@ -44,7 +45,7 @@ class FlaisGatewayTest {
         // POST /client/decrypt → AuthObject
         server.enqueue(jsonResponse(decryptedAuthObject()))
 
-        val result = gateway.getAuthObject("afk-no")
+        val result = gateway.getAuthObject(OrgId("afk_no"))
 
         assertNotNull(result)
         assertEquals("link-walker@client.afk.no", result!!.name)
@@ -72,7 +73,7 @@ class FlaisGatewayTest {
         // POST /client/decrypt → AuthObject
         server.enqueue(jsonResponse(decryptedAuthObject()))
 
-        val result = gateway.getAuthObject("afk-no")
+        val result = gateway.getAuthObject(OrgId("afk_no"))
 
         assertNotNull(result)
 
@@ -94,7 +95,7 @@ class FlaisGatewayTest {
         server.enqueue(jsonResponse(authResponseWithObject()))
         server.enqueue(jsonResponse(decryptedAuthObject()))
 
-        gateway.getAuthObject("agderfk-no")
+        gateway.getAuthObject(OrgId("agderfk_no"))
 
         val getRequest = server.takeRequest()
         assertEquals(
@@ -108,7 +109,7 @@ class FlaisGatewayTest {
         server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json"))
 
         assertThrows(IllegalStateException::class.java) {
-            runBlocking { gateway.getAuthObject("afk-no") }
+            runBlocking { gateway.getAuthObject(OrgId("afk_no")) }
         }
     }
 
@@ -116,7 +117,7 @@ class FlaisGatewayTest {
     fun `4xx from FLAIS propagates as exception`() {
         server.enqueue(MockResponse().setResponseCode(404).setBody("not found"))
 
-        val ex = runCatching { runBlocking { gateway.getAuthObject("afk-no") } }.exceptionOrNull()
+        val ex = runCatching { runBlocking { gateway.getAuthObject(OrgId("afk_no")) } }.exceptionOrNull()
         assert(ex != null)
     }
 
@@ -140,8 +141,8 @@ class FlaisGatewayTest {
         shortDescription = "Autogenerert relasjontester",
         assetId = "", asset = "", note = "",
         password = "p", clientSecret = "s", publicKey = "", clientId = "c",
-        components = mutableListOf("ou=utdanning_elev,ou=components,o=fint"),
-        accessPackages = mutableListOf(),
+        components = listOf("ou=utdanning_elev,ou=components,o=fint"),
+        accessPackages = emptyList(),
         managed = true,
     )
 

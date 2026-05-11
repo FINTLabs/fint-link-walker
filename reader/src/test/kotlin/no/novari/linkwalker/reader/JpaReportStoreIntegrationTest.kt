@@ -1,7 +1,9 @@
 package no.novari.linkwalker.reader
 
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.report.ComponentSummary
 import no.novari.linkwalker.report.LatestReport
+import no.novari.linkwalker.report.ProblemType
 import no.novari.linkwalker.report.ReportRow
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
@@ -45,7 +47,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
 
     @Test
     fun `publish then read summary + paginated filtered rows`() {
-        val orgId = "test_org"
+        val orgId = OrgId("test_org")
         val rows = buildRows(orgId, components = listOf("utdanning_elev", "utdanning_vurdering"))
         val report = LatestReport(
             scanCompletedAt = Instant.now(),
@@ -89,19 +91,19 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
 
         val onlyMissing = reportStore.findRows(
             orgId,
-            RowFilter(problemType = "missing-resource"),
+            RowFilter(problemType = ProblemType.MissingResource),
             page = 0,
             size = 1000,
         )!!
-        assertTrue(onlyMissing.rows.all { it.problemType == "missing-resource" })
+        assertTrue(onlyMissing.rows.all { it.problemType == ProblemType.MissingResource })
 
-        val unknownOrg = reportStore.findRows("does_not_exist", RowFilter(), 0, 10)
+        val unknownOrg = reportStore.findRows(OrgId("does_not_exist"), RowFilter(), 0, 10)
         assertNull(unknownOrg)
     }
 
     @Test
     fun `latest scan wins for same org-id`() {
-        val orgId = "test_org"
+        val orgId = OrgId("test_org")
         val older = LatestReport(
             scanCompletedAt = Instant.parse("2026-04-01T00:00:00Z"),
             orgId = orgId,
@@ -131,8 +133,12 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         assertEquals(2, summaryRepo.findAll().count())
     }
 
-    private fun buildRows(orgId: String, components: List<String>): List<ReportRow> {
-        val problemTypes = listOf("missing-resource", "unknown-link", "missing-back-link-adapter")
+    private fun buildRows(orgId: OrgId, components: List<String>): List<ReportRow> {
+        val problemTypes = listOf(
+            ProblemType.MissingResource,
+            ProblemType.UnknownLink,
+            ProblemType.MissingBackLinkAdapter,
+        )
         val resources = listOf("elevforhold", "vurdering")
         return (0 until 250).map { i ->
             ReportRow(
@@ -153,7 +159,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         totalRefs = 5000L,
         brokenLinkCount = rows.size.toLong(),
         integrityPercent = 95.0,
-        byProblemType = rows.groupingBy { it.problemType }.eachCount().mapValues { it.value.toLong() },
+        byProblemType = rows.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
         components = rows.groupBy { it.component }.map { (compName, compRows) ->
             ComponentSummary(
                 component = compName,
@@ -161,7 +167,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
                 totalRefs = 2500L,
                 brokenLinkCount = compRows.size.toLong(),
                 integrityPercent = 95.0,
-                byProblemType = compRows.groupingBy { it.problemType }.eachCount().mapValues { it.value.toLong() },
+                byProblemType = compRows.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
                 resources = compRows.groupBy { it.resource }.map { (resName, resRows) ->
                     ResourceSummary(
                         resource = resName,
@@ -169,7 +175,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
                         totalRefs = 1250L,
                         brokenLinkCount = resRows.size.toLong(),
                         integrityPercent = 95.0,
-                        byProblemType = resRows.groupingBy { it.problemType }.eachCount()
+                        byProblemType = resRows.groupingBy { it.problemType.wire }.eachCount()
                             .mapValues { it.value.toLong() },
                     )
                 },
@@ -177,11 +183,11 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         },
     )
 
-    private fun sampleRow(orgId: String, idx: Int, component: String): ReportRow = ReportRow(
+    private fun sampleRow(orgId: OrgId, idx: Int, component: String): ReportRow = ReportRow(
         orgId = orgId,
         component = component,
         resource = "elevforhold",
-        problemType = "missing-resource",
+        problemType = ProblemType.MissingResource,
         sourceSelf = "https://api.felleskomponent.no/source/$idx",
         targetHref = "https://api.felleskomponent.no/target/$idx",
     )

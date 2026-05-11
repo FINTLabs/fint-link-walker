@@ -3,9 +3,9 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/linkwalker}
-    username: ${SPRING_DATASOURCE_USERNAME:linkwalker}
-    password: ${SPRING_DATASOURCE_PASSWORD:linkwalker}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update

@@ -1,3 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/linkwalker
+    username: linkwalker
+    password: linkwalker
+
 fint:
   linkwalker:
     auth:

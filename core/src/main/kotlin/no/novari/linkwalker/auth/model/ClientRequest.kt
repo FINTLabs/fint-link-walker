@@ -2,29 +2,22 @@ package no.novari.linkwalker.auth.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import no.novari.linkwalker.auth.AuthConstants.CLIENT_NAME
-import java.util.UUID
 
-class ClientRequest(
-    components: List<String>,
-    orgId: String,
+data class ClientRequest(
+    val orgId: String,
     @get:JsonProperty("object")
-    val clientData: ClientData = ClientData(components),
+    val clientData: ClientData,
+)
+
+data class ClientData(
+    val components: List<String>,
+    val name: String = CLIENT_NAME,
+    val shortDescription: String = "Autogenerert relasjontester",
+    val note: String = "En generert klient for relasjon testing",
+    val managed: Boolean = true,
 ) {
-
-    val orgId = orgId.replace("-", ".")
-        .replace("_", ".")
-
-}
-
-class ClientData(components: List<String>) {
-
-    val name: String = CLIENT_NAME
-    val shortDescription: String = "Autogenerert relasjontester"
-    val note: String = "En generert klient for relasjon testing"
-
-    // Keep managed so user cannot access client credentials
-    val managed = true
-
-    // Access to all components due to cross-domain relations
-    val components = components.map { "ou=$it,ou=components,o=fint" }
+    companion object {
+        fun forComponents(components: List<String>): ClientData =
+            ClientData(components = components.map { "ou=$it,ou=components,o=fint" })
+    }
 }

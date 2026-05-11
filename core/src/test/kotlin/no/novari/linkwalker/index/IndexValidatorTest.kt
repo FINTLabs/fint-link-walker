@@ -5,8 +5,10 @@ import io.mockk.mockk
 import no.novari.fint.model.FintMultiplicity
 import no.novari.fint.model.FintRelation
 import no.novari.fint.model.resource.FintResource
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.config.AutoRelationRule
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.IndexProperties
+import no.novari.linkwalker.report.ProblemType
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Component
 import no.novari.metamodel.model.Resource
@@ -38,7 +40,7 @@ class IndexValidatorTest {
             "utdanning" to "elev" to "elev" via "fravarsregistrering" inverse "elev",
         )
 
-        val rows = validator(metamodel).validate("afk-no", index)
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
 
         assertTrue(rows.isEmpty(), "Expected no rows, got: $rows")
     }
@@ -62,10 +64,10 @@ class IndexValidatorTest {
             "utdanning" to "vurdering" to "elevfravar" via "elev" inverse "fravarsregistrering",
         )
 
-        val rows = validator(metamodel).validate("afk-no", index)
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
 
         val row = rows.single()
-        assertEquals("missing-back-link-adapter", row.problemType)
+        assertEquals(ProblemType.MissingBackLinkAdapter, row.problemType)
         assertEquals("elev", row.relationName)
         assertEquals("fravarsregistrering", row.expectedInverseName)
     }
@@ -101,9 +103,9 @@ class IndexValidatorTest {
             metamodel,
             autoRelations = rules,
             autoRelationComponents = listOf("utdanning_vurdering"),
-        ).validate("afk-no", index)
+        ).validate(OrgId("afk_no"), index)
 
-        assertEquals("missing-back-link-autorelation", rows.single().problemType)
+        assertEquals(ProblemType.MissingBackLinkAutorelation, rows.single().problemType)
     }
 
     @Test
@@ -127,7 +129,7 @@ class IndexValidatorTest {
             "utdanning" to "elev" to "elev" via "person" inverse "elev",
         )
 
-        val rows = validator(metamodel).validate("afk-no", index)
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
 
         val row = rows.single()
         assertEquals("https://host/utdanning/elev/person/systemid/p-1", row.targetHref)
@@ -148,10 +150,10 @@ class IndexValidatorTest {
             "utdanning" to "elev" to "elev" via "person" inverse null,
         )
 
-        val rows = validator(metamodel).validate("afk-no", index)
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
 
         val row = rows.single()
-        assertEquals("missing-resource", row.problemType)
+        assertEquals(ProblemType.MissingResource, row.problemType)
         assertEquals("https://host/utdanning/elev/person/fodselsnummer/***", row.targetHref)
     }
 
@@ -169,10 +171,10 @@ class IndexValidatorTest {
             "utdanning" to "vurdering" to "elevfravar" via "elev" inverse null,
         )
 
-        val rows = validator(metamodel).validate("afk-no", index)
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
 
         assertEquals(1, rows.size)
-        assertEquals("missing-resource", rows.single().problemType)
+        assertEquals(ProblemType.MissingResource, rows.single().problemType)
     }
 
     private fun validator(
@@ -181,7 +183,7 @@ class IndexValidatorTest {
         autoRelationComponents: List<String> = emptyList(),
         piiIdentifiers: List<String> = listOf("fodselsnummer", "feidenavn"),
     ): IndexValidator {
-        val config = LinkWalkerConfig(
+        val config = IndexProperties(
             autoRelations = autoRelations,
             autoRelationComponents = autoRelationComponents,
             piiIdentifiers = piiIdentifiers,

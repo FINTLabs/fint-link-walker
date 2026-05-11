@@ -1,7 +1,7 @@
 package no.novari.linkwalker.index
 
 import no.novari.linkwalker.config.AutoRelationRule
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.IndexProperties
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -70,7 +70,7 @@ class AutoRelationRulesTest {
         autoRelations: List<AutoRelationRule> = emptyList(),
         enabled: List<String> = emptyList(),
     ) = AutoRelationRules(
-        LinkWalkerConfig(
+        IndexProperties(
             autoRelations = autoRelations,
             autoRelationComponents = enabled,
         )

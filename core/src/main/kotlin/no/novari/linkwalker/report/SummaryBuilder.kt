@@ -17,16 +17,13 @@ class SummaryBuilder {
             }
             .sortedByDescending { it.brokenLinkCount }
 
-        val totalRecords = index.records.size.toLong()
-        val totalRefs = index.records.sumOf { refCount(it) }
-        val brokenLinkCount = rows.size.toLong()
-
+        val agg = aggregate(index.records, rows)
         return ScanSummary(
-            totalRecords = totalRecords,
-            totalRefs = totalRefs,
-            brokenLinkCount = brokenLinkCount,
-            integrityPercent = integrity(totalRefs, brokenLinkCount),
-            byProblemType = countByProblemType(rows),
+            totalRecords = agg.totalRecords,
+            totalRefs = agg.totalRefs,
+            brokenLinkCount = agg.brokenLinkCount,
+            integrityPercent = agg.integrityPercent,
+            byProblemType = agg.byProblemType,
             components = components,
         )
     }
@@ -45,17 +42,14 @@ class SummaryBuilder {
             }
             .sortedByDescending { it.brokenLinkCount }
 
-        val totalRecords = records.size.toLong()
-        val totalRefs = records.sumOf { refCount(it) }
-        val brokenLinkCount = rows.size.toLong()
-
+        val agg = aggregate(records, rows)
         return ComponentSummary(
             component = component,
-            totalRecords = totalRecords,
-            totalRefs = totalRefs,
-            brokenLinkCount = brokenLinkCount,
-            integrityPercent = integrity(totalRefs, brokenLinkCount),
-            byProblemType = countByProblemType(rows),
+            totalRecords = agg.totalRecords,
+            totalRefs = agg.totalRefs,
+            brokenLinkCount = agg.brokenLinkCount,
+            integrityPercent = agg.integrityPercent,
+            byProblemType = agg.byProblemType,
             resources = resources,
         )
     }
@@ -65,29 +59,52 @@ class SummaryBuilder {
         records: List<MinimalRecord>,
         rows: List<ReportRow>,
     ): ResourceSummary {
-        val totalRecords = records.size.toLong()
-        val totalRefs = records.sumOf { refCount(it) }
-        val brokenLinkCount = rows.size.toLong()
-
+        val agg = aggregate(records, rows)
         return ResourceSummary(
             resource = resource,
-            totalRecords = totalRecords,
+            totalRecords = agg.totalRecords,
+            totalRefs = agg.totalRefs,
+            brokenLinkCount = agg.brokenLinkCount,
+            integrityPercent = agg.integrityPercent,
+            byProblemType = agg.byProblemType,
+        )
+    }
+
+    private fun aggregate(records: List<MinimalRecord>, rows: List<ReportRow>): Aggregates {
+        val totalRefs = records.sumOf { refCount(it) }
+        val broken = rows.size.toLong()
+        return Aggregates(
+            totalRecords = records.size.toLong(),
             totalRefs = totalRefs,
-            brokenLinkCount = brokenLinkCount,
-            integrityPercent = integrity(totalRefs, brokenLinkCount),
+            brokenLinkCount = broken,
+            integrityPercent = integrity(totalRefs, broken),
             byProblemType = countByProblemType(rows),
         )
     }
 
+    // Malformed hrefs count as both a ref (denominator of integrity) and a broken
+    // ref (numerator) — they appear as `unknown-link` rows, so integrity drops
+    // by their share just like missing-resource and missing-back-link findings.
     private fun refCount(record: MinimalRecord): Long =
         (record.outboundRefs.size + record.malformedHrefs.size).toLong()
 
     private fun countByProblemType(rows: List<ReportRow>): Map<String, Long> =
-        rows.groupingBy { it.problemType }.eachCount().mapValues { it.value.toLong() }
+        rows.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() }
 
     private fun integrity(totalRefs: Long, broken: Long): Double? {
         if (totalRefs == 0L) return null
         val pct = (1.0 - broken.toDouble() / totalRefs) * 100
-        return ((pct * 100).toLong() / 100.0).coerceIn(0.0, 100.0)
+        return truncateToTwoDecimals(pct).coerceIn(0.0, 100.0)
     }
+
+    private fun truncateToTwoDecimals(value: Double): Double =
+        (value * 100).toLong() / 100.0
+
+    private data class Aggregates(
+        val totalRecords: Long,
+        val totalRefs: Long,
+        val brokenLinkCount: Long,
+        val integrityPercent: Double?,
+        val byProblemType: Map<String, Long>,
+    )
 }

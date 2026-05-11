@@ -5,8 +5,10 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.AuthService
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.ScannerProperties
+import no.novari.linkwalker.report.ProblemType
 import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
@@ -31,14 +33,14 @@ class ScanRunnerTest {
 
     @Test
     fun `happy path publishes report with summary and rows`() {
-        val runner = runner(orgId = "afk-no", components = listOf("utdanning_elev"))
+        val runner = runner(orgId = "afk_no", components = listOf("utdanning_elev"))
         val index = emptyIndex()
-        val rows = listOf(reportRow("afk-no"))
+        val rows = listOf(reportRow("afk_no"))
         val summary = summary(integrity = 99.5)
 
-        coEvery { authService.getBearerToken("afk-no") } returns "bearer-x"
-        coEvery { indexBuilder.buildIndex(listOf("utdanning_elev"), "bearer-x", any()) } returns index
-        every { indexValidator.validate("afk-no", index) } returns rows
+        coEvery { authService.getBearerToken(OrgId("afk_no")) } returns "bearer-x"
+        coEvery { indexBuilder.buildIndex(listOf("utdanning_elev"), "bearer-x") } returns index
+        every { indexValidator.validate(OrgId("afk_no"), index) } returns rows
         every { summaryBuilder.build(index, rows) } returns summary
 
         val captured = slot<LatestReport>()
@@ -47,7 +49,7 @@ class ScanRunnerTest {
         runner.run(args)
 
         coVerify { reportStore.publish(any()) }
-        assertEquals("afk-no", captured.captured.orgId)
+        assertEquals(OrgId("afk_no"), captured.captured.orgId)
         assertEquals(listOf("utdanning_elev"), captured.captured.components)
         assertEquals(rows, captured.captured.rows)
         assertEquals(summary, captured.captured.summary)
@@ -71,39 +73,26 @@ class ScanRunnerTest {
 
     @Test
     fun `null bearer token throws and never publishes`() {
-        val runner = runner(orgId = "afk-no")
-        coEvery { authService.getBearerToken("afk-no") } returns null
+        val runner = runner(orgId = "afk_no")
+        coEvery { authService.getBearerToken(OrgId("afk_no")) } returns null
 
         assertThrows(IllegalStateException::class.java) { runner.run(args) }
         coVerify(exactly = 0) { reportStore.publish(any()) }
     }
 
     @Test
-    fun `partial component failure still publishes report`() {
-        val runner = runner(orgId = "afk-no", components = listOf("good", "broken"))
-        val index = emptyIndex()
-        val rows = emptyList<ReportRow>()
+    fun `index-builder failure fails the scan and never publishes (fail-fast)`() {
+        val runner = runner(orgId = "afk_no", components = listOf("utdanning_elev"))
+        coEvery { authService.getBearerToken(OrgId("afk_no")) } returns "bearer"
+        coEvery { indexBuilder.buildIndex(any(), any()) } throws RuntimeException("fetch blew up")
 
-        coEvery { authService.getBearerToken("afk-no") } returns "bearer"
-        coEvery {
-            indexBuilder.buildIndex(any(), any(), any())
-        } answers {
-            // Simulate a per-component failure being reported back via the callback.
-            val onError = thirdArg<(String) -> Unit>()
-            onError("broken")
-            index
-        }
-        every { indexValidator.validate("afk-no", index) } returns rows
-        every { summaryBuilder.build(index, rows) } returns summary(integrity = 100.0)
-
-        runner.run(args)
-
-        coVerify(exactly = 1) { reportStore.publish(any()) }
+        assertThrows(RuntimeException::class.java) { runner.run(args) }
+        coVerify(exactly = 0) { reportStore.publish(any()) }
     }
 
     private fun runner(orgId: String?, components: List<String> = emptyList()): ScanRunner =
         ScanRunner(
-            config = LinkWalkerConfig(orgId = orgId, components = components),
+            config = ScannerProperties(orgId = orgId, components = components),
             authService = authService,
             indexBuilder = indexBuilder,
             indexValidator = indexValidator,
@@ -123,10 +112,10 @@ class ScanRunnerTest {
     )
 
     private fun reportRow(orgId: String) = ReportRow(
-        orgId = orgId,
+        orgId = OrgId(orgId),
         component = "utdanning_elev",
         resource = "elev",
-        problemType = "missing-resource",
+        problemType = ProblemType.MissingResource,
         sourceSelf = "https://host/utdanning/elev/elev/systemid/x",
         targetHref = "https://host/utdanning/elev/elev/systemid/y",
     )

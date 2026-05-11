@@ -1,6 +1,6 @@
 package no.novari.linkwalker.index
 
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.IndexProperties
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -12,23 +12,14 @@ class HrefSanitizerTest {
             "https://host/utdanning/elev/person/fodselsnummer/12345",
             "https://host/utdanning/elev/person/systemid/p-1",
         )
-        val href = sanitizer().safeHref(record, record.canonicalKeys.first())
+        val href = sanitizer().safeHref(record)
         assertEquals("https://host/utdanning/elev/person/systemid/p-1", href)
     }
 
     @Test
-    fun `safeHref masks fallback when all canonical keys are PII`() {
+    fun `safeHref masks the first PII key when all keys are PII`() {
         val record = recordOf("https://host/utdanning/elev/person/fodselsnummer/12345")
-        val href = sanitizer().safeHref(record, record.canonicalKeys.first())
-        assertEquals("https://host/utdanning/elev/person/fodselsnummer/***", href)
-    }
-
-    @Test
-    fun `safeHref masks fallback when record is null`() {
-        val href = sanitizer().safeHref(
-            null,
-            "https://host/utdanning/elev/person/fodselsnummer/12345",
-        )
+        val href = sanitizer().safeHref(record)
         assertEquals("https://host/utdanning/elev/person/fodselsnummer/***", href)
     }
 
@@ -58,7 +49,7 @@ class HrefSanitizerTest {
     }
 
     private fun sanitizer(piiTypes: List<String> = listOf("fodselsnummer", "feidenavn")) =
-        HrefSanitizer(LinkWalkerConfig(piiIdentifiers = piiTypes))
+        HrefSanitizer(IndexProperties(piiIdentifiers = piiTypes))
 
     private fun recordOf(vararg canonicalKeys: String) = MinimalRecord(
         component = "test",

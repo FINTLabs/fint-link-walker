@@ -1,7 +1,6 @@
 package no.novari.linkwalker
 
 import kotlinx.coroutines.runBlocking
-import no.novari.linkwalker.config.LinkWalkerConfig
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
@@ -27,10 +26,7 @@ class FintClientTest {
     @BeforeEach
     fun setUp() {
         server = MockWebServer().apply { start() }
-        client = FintClient(
-            fintRestClient = RestClient.builder().build(),
-            config = LinkWalkerConfig(maxAttempts = 2),
-        )
+        client = FintClient(fintRestClient = RestClient.builder().build())
     }
 
     @AfterEach
@@ -71,7 +67,7 @@ class FintClientTest {
     }
 
     @Test
-    fun `200 + HTML throws NoRouteException without retry`() {
+    fun `200 + HTML throws NoRouteException`() {
         server.enqueue(
             MockResponse()
                 .setResponseCode(200)
@@ -84,11 +80,11 @@ class FintClientTest {
                 client.streamToFile(server.url("/utdanning/ot").toString(), "t", tempDir.resolve("x"))
             }
         }
-        assertEquals(1, server.requestCount, "NoRoute must not retry")
+        assertEquals(1, server.requestCount)
     }
 
     @Test
-    fun `503 + CacheNotFoundException body throws NoDataException without retry`() {
+    fun `503 + CacheNotFoundException body throws NoDataException`() {
         server.enqueue(
             MockResponse()
                 .setResponseCode(503)
@@ -101,30 +97,28 @@ class FintClientTest {
                 client.streamToFile(server.url("/data").toString(), "t", tempDir.resolve("x"))
             }
         }
-        assertEquals(1, server.requestCount, "NoData must not retry")
+        assertEquals(1, server.requestCount)
     }
 
     @Test
-    fun `503 without CacheNotFoundException is retried as 5xx`() {
-        repeat(3) {
-            server.enqueue(
-                MockResponse()
-                    .setResponseCode(503)
-                    .setHeader("Content-Type", "application/json")
-                    .setBody("""{"error":"transient"}"""),
-            )
-        }
+    fun `5xx fails immediately without retry`() {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(503)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"error":"transient"}"""),
+        )
 
         assertThrows(HttpClientErrorException::class.java) {
             runBlocking {
                 client.streamToFile(server.url("/data").toString(), "t", tempDir.resolve("x"))
             }
         }
-        assertEquals(3, server.requestCount, "1 initial + 2 retries with maxAttempts=2")
+        assertEquals(1, server.requestCount, "fail-fast: no retry on 5xx")
     }
 
     @Test
-    fun `4xx is not retried`() {
+    fun `4xx fails immediately`() {
         server.enqueue(
             MockResponse()
                 .setResponseCode(404)
@@ -138,24 +132,7 @@ class FintClientTest {
             }
         }
         assertTrue(ex.statusCode.is4xxClientError)
-        assertEquals(1, server.requestCount, "4xx must not retry")
-    }
-
-    @Test
-    fun `5xx then 200 succeeds after retry`() = runBlocking {
-        server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
-        server.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("""{"ok":true}"""),
-        )
-        val dest = tempDir.resolve("out.json")
-
-        client.streamToFile(server.url("/data").toString(), "t", dest)
-
-        assertEquals("""{"ok":true}""", Files.readString(dest))
-        assertEquals(2, server.requestCount)
+        assertEquals(1, server.requestCount)
     }
 
     @Test

@@ -91,6 +91,6 @@ class IdpClientTest {
     ) = AuthObject(
         dn = "", name = name, shortDescription = "", assetId = "", asset = "", note = "",
         password = password, clientSecret = clientSecret, publicKey = "", clientId = clientId,
-        components = mutableListOf(), accessPackages = mutableListOf(), managed = true,
+        components = emptyList(), accessPackages = emptyList(), managed = true,
     )
 }

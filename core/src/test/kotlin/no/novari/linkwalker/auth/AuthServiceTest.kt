@@ -3,6 +3,7 @@ package no.novari.linkwalker.auth
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.model.AuthObject
 import no.novari.linkwalker.auth.model.TokenResponse
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -18,33 +19,33 @@ class AuthServiceTest {
     @Test
     fun `returns access token on happy path`() = runBlocking {
         val authObject = fakeAuthObject()
-        coEvery { flaisGateway.getAuthObject("afk-no") } returns authObject
+        coEvery { flaisGateway.getAuthObject(OrgId("afk_no")) } returns authObject
         coEvery { idpClient.getTokenResponse(authObject) } returns tokenResponse("ya29.bearer")
 
-        assertEquals("ya29.bearer", service.getBearerToken("afk-no"))
+        assertEquals("ya29.bearer", service.getBearerToken(OrgId("afk_no")))
     }
 
     @Test
     fun `returns null when FlaisGateway returns null`() = runBlocking {
-        coEvery { flaisGateway.getAuthObject("afk-no") } returns null
+        coEvery { flaisGateway.getAuthObject(OrgId("afk_no")) } returns null
 
-        assertNull(service.getBearerToken("afk-no"))
+        assertNull(service.getBearerToken(OrgId("afk_no")))
     }
 
     @Test
     fun `returns null when IdpClient returns null`() = runBlocking {
         val authObject = fakeAuthObject()
-        coEvery { flaisGateway.getAuthObject("afk-no") } returns authObject
+        coEvery { flaisGateway.getAuthObject(OrgId("afk_no")) } returns authObject
         coEvery { idpClient.getTokenResponse(authObject) } returns null
 
-        assertNull(service.getBearerToken("afk-no"))
+        assertNull(service.getBearerToken(OrgId("afk_no")))
     }
 
     private fun fakeAuthObject() = AuthObject(
         dn = "cn=link-walker", name = "link-walker@client.afk.no",
         shortDescription = "", assetId = "", asset = "", note = "",
         password = "p", clientSecret = "s", publicKey = "", clientId = "c",
-        components = mutableListOf(), accessPackages = mutableListOf(),
+        components = emptyList(), accessPackages = emptyList(),
         managed = true,
     )
 

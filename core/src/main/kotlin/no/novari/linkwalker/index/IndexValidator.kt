@@ -1,6 +1,8 @@
 package no.novari.linkwalker.index
 
 import no.novari.fint.model.FintRelation
+import no.novari.linkwalker.OrgId
+import no.novari.linkwalker.report.ProblemType
 import no.novari.linkwalker.report.ReportRow
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Resource
@@ -13,7 +15,7 @@ class IndexValidator(
     private val sanitizer: HrefSanitizer,
 ) {
 
-    fun validate(orgId: String, index: TenantIndex): List<ReportRow> {
+    fun validate(orgId: OrgId, index: TenantIndex): List<ReportRow> {
         val rows = mutableListOf<ReportRow>()
         val resourceCache = mutableMapOf<Pair<String, String>, ResourceInfo?>()
 
@@ -27,82 +29,92 @@ class IndexValidator(
     }
 
     private fun validateRecord(
-        orgId: String,
+        orgId: OrgId,
         record: MinimalRecord,
         info: ResourceInfo?,
         index: TenantIndex,
         rows: MutableList<ReportRow>,
     ) {
         val sourceCanonical: Set<String> = record.canonicalKeys.toSet()
-
         record.outboundRefs.forEach { ref ->
-            val target = index.recordAt(ref.targetCanonical)
-            if (target == null) {
-                rows += ReportRow(
-                    orgId = orgId,
-                    component = record.component,
-                    resource = record.resourceName,
-                    problemType = MISSING_RESOURCE,
-                    sourceSelf = sanitizer.safeHref(record, record.displaySelf),
-                    targetHref = sanitizer.mask(ref.targetCanonical),
-                    relationName = ref.relationName,
-                )
-                return@forEach
-            }
-            val relation = info?.relationsByName?.get(ref.relationName.lowercase()) ?: return@forEach
-            val inverseName = relation.inverseName ?: return@forEach
-
-            val pointsBack = target.outboundRefs.any { backRef ->
-                backRef.relationName.equals(inverseName, ignoreCase = true) &&
-                    backRef.targetCanonical in sourceCanonical
-            }
-            if (!pointsBack) {
-                val isAutoRelation = autoRelationRules.isAutoRelation(
-                    component = record.component,
-                    resourceName = record.resourceName,
-                    relationName = ref.relationName,
-                )
-                rows += ReportRow(
-                    orgId = orgId,
-                    component = record.component,
-                    resource = record.resourceName,
-                    problemType = if (isAutoRelation) MISSING_BACK_LINK_AUTORELATION
-                                  else MISSING_BACK_LINK_ADAPTER,
-                    sourceSelf = sanitizer.safeHref(record, record.displaySelf),
-                    targetHref = sanitizer.safeHref(target, target.displaySelf),
-                    relationName = ref.relationName,
-                    expectedInverseName = inverseName,
-                )
-            }
+            checkOutboundRef(orgId, record, info, index, sourceCanonical, ref)?.let(rows::add)
         }
-
         record.malformedHrefs.forEach { badHref ->
-            rows += ReportRow(
-                orgId = orgId,
-                component = record.component,
-                resource = record.resourceName,
-                problemType = UNKNOWN_LINK,
-                sourceSelf = sanitizer.safeHref(record, record.displaySelf),
-                targetHref = sanitizer.mask(badHref),
-            )
+            rows += unknownLinkRow(orgId, record, badHref)
         }
     }
 
+    private fun checkOutboundRef(
+        orgId: OrgId,
+        record: MinimalRecord,
+        info: ResourceInfo?,
+        index: TenantIndex,
+        sourceCanonical: Set<String>,
+        ref: OutboundRef,
+    ): ReportRow? {
+        val target = index.recordAt(ref.targetCanonical)
+            ?: return missingResourceRow(orgId, record, ref)
+
+        val inverseName = info?.relationsByName?.get(ref.relationName.lowercase())?.inverseName
+            ?: return null
+
+        val pointsBack = target.outboundRefs.any { backRef ->
+            backRef.relationName.equals(inverseName, ignoreCase = true) &&
+                backRef.targetCanonical in sourceCanonical
+        }
+        if (pointsBack) return null
+
+        return missingBackLinkRow(orgId, record, target, ref, inverseName)
+    }
+
+    private fun missingResourceRow(orgId: OrgId, record: MinimalRecord, ref: OutboundRef) = ReportRow(
+        orgId = orgId,
+        component = record.component,
+        resource = record.resourceName,
+        problemType = ProblemType.MissingResource,
+        sourceSelf = sanitizer.safeHref(record),
+        targetHref = sanitizer.mask(ref.targetCanonical),
+        relationName = ref.relationName,
+    )
+
+    private fun missingBackLinkRow(
+        orgId: OrgId,
+        record: MinimalRecord,
+        target: MinimalRecord,
+        ref: OutboundRef,
+        inverseName: String,
+    ): ReportRow {
+        val isAutoRelation = autoRelationRules.isAutoRelation(
+            component = record.component,
+            resourceName = record.resourceName,
+            relationName = ref.relationName,
+        )
+        return ReportRow(
+            orgId = orgId,
+            component = record.component,
+            resource = record.resourceName,
+            problemType = if (isAutoRelation) ProblemType.MissingBackLinkAutorelation else ProblemType.MissingBackLinkAdapter,
+            sourceSelf = sanitizer.safeHref(record),
+            targetHref = sanitizer.safeHref(target),
+            relationName = ref.relationName,
+            expectedInverseName = inverseName,
+        )
+    }
+
+    private fun unknownLinkRow(orgId: OrgId, record: MinimalRecord, badHref: String) = ReportRow(
+        orgId = orgId,
+        component = record.component,
+        resource = record.resourceName,
+        problemType = ProblemType.UnknownLink,
+        sourceSelf = sanitizer.safeHref(record),
+        targetHref = sanitizer.mask(badHref),
+    )
+
     private fun buildResourceInfo(component: String, resourceName: String): ResourceInfo? {
-        val (domain, pkg) = parseComponent(component) ?: return null
-        val resource: Resource = metamodelService.getResource(domain, pkg, resourceName) ?: return null
+        val id = ComponentId.parse(component) ?: return null
+        val resource: Resource = metamodelService.getResource(id.domain, id.pkg, resourceName) ?: return null
         return ResourceInfo(resource.relations.associateBy { it.name.lowercase() })
     }
 
-    private fun parseComponent(component: String): Pair<String, String>? =
-        component.split('_', limit = 2).takeIf { it.size == 2 }?.let { it[0] to it[1] }
-
     private data class ResourceInfo(val relationsByName: Map<String, FintRelation>)
-
-    companion object {
-        const val MISSING_RESOURCE = "missing-resource"
-        const val UNKNOWN_LINK = "unknown-link"
-        const val MISSING_BACK_LINK_AUTORELATION = "missing-back-link-autorelation"
-        const val MISSING_BACK_LINK_ADAPTER = "missing-back-link-adapter"
-    }
 }

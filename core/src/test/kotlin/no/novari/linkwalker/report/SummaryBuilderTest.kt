@@ -1,5 +1,6 @@
 package no.novari.linkwalker.report
 
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.index.MinimalRecord
 import no.novari.linkwalker.index.OutboundRef
 import no.novari.linkwalker.index.TenantIndex
@@ -107,10 +108,10 @@ class SummaryBuilderTest {
     )
 
     private fun row(component: String, resource: String, problemType: String) = ReportRow(
-        orgId = "test",
+        orgId = OrgId("test"),
         component = component,
         resource = resource,
-        problemType = problemType,
+        problemType = ProblemType.parseOrNull(problemType) ?: error("unknown wire: $problemType"),
         sourceSelf = "https://host/$component/$resource/systemid/x",
         targetHref = "https://host/target/systemid/y",
     )

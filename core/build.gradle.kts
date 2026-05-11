@@ -2,6 +2,7 @@ plugins {
     `java-library`
     kotlin("jvm")
     kotlin("plugin.spring")
+    kotlin("plugin.jpa")
     id("io.spring.dependency-management")
 }
 
@@ -34,14 +35,12 @@ dependencies {
 
     api("no.novari:fint-core-metamodel:3.0.0")
 
-    api("io.swagger.core.v3:swagger-annotations-jakarta:2.2.47")
     api("tools.jackson.module:jackson-module-kotlin:3.1.3")
     api("org.jetbrains.kotlin:kotlin-reflect")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
     api("org.springframework.boot:spring-boot-starter-data-jpa")
-    // Compile-time access for PGConnection.copyAPI in JpaReportStore's bulk-load path.
-    implementation("org.postgresql:postgresql")
+    runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

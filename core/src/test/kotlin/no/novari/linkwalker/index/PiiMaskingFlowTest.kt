@@ -2,7 +2,9 @@ package no.novari.linkwalker.index
 
 import io.mockk.every
 import io.mockk.mockk
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.OrgId
+import no.novari.linkwalker.config.IndexProperties
+import no.novari.linkwalker.report.ProblemType
 import no.novari.metamodel.MetamodelService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -15,7 +17,7 @@ class PiiMaskingFlowTest {
     private val rules = mockk<AutoRelationRules> {
         every { isAutoRelation(any(), any(), any()) } returns false
     }
-    private val sanitizer = HrefSanitizer(LinkWalkerConfig())
+    private val sanitizer = HrefSanitizer(IndexProperties())
     private val validator = IndexValidator(metamodel, rules, sanitizer)
 
     @Test
@@ -32,11 +34,11 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceFnrHref to source))
 
-        val rows = validator.validate("afk-no", index)
+        val rows = validator.validate(OrgId("afk_no"), index)
 
         assertEquals(1, rows.size)
         val row = rows.single()
-        assertEquals("missing-resource", row.problemType)
+        assertEquals(ProblemType.MissingResource, row.problemType)
         assertTrue(row.sourceSelf.endsWith("/fodselsnummer/***"), "sourceSelf must mask PII value: ${row.sourceSelf}")
         assertTrue(row.targetHref.endsWith("/fodselsnummer/***"), "targetHref must mask PII value: ${row.targetHref}")
         assertFalse("12345678901" in row.sourceSelf, "fodselsnummer leaked in sourceSelf")
@@ -58,7 +60,7 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(systemIdHref to source))
 
-        val rows = validator.validate("afk-no", index)
+        val rows = validator.validate(OrgId("afk_no"), index)
 
         assertEquals(1, rows.size)
         assertEquals(systemIdHref, rows.single().sourceSelf, "Should prefer non-PII canonical key over fodselsnummer")
@@ -78,11 +80,11 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceHref to source))
 
-        val rows = validator.validate("afk-no", index)
+        val rows = validator.validate(OrgId("afk_no"), index)
 
         assertEquals(1, rows.size)
         val row = rows.single()
-        assertEquals("unknown-link", row.problemType)
+        assertEquals(ProblemType.UnknownLink, row.problemType)
         assertFalse("12345678901" in row.targetHref, "fodselsnummer leaked in malformed targetHref: ${row.targetHref}")
     }
 
@@ -100,7 +102,7 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(feideHref to source))
 
-        val rows = validator.validate("afk-no", index)
+        val rows = validator.validate(OrgId("afk_no"), index)
 
         assertEquals(1, rows.size)
         assertFalse("alice" in rows.single().sourceSelf, "feidenavn leaked in sourceSelf: ${rows.single().sourceSelf}")
@@ -133,11 +135,11 @@ class PiiMaskingFlowTest {
             ),
         )
 
-        val rows = validator.validate("afk-no", index)
+        val rows = validator.validate(OrgId("afk_no"), index)
 
         // Resource was found via PII key → no missing-resource row should appear for this ref.
         assertTrue(
-            rows.none { it.problemType == "missing-resource" },
+            rows.none { it.problemType == ProblemType.MissingResource },
             "Index lookup must use unmasked canonical keys; got rows: $rows",
         )
     }

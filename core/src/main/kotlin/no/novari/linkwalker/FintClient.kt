@@ -1,10 +1,5 @@
 package no.novari.linkwalker
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import no.novari.linkwalker.config.LinkWalkerConfig
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -13,7 +8,6 @@ import org.springframework.web.client.RestClient
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import kotlin.random.Random
 
 class NoRouteException(message: String) : RuntimeException(message)
 class NoDataException(message: String) : RuntimeException(message)
@@ -21,15 +15,14 @@ class NoDataException(message: String) : RuntimeException(message)
 @Component
 class FintClient(
     private val fintRestClient: RestClient,
-    private val config: LinkWalkerConfig,
 ) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
-    suspend fun streamToFile(url: String, bearer: String, destination: Path): Unit =
-        withContext(Dispatchers.IO) {
-            withRetry { fetchAndCopy(url, bearer, destination) }
-        }
+    // Suspend so callers can compose, but runs synchronously on the caller's dispatcher.
+    // IndexBuilder dispatches through a parallelism-limited view of Dispatchers.IO;
+    // a withContext(Dispatchers.IO) here would break that cap.
+    suspend fun streamToFile(url: String, bearer: String, destination: Path) {
+        fetchAndCopy(url, bearer, destination)
+    }
 
     private fun fetchAndCopy(url: String, bearer: String, destination: Path) {
         fintRestClient.get()
@@ -68,38 +61,6 @@ class FintClient(
                     }
                 }
             }
-    }
-
-    private suspend fun withRetry(block: () -> Unit) {
-        val maxAttempts = config.maxAttempts.toInt()
-        var attempt = 0
-        while (true) {
-            try {
-                block()
-                return
-            } catch (ex: NoRouteException) {
-                throw ex
-            } catch (ex: NoDataException) {
-                throw ex
-            } catch (ex: HttpClientErrorException) {
-                if (ex.statusCode.is4xxClientError) throw ex
-                attempt++
-                if (attempt > maxAttempts) throw ex
-                logger.warn("Retry #{} – {}", attempt, ex.message)
-                delay(backoffMs(attempt))
-            } catch (ex: Exception) {
-                attempt++
-                if (attempt > maxAttempts) throw ex
-                logger.warn("Retry #{} – {}", attempt, ex.message)
-                delay(backoffMs(attempt))
-            }
-        }
-    }
-
-    private fun backoffMs(attempt: Int): Long {
-        val base = (250L shl (attempt - 1).coerceAtMost(6)).coerceAtMost(20_000L)
-        val jitter = Random.nextLong((base * 0.25).toLong().coerceAtLeast(1))
-        return base + jitter
     }
 
     private fun isJson(contentType: MediaType?): Boolean =

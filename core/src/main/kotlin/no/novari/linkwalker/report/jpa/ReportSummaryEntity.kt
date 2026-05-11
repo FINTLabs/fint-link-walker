@@ -13,20 +13,20 @@ import java.util.UUID
     name = "report_summary",
     indexes = [Index(name = "idx_summary_org_completed", columnList = "org_id, scan_completed_at DESC")],
 )
-class ReportSummaryEntity(
+class ReportSummaryEntity internal constructor(
     @Id
     @Column(name = "id", nullable = false)
-    var id: UUID = UUID.randomUUID(),
+    val id: UUID,
 
     @Column(name = "scan_id", nullable = false)
-    var scanId: UUID = UUID.randomUUID(),
+    val scanId: UUID,
 
     @Column(name = "org_id", nullable = false, length = 64)
-    var orgId: String = "",
+    val orgId: String,
 
     @Column(name = "scan_completed_at", nullable = false)
-    var scanCompletedAt: Instant = Instant.EPOCH,
+    val scanCompletedAt: Instant,
 
     @Column(name = "summary_json", nullable = false, columnDefinition = "TEXT")
-    var summaryJson: String = "",
+    val summaryJson: String,
 )

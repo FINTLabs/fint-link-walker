@@ -1,7 +1,7 @@
 package no.novari.linkwalker.index
 
 import tools.jackson.module.kotlin.jacksonObjectMapper
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.IndexProperties
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -26,7 +26,7 @@ class RecordExtractorTest {
             }
         """.trimIndent()
 
-        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")
+        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")!!
 
         assertEquals(
             listOf("https://api.f.no/utdanning/elev/elev/systemid/abc"),
@@ -49,7 +49,7 @@ class RecordExtractorTest {
         """.trimIndent()
 
         val record = extractor(excludeRelations = listOf("vigoreferanse"))
-            .extract(mapper.readTree(json), "utdanning_elev", "elev")
+            .extract(mapper.readTree(json), "utdanning_elev", "elev")!!
 
         assertTrue(record.outboundRefs.isEmpty())
         assertTrue(record.malformedHrefs.isEmpty())
@@ -89,11 +89,22 @@ class RecordExtractorTest {
     }
 
     @Test
-    fun `record with no _links returns empty fields`() {
+    fun `record with no _links is dropped (returns null)`() {
         val record = extractor().extract(mapper.readTree("{}"), "any", "any")
-        assertTrue(record.canonicalKeys.isEmpty())
-        assertTrue(record.outboundRefs.isEmpty())
-        assertTrue(record.malformedHrefs.isEmpty())
+        assertEquals(null, record)
+    }
+
+    @Test
+    fun `record with _links but no self is dropped (returns null)`() {
+        val json = """
+            {
+              "_links": {
+                "skole": [{ "href": "https://api.f.no/utdanning/elev/skole/systemid/x" }]
+              }
+            }
+        """.trimIndent()
+        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")
+        assertEquals(null, record)
     }
 
     @Test
@@ -108,7 +119,7 @@ class RecordExtractorTest {
               }
             }
         """.trimIndent()
-        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "person")
+        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "person")!!
 
         assertEquals(2, record.canonicalKeys.size)
         assertTrue(record.canonicalKeys.any { it.endsWith("systemid/p-1") })
@@ -124,7 +135,7 @@ class RecordExtractorTest {
               }
             }
         """.trimIndent()
-        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")
+        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")!!
         assertTrue(record.outboundRefs.isEmpty())
     }
 
@@ -137,6 +148,9 @@ class RecordExtractorTest {
         file.writeText(
             """
             {
+              "total_items": 3,
+              "offset": 0,
+              "size": 100,
               "_embedded": {
                 "_entries": [
                   {
@@ -163,24 +177,29 @@ class RecordExtractorTest {
             """.trimIndent()
         )
 
-        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
 
-        assertEquals(3, records.size, "All three entries should have been extracted")
+        assertEquals(3, page.records.size, "All three entries should have been extracted")
+        assertEquals(3L, page.totalItems)
         assertEquals(
             listOf("systemid/a", "systemid/b", "systemid/c"),
-            records.map { it.canonicalKeys.single().substringAfterLast('/').let { id -> "systemid/$id" } },
+            page.records.map { it.canonicalKeys.single().substringAfterLast('/').let { id -> "systemid/$id" } },
         )
-        assertEquals(setOf("person", "klasse"), records.flatMap { it.outboundRefs.map { ref -> ref.relationName } }.toSet())
+        assertEquals(
+            setOf("person", "klasse"),
+            page.records.flatMap { it.outboundRefs.map { ref -> ref.relationName } }.toSet(),
+        )
     }
 
     @Test
     fun `extractFromFile returns empty when _embedded _entries is empty`(@TempDir tmp: Path) {
         val file = tmp.resolve("empty.json")
-        file.writeText("""{"_embedded":{"_entries":[]}}""")
+        file.writeText("""{"total_items":0,"_embedded":{"_entries":[]}}""")
 
-        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
 
-        assertTrue(records.isEmpty())
+        assertTrue(page.records.isEmpty())
+        assertEquals(0L, page.totalItems)
     }
 
     @Test
@@ -188,11 +207,36 @@ class RecordExtractorTest {
         val file = tmp.resolve("no-entries.json")
         file.writeText("""{"_embedded":{"otherField":[]}}""")
 
-        val records = extractor().extractFromFile(file, "utdanning_elev", "elev")
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
 
-        assertTrue(records.isEmpty())
+        assertTrue(page.records.isEmpty())
+        assertEquals(null, page.totalItems)
+    }
+
+    @Test
+    fun `extractFromFile reports total_items even when greater than entries in this page`(@TempDir tmp: Path) {
+        val file = tmp.resolve("partial.json")
+        file.writeText(
+            """
+            {
+              "total_items": 1497067,
+              "offset": 0,
+              "size": 100,
+              "_embedded": {
+                "_entries": [
+                  { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(1, page.records.size)
+        assertEquals(1_497_067L, page.totalItems)
     }
 
     private fun extractor(excludeRelations: List<String> = emptyList()) =
-        RecordExtractor(mapper, LinkWalkerConfig(excludeRelations = excludeRelations))
+        RecordExtractor(mapper, IndexProperties(excludeRelations = excludeRelations))
 }

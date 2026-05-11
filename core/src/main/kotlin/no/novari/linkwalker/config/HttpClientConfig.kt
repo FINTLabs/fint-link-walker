@@ -9,7 +9,7 @@ import java.net.http.HttpClient
 @Configuration
 class HttpClientConfig(
     private val authProperties: AuthProperties,
-    private val linkWalkerConfig: LinkWalkerConfig,
+    private val httpProperties: HttpProperties,
 ) {
 
     @Bean("idpRestClient")
@@ -35,10 +35,10 @@ class HttpClientConfig(
 
     private fun jdkRequestFactory(): JdkClientHttpRequestFactory {
         val httpClient = HttpClient.newBuilder()
-            .connectTimeout(linkWalkerConfig.connectTimeout)
+            .connectTimeout(httpProperties.connectTimeout)
             .build()
         return JdkClientHttpRequestFactory(httpClient).apply {
-            setReadTimeout(linkWalkerConfig.readTimeout)
+            setReadTimeout(httpProperties.readTimeout)
         }
     }
 }

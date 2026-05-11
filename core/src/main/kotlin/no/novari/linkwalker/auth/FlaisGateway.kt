@@ -3,10 +3,12 @@ package no.novari.linkwalker.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.novari.linkwalker.auth.AuthConstants.CLIENT_NAME
+import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.model.AuthObject
 import no.novari.linkwalker.auth.model.AuthResponse
+import no.novari.linkwalker.auth.model.ClientData
 import no.novari.linkwalker.auth.model.ClientRequest
-import no.novari.linkwalker.config.LinkWalkerConfig
+import no.novari.linkwalker.config.ScannerProperties
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -17,24 +19,25 @@ import org.springframework.web.client.body
 class FlaisGateway(
     @Qualifier("flaisRestClient")
     private val restClient: RestClient,
-    private val config: LinkWalkerConfig,
+    private val config: ScannerProperties,
 ) {
 
-    suspend fun getAuthObject(orgId: String): AuthObject? = withContext(Dispatchers.IO) {
-        val encrypted = getEncryptedAuthObject(orgId)
+    suspend fun getAuthObject(orgId: OrgId): AuthObject? = withContext(Dispatchers.IO) {
+        val raw = orgId.value
+        val encrypted = getEncryptedAuthObject(raw)
         if (clientExists(encrypted)) {
             decryptAuthResponse(encrypted)
         } else {
-            decryptAuthResponse(createNewClient(ClientRequest(config.components, orgId)))
+            decryptAuthResponse(createNewClient(raw))
         }
     }
 
-    private fun getEncryptedAuthObject(orgName: String): AuthResponse =
+    private fun getEncryptedAuthObject(orgId: String): AuthResponse =
         restClient.get()
-            .uri(createUri(orgName))
+            .uri(createUri(orgId))
             .retrieve()
             .body<AuthResponse>()
-            ?: error("Empty response from flais-gateway for $orgName")
+            ?: error("Empty response from flais-gateway for $orgId")
 
     private fun clientExists(authResponse: AuthResponse): Boolean = authResponse.authObject != null
 
@@ -47,18 +50,19 @@ class FlaisGateway(
             .body<AuthObject>()
             ?: error("Empty response from flais-gateway decrypt")
 
-    private fun createNewClient(clientRequest: ClientRequest): AuthResponse =
+    private fun createNewClient(orgId: String): AuthResponse =
         restClient.post()
             .uri("/client")
-            .body(clientRequest)
+            .body(ClientRequest(orgId = dotted(orgId), clientData = ClientData.forComponents(config.components)))
             .retrieve()
             .body<AuthResponse>()
             ?: error("Empty response from flais-gateway client creation")
 
+    // OU uses the underscore form (already what OrgId enforces); CN uses dotted DNS-style.
     private fun createUri(orgId: String): String =
-        orgId.replace('.', '_').replace("-", "_")
-            .let { "/client/cn=${createCn(orgId)},ou=clients,ou=$it,ou=organisations,o=fint" }
+        "/client/cn=${cnFor(orgId)},ou=clients,ou=$orgId,ou=organisations,o=fint"
 
-    private fun createCn(orgId: String) =
-        "$CLIENT_NAME@client.${orgId.replace("-", ".").replace("_", ".")}"
+    private fun cnFor(orgId: String): String = "$CLIENT_NAME@client.${dotted(orgId)}"
+
+    private fun dotted(orgId: String): String = orgId.replace('_', '.')
 }
