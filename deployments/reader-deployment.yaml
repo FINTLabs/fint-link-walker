@@ -42,18 +42,18 @@ spec:
       periodSeconds: 10
       timeoutSeconds: 5
   env:
-    - name: SPRING_DATASOURCE_URL
+    - name: FINT_DATABASE_URL
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: jdbc-url
-    - name: SPRING_DATASOURCE_USERNAME
+    - name: FINT_DATABASE_USERNAME
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: username
-    - name: SPRING_DATASOURCE_PASSWORD
+    - name: FINT_DATABASE_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: password

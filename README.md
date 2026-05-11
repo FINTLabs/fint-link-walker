@@ -99,9 +99,9 @@ Datasource via Spring properties (env-var overridable):
 
 | Property                  | Default (local)                                | Override in prod via                |
 |---------------------------|------------------------------------------------|-------------------------------------|
-| `spring.datasource.url`   | `jdbc:postgresql://localhost:5432/linkwalker`  | `SPRING_DATASOURCE_URL`             |
-| `spring.datasource.username` | `linkwalker`                                | `SPRING_DATASOURCE_USERNAME`        |
-| `spring.datasource.password` | `linkwalker`                                | `SPRING_DATASOURCE_PASSWORD`        |
+| `spring.datasource.url`   | `jdbc:postgresql://localhost:5432/linkwalker`  | `FINT_DATABASE_URL`                 |
+| `spring.datasource.username` | `linkwalker`                                | `FINT_DATABASE_USERNAME`            |
+| `spring.datasource.password` | `linkwalker`                                | `FINT_DATABASE_PASSWORD`            |
 
 ## Running locally
 
@@ -163,4 +163,4 @@ The test strategy mixes pure unit tests with three kinds of integration tests, p
 - **Scanner** runs as a Kubernetes `CronJob` per tenant. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction — partial scans are not visible to the reader.
 - **Reader** runs as a `Deployment` with a `Service` exposing `:8080`. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
 
-The Postgres connection is an Aiven managed instance in production, configured per-environment via `SPRING_DATASOURCE_*` env vars (typically sourced from a Kubernetes secret).
+The Postgres connection is an Aiven managed instance in production, configured per-environment via `FINT_DATABASE_*` env vars (typically sourced from a Kubernetes secret).

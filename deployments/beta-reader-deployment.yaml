@@ -1,16 +1,3 @@
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: fint-link-walker-postgres
-  namespace: fint-core
-  labels:
-    fintlabs.no/team: core
-    fintlabs.no/org-id: fintlabs-no
-spec:
-  # TODO: point at the Aiven Postgres item in 1Password (beta).
-  # Item must expose fields named `jdbc-url`, `username`, `password`.
-  itemPath: "vaults/aks-beta-vault/items/fint-link-walker-postgres"
----
 apiVersion: fintlabs.no/v1alpha1
 kind: Application
 metadata:
@@ -55,18 +42,18 @@ spec:
       periodSeconds: 10
       timeoutSeconds: 5
   env:
-    - name: SPRING_DATASOURCE_URL
+    - name: FINT_DATABASE_URL
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: jdbc-url
-    - name: SPRING_DATASOURCE_USERNAME
+    - name: FINT_DATABASE_USERNAME
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: username
-    - name: SPRING_DATASOURCE_PASSWORD
+    - name: FINT_DATABASE_PASSWORD
       valueFrom:
         secretKeyRef:
-          name: fint-link-walker-postgres
+          name: fint-link-walker-db
           key: password

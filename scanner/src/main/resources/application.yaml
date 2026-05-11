@@ -4,9 +4,9 @@ spring:
   config:
     import: classpath:auto-relations.yaml
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${fint.database.url}
+    username: ${fint.database.username}
+    password: ${fint.database.password}
   jpa:
     hibernate:
       ddl-auto: update
