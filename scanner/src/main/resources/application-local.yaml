@@ -5,6 +5,6 @@ spring:
     password: linkwalker
 
 fint:
-  linkwalker:
+  link-walker:
     auth:
-      flais-gateway: "http://localhost:56417"
+      flais-gateway: "http://localhost:9095"

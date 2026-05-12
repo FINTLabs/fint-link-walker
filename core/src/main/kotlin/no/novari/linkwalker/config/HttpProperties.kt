@@ -3,7 +3,7 @@ package no.novari.linkwalker.config
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.time.Duration
 
-@ConfigurationProperties("link-walker")
+@ConfigurationProperties("fint.link-walker.http")
 data class HttpProperties(
     val maxConcurrentFetches: Int = 50,
     val connectTimeout: Duration = Duration.ofSeconds(10),

@@ -45,7 +45,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=afk_no"
+                - "--fint.link-walker.scanner.org-id=afk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -116,7 +116,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=agderfk_no"
+                - "--fint.link-walker.scanner.org-id=agderfk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -187,7 +187,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=bfk_no"
+                - "--fint.link-walker.scanner.org-id=bfk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -258,7 +258,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=ffk_no"
+                - "--fint.link-walker.scanner.org-id=ffk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -329,7 +329,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=innlandetfylke_no"
+                - "--fint.link-walker.scanner.org-id=innlandetfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -400,7 +400,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=mrfylke_no"
+                - "--fint.link-walker.scanner.org-id=mrfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -471,7 +471,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=nfk_no"
+                - "--fint.link-walker.scanner.org-id=nfk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -542,7 +542,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=ofk_no"
+                - "--fint.link-walker.scanner.org-id=ofk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -613,7 +613,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=rogfk_no"
+                - "--fint.link-walker.scanner.org-id=rogfk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -684,7 +684,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=telemarkfylke_no"
+                - "--fint.link-walker.scanner.org-id=telemarkfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -755,7 +755,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=tromsfylke_no"
+                - "--fint.link-walker.scanner.org-id=tromsfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -826,7 +826,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=trondelagfylke_no"
+                - "--fint.link-walker.scanner.org-id=trondelagfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -897,7 +897,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=ude_oslo_kommune_no"
+                - "--fint.link-walker.scanner.org-id=ude_oslo_kommune_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -968,7 +968,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=vestfoldfylke_no"
+                - "--fint.link-walker.scanner.org-id=vestfoldfylke_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -1039,7 +1039,7 @@ spec:
               image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
               imagePullPolicy: IfNotPresent
               args:
-                - "--link-walker.org-id=vlfk_no"
+                - "--fint.link-walker.scanner.org-id=vlfk_no"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:

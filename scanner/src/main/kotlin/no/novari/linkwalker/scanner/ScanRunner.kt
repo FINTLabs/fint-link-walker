@@ -58,10 +58,10 @@ class ScanRunner(
 
     private fun requiredOrgId(): OrgId {
         val raw = requireNotNull(config.orgId?.takeIf { it.isNotBlank() }) {
-            "link-walker.org-id must be set (e.g. --link-walker.org-id=afk_no)"
+            "fint.link-walker.scanner.org-id must be set (e.g. --fint.link-walker.scanner.org-id=afk_no)"
         }
         return OrgId.parseOrNull(raw)
-            ?: error("link-walker.org-id '$raw' is invalid — expected ${OrgId.REGEX.pattern}")
+            ?: error("fint.link-walker.scanner.org-id '$raw' is invalid — expected ${OrgId.REGEX.pattern}")
     }
 
     private suspend fun scan(orgId: OrgId): ScanResult {

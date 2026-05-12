@@ -16,32 +16,37 @@ spring:
       hibernate.order_inserts: true
       hibernate.jdbc.batch_versioned_data: true
 
-link-walker:
-  base-url: "https://api.felleskomponent.no"
-  org-id: afk_no   # default for local dev; in k8s pass --link-walker.org-id=<orgId>
-  # Defaults to all FINT components (see LinkWalkerConfig.ALL_FINT_COMPONENTS).
-  # Override per deployment to narrow scope, e.g. only utdanning_*.
-  components:
-    - "administrasjon_fullmakt"
-    - "administrasjon_kodeverk"
-    - "administrasjon_organisasjon"
-    - "administrasjon_personal"
-    - "felles_kodeverk"
-    - "personvern_samtykke"
-    - "ressurs_datautstyr"
-    - "ressurs_eiendel"
-    - "ressurs_tilgang"
-    - "utdanning_elev"
-    - "utdanning_kodeverk"
-    - "utdanning_larling"
-    - "utdanning_ot"
-    - "utdanning_timeplan"
-    - "utdanning_utdanningsprogram"
-    - "utdanning_vurdering"
-  auto-relation-components:
-    - "utdanning_elev"
-    - "utdanning_vurdering"
-    - "utdanning_utdanningsprogram"
-    - "utdanning_timeplan"
-    - "utdanning_kodeverk"
-  max-attempts: 5
+fint:
+  link-walker:
+    scanner:
+      base-url: "https://api.felleskomponent.no"
+      # default for local dev; in k8s pass --fint.link-walker.scanner.org-id=<orgId>
+      org-id: afk_no
+      # Defaults to all FINT components (see ScannerProperties.ALL_FINT_COMPONENTS).
+      # Override per deployment to narrow scope, e.g. only utdanning_*.
+      components:
+        - "administrasjon_fullmakt"
+        - "administrasjon_kodeverk"
+        - "administrasjon_organisasjon"
+        - "administrasjon_personal"
+        - "felles_kodeverk"
+        - "personvern_samtykke"
+        - "ressurs_datautstyr"
+        - "ressurs_eiendel"
+        - "ressurs_tilgang"
+        - "utdanning_elev"
+        - "utdanning_kodeverk"
+        - "utdanning_larling"
+        - "utdanning_ot"
+        - "utdanning_timeplan"
+        - "utdanning_utdanningsprogram"
+        - "utdanning_vurdering"
+    index:
+      auto-relation-components:
+        - "utdanning_elev"
+        - "utdanning_vurdering"
+        - "utdanning_utdanningsprogram"
+        - "utdanning_timeplan"
+        - "utdanning_kodeverk"
+    http:
+      max-attempts: 5

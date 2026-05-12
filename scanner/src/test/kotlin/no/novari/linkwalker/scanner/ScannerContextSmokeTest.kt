@@ -8,7 +8,7 @@ import org.springframework.test.context.TestPropertySource
 @SpringBootTest
 @TestPropertySource(
     properties = [
-        "link-walker.org-id=test",
+        "fint.link-walker.scanner.org-id=test",
         "spring.datasource.url=jdbc:postgresql://localhost:5432/linkwalker",
         "spring.datasource.username=linkwalker",
         "spring.datasource.password=linkwalker",
