@@ -9,7 +9,7 @@ import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
 import no.novari.linkwalker.report.LatestReport
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.ReportProblem
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ScanSummary
 import no.novari.linkwalker.report.SummaryBuilder
@@ -35,11 +35,10 @@ class ScanRunner(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun run(args: ApplicationArguments) {
-        val orgId = requiredOrgId()
         MDC.put("scanId", UUID.randomUUID().toString())
-        MDC.put("orgId", orgId.value)
+        MDC.put("orgId", config.orgId.value)
         try {
-            runBlocking(MDCContext()) { runScan(orgId) }
+            runBlocking(MDCContext()) { runScan(config.orgId) }
         } finally {
             MDC.clear()
         }
@@ -51,17 +50,9 @@ class ScanRunner(
         val started = Instant.now()
         val result = scan(orgId)
         val completedAt = Instant.now()
-        val summary = summaryBuilder.build(result.index, result.rows)
-        publish(orgId, summary, result.rows, completedAt)
-        logFinished(summary, result.rows, started, completedAt)
-    }
-
-    private fun requiredOrgId(): OrgId {
-        val raw = requireNotNull(config.orgId?.takeIf { it.isNotBlank() }) {
-            "fint.link-walker.scanner.org-id must be set (e.g. --fint.link-walker.scanner.org-id=afk_no)"
-        }
-        return OrgId.parseOrNull(raw)
-            ?: error("fint.link-walker.scanner.org-id '$raw' is invalid — expected ${OrgId.REGEX.pattern}")
+        val summary = summaryBuilder.build(result.index, result.problems)
+        publish(orgId, summary, result.problems, completedAt)
+        logFinished(summary, result.problems, started, completedAt)
     }
 
     private suspend fun scan(orgId: OrgId): ScanResult {
@@ -69,30 +60,30 @@ class ScanRunner(
             ?: error("No bearer token for org-id $orgId — aborting")
 
         val index = indexBuilder.buildIndex(components = config.components, bearer = bearer)
-        val rows = indexValidator.validate(orgId, index)
-        logger.info("Indexed records={} broken-link rows={}", index.records.size, rows.size)
-        return ScanResult(index, rows)
+        val problems = indexValidator.validate(orgId, index)
+        logger.info("Indexed records={} broken-link problems={}", index.records.size, problems.size)
+        return ScanResult(index, problems)
     }
 
-    private fun publish(orgId: OrgId, summary: ScanSummary, rows: List<ReportRow>, completedAt: Instant) {
+    private fun publish(orgId: OrgId, summary: ScanSummary, problems: List<ReportProblem>, completedAt: Instant) {
         reportStore.publish(
             LatestReport(
                 scanCompletedAt = completedAt,
                 orgId = orgId,
                 components = config.components,
                 summary = summary,
-                rows = rows,
+                problems = problems,
             )
         )
     }
 
-    private fun logFinished(summary: ScanSummary, rows: List<ReportRow>, started: Instant, completedAt: Instant) {
+    private fun logFinished(summary: ScanSummary, problems: List<ReportProblem>, started: Instant, completedAt: Instant) {
         val duration = Duration.between(started, completedAt)
         logger.info(
-            "Scan finished: integrity={}% rows={} duration={}s",
-            summary.integrityPercent, rows.size, duration.toSeconds(),
+            "Scan finished: integrity={}% problems={} duration={}s",
+            summary.integrityPercent, problems.size, duration.toSeconds(),
         )
     }
 
-    private data class ScanResult(val index: TenantIndex, val rows: List<ReportRow>)
+    private data class ScanResult(val index: TenantIndex, val problems: List<ReportProblem>)
 }

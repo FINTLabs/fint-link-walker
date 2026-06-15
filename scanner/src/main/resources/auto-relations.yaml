@@ -4,10 +4,6 @@ fint:
     index:
       auto-relations:
         - source: administrasjon-fullmakt-fullmakt
-          relation: stedfortreder
-          target: administrasjon-personal-personalressurs
-          back-relation: stedfortreder
-        - source: administrasjon-fullmakt-fullmakt
           relation: fullmektig
           target: administrasjon-personal-personalressurs
           back-relation: fullmakt
@@ -15,6 +11,10 @@ fint:
           relation: rolle
           target: administrasjon-fullmakt-rolle
           back-relation: fullmakt
+        - source: administrasjon-fullmakt-fullmakt
+          relation: stedfortreder
+          target: administrasjon-personal-personalressurs
+          back-relation: stedfortreder
         - source: administrasjon-kodeverk-ansvar
           relation: overordnet
           target: administrasjon-kodeverk-ansvar
@@ -24,13 +24,13 @@ fint:
           target: administrasjon-kodeverk-funksjon
           back-relation: underordnet
         - source: administrasjon-kodeverk-prosjektart
-          relation: prosjekt
-          target: administrasjon-kodeverk-prosjekt
-          back-relation: prosjektart
-        - source: administrasjon-kodeverk-prosjektart
           relation: overordnet
           target: administrasjon-kodeverk-prosjektart
           back-relation: underordnet
+        - source: administrasjon-kodeverk-prosjektart
+          relation: prosjekt
+          target: administrasjon-kodeverk-prosjekt
+          back-relation: prosjektart
         - source: administrasjon-organisasjon-organisasjonselement
           relation: ansvar
           target: administrasjon-kodeverk-ansvar
@@ -72,13 +72,13 @@ fint:
           target: administrasjon-personal-person
           back-relation: parorende
         - source: administrasjon-personal-person
-          relation: foreldreansvar
-          target: administrasjon-personal-person
-          back-relation: foreldre
-        - source: administrasjon-personal-person
           relation: foreldre
           target: administrasjon-personal-person
           back-relation: foreldreansvar
+        - source: administrasjon-personal-person
+          relation: foreldreansvar
+          target: administrasjon-personal-person
+          back-relation: foreldre
         - source: administrasjon-personal-variabellonn
           relation: arbeidsforhold
           target: administrasjon-personal-arbeidsforhold
@@ -100,13 +100,13 @@ fint:
           target: arkiv-personal-person
           back-relation: parorende
         - source: arkiv-personal-person
-          relation: foreldreansvar
-          target: arkiv-personal-person
-          back-relation: foreldre
-        - source: arkiv-personal-person
           relation: foreldre
           target: arkiv-personal-person
           back-relation: foreldreansvar
+        - source: arkiv-personal-person
+          relation: foreldreansvar
+          target: arkiv-personal-person
+          back-relation: foreldre
         - source: felles-kodeverk-kommune
           relation: fylke
           target: felles-kodeverk-fylke
@@ -128,13 +128,13 @@ fint:
           target: okonomi-regnskap-person
           back-relation: parorende
         - source: okonomi-regnskap-person
-          relation: foreldreansvar
-          target: okonomi-regnskap-person
-          back-relation: foreldre
-        - source: okonomi-regnskap-person
           relation: foreldre
           target: okonomi-regnskap-person
           back-relation: foreldreansvar
+        - source: okonomi-regnskap-person
+          relation: foreldreansvar
+          target: okonomi-regnskap-person
+          back-relation: foreldre
         - source: okonomi-regnskap-postering
           relation: transaksjon
           target: okonomi-regnskap-transaksjon
@@ -148,13 +148,13 @@ fint:
           target: personvern-samtykke-person
           back-relation: parorende
         - source: personvern-samtykke-person
-          relation: foreldreansvar
-          target: personvern-samtykke-person
-          back-relation: foreldre
-        - source: personvern-samtykke-person
           relation: foreldre
           target: personvern-samtykke-person
           back-relation: foreldreansvar
+        - source: personvern-samtykke-person
+          relation: foreldreansvar
+          target: personvern-samtykke-person
+          back-relation: foreldre
         - source: personvern-samtykke-samtykke
           relation: behandling
           target: personvern-samtykke-behandling
@@ -196,12 +196,16 @@ fint:
           target: utdanning-timeplan-fag
           back-relation: tilrettelegging
         - source: utdanning-elev-klasse
+          relation: skole
+          target: utdanning-utdanningsprogram-skole
+          back-relation: klasse
+        - source: utdanning-elev-klasse
           relation: trinn
           target: utdanning-utdanningsprogram-arstrinn
           back-relation: klasse
         - source: utdanning-elev-klasse
-          relation: skole
-          target: utdanning-utdanningsprogram-skole
+          relation: undervisningsforhold
+          target: utdanning-elev-undervisningsforhold
           back-relation: klasse
         - source: utdanning-elev-klassemedlemskap
           relation: elevforhold
@@ -236,13 +240,13 @@ fint:
           target: utdanning-elev-person
           back-relation: parorende
         - source: utdanning-elev-person
-          relation: foreldreansvar
-          target: utdanning-elev-person
-          back-relation: foreldre
-        - source: utdanning-elev-person
           relation: foreldre
           target: utdanning-elev-person
           back-relation: foreldreansvar
+        - source: utdanning-elev-person
+          relation: foreldreansvar
+          target: utdanning-elev-person
+          back-relation: foreldre
         - source: utdanning-elev-persongruppemedlemskap
           relation: elevforhold
           target: utdanning-elev-elevforhold
@@ -256,20 +260,16 @@ fint:
           target: utdanning-utdanningsprogram-skole
           back-relation: skoleressurs
         - source: utdanning-elev-undervisningsforhold
-          relation: klasse
-          target: utdanning-elev-klasse
-          back-relation: undervisningsforhold
-        - source: utdanning-elev-undervisningsforhold
-          relation: time
-          target: utdanning-timeplan-time
-          back-relation: undervisningsforhold
-        - source: utdanning-elev-undervisningsforhold
           relation: skole
           target: utdanning-utdanningsprogram-skole
           back-relation: undervisningsforhold
         - source: utdanning-elev-undervisningsforhold
           relation: skoleressurs
           target: utdanning-elev-skoleressurs
+          back-relation: undervisningsforhold
+        - source: utdanning-elev-undervisningsforhold
+          relation: time
+          target: utdanning-timeplan-time
           back-relation: undervisningsforhold
         - source: utdanning-elev-varsel
           relation: faggruppemedlemskap
@@ -284,33 +284,33 @@ fint:
           target: utdanning-larling-person
           back-relation: parorende
         - source: utdanning-larling-larling
-          relation: person
-          target: utdanning-larling-person
-          back-relation: larling
-        - source: utdanning-larling-larling
           relation: bedrift
           target: utdanning-larling-virksomhet
           back-relation: larling
-        - source: utdanning-larling-person
-          relation: foreldreansvar
+        - source: utdanning-larling-larling
+          relation: person
           target: utdanning-larling-person
-          back-relation: foreldre
+          back-relation: larling
         - source: utdanning-larling-person
           relation: foreldre
           target: utdanning-larling-person
           back-relation: foreldreansvar
+        - source: utdanning-larling-person
+          relation: foreldreansvar
+          target: utdanning-larling-person
+          back-relation: foreldre
         - source: utdanning-ot-kontaktperson
           relation: kontaktperson
           target: utdanning-ot-person
           back-relation: parorende
         - source: utdanning-ot-person
-          relation: foreldreansvar
-          target: utdanning-ot-person
-          back-relation: foreldre
-        - source: utdanning-ot-person
           relation: foreldre
           target: utdanning-ot-person
           back-relation: foreldreansvar
+        - source: utdanning-ot-person
+          relation: foreldreansvar
+          target: utdanning-ot-person
+          back-relation: foreldre
         - source: utdanning-timeplan-eksamen
           relation: rom
           target: utdanning-timeplan-rom
@@ -340,16 +340,16 @@ fint:
           target: utdanning-timeplan-undervisningsgruppe
           back-relation: time
         - source: utdanning-timeplan-undervisningsgruppe
-          relation: undervisningsforhold
-          target: utdanning-elev-undervisningsforhold
-          back-relation: undervisningsgruppe
-        - source: utdanning-timeplan-undervisningsgruppe
           relation: fag
           target: utdanning-timeplan-fag
           back-relation: undervisningsgruppe
         - source: utdanning-timeplan-undervisningsgruppe
           relation: skole
           target: utdanning-utdanningsprogram-skole
+          back-relation: undervisningsgruppe
+        - source: utdanning-timeplan-undervisningsgruppe
+          relation: undervisningsforhold
+          target: utdanning-elev-undervisningsforhold
           back-relation: undervisningsgruppe
         - source: utdanning-timeplan-undervisningsgruppemedlemskap
           relation: elevforhold
@@ -384,10 +384,6 @@ fint:
           target: utdanning-utdanningsprogram-skole
           back-relation: utdanningsprogram
         - source: utdanning-vurdering-eksamensgruppe
-          relation: undervisningsforhold
-          target: utdanning-elev-undervisningsforhold
-          back-relation: eksamensgruppe
-        - source: utdanning-vurdering-eksamensgruppe
           relation: eksamen
           target: utdanning-timeplan-eksamen
           back-relation: eksamensgruppe
@@ -399,14 +395,18 @@ fint:
           relation: skole
           target: utdanning-utdanningsprogram-skole
           back-relation: eksamensgruppe
-        - source: utdanning-vurdering-eksamensgruppemedlemskap
-          relation: elevforhold
-          target: utdanning-elev-elevforhold
-          back-relation: eksamensgruppemedlemskap
+        - source: utdanning-vurdering-eksamensgruppe
+          relation: undervisningsforhold
+          target: utdanning-elev-undervisningsforhold
+          back-relation: eksamensgruppe
         - source: utdanning-vurdering-eksamensgruppemedlemskap
           relation: eksamensgruppe
           target: utdanning-vurdering-eksamensgruppe
           back-relation: gruppemedlemskap
+        - source: utdanning-vurdering-eksamensgruppemedlemskap
+          relation: elevforhold
+          target: utdanning-elev-elevforhold
+          back-relation: eksamensgruppemedlemskap
         - source: utdanning-vurdering-eksamensvurdering
           relation: elevvurdering
           target: utdanning-vurdering-elevvurdering
@@ -432,12 +432,12 @@ fint:
           target: utdanning-kodeverk-karakterskala
           back-relation: verdi
         - source: utdanning-vurdering-sensor
-          relation: skoleressurs
-          target: utdanning-elev-skoleressurs
-          back-relation: sensor
-        - source: utdanning-vurdering-sensor
           relation: eksamensgruppe
           target: utdanning-vurdering-eksamensgruppe
+          back-relation: sensor
+        - source: utdanning-vurdering-sensor
+          relation: skoleressurs
+          target: utdanning-elev-skoleressurs
           back-relation: sensor
         - source: utdanning-vurdering-sluttfagvurdering
           relation: elevvurdering

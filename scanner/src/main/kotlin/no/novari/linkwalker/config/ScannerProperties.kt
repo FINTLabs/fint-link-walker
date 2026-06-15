@@ -1,10 +1,11 @@
 package no.novari.linkwalker.config
 
+import no.novari.linkwalker.OrgId
 import org.springframework.boot.context.properties.ConfigurationProperties
 
 @ConfigurationProperties("fint.link-walker.scanner")
 data class ScannerProperties(
-    val orgId: String? = null,
+    val orgId: OrgId,
     val baseUrl: String = "https://api.felleskomponent.no",
     val components: List<String> = ALL_FINT_COMPONENTS,
 ) {

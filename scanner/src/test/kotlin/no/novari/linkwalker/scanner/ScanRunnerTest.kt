@@ -13,7 +13,7 @@ import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
 import no.novari.linkwalker.report.LatestReport
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.ReportProblem
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ScanSummary
 import no.novari.linkwalker.report.SummaryBuilder
@@ -32,16 +32,16 @@ class ScanRunnerTest {
     private val args = mockk<ApplicationArguments>(relaxed = true)
 
     @Test
-    fun `happy path publishes report with summary and rows`() {
+    fun `happy path publishes report with summary and problems`() {
         val runner = runner(orgId = "afk_no", components = listOf("utdanning_elev"))
         val index = emptyIndex()
-        val rows = listOf(reportRow("afk_no"))
+        val problems = listOf(reportProblem("afk_no"))
         val summary = summary(integrity = 99.5)
 
         coEvery { authService.getBearerToken(OrgId("afk_no")) } returns "bearer-x"
         coEvery { indexBuilder.buildIndex(listOf("utdanning_elev"), "bearer-x") } returns index
-        every { indexValidator.validate(OrgId("afk_no"), index) } returns rows
-        every { summaryBuilder.build(index, rows) } returns summary
+        every { indexValidator.validate(OrgId("afk_no"), index) } returns problems
+        every { summaryBuilder.build(index, problems) } returns summary
 
         val captured = slot<LatestReport>()
         every { reportStore.publish(capture(captured)) } returns Unit
@@ -51,24 +51,8 @@ class ScanRunnerTest {
         coVerify { reportStore.publish(any()) }
         assertEquals(OrgId("afk_no"), captured.captured.orgId)
         assertEquals(listOf("utdanning_elev"), captured.captured.components)
-        assertEquals(rows, captured.captured.rows)
+        assertEquals(problems, captured.captured.problems)
         assertEquals(summary, captured.captured.summary)
-    }
-
-    @Test
-    fun `null tenant throws and never publishes`() {
-        val runner = runner(orgId = null)
-
-        assertThrows(IllegalArgumentException::class.java) { runner.run(args) }
-        coVerify(exactly = 0) { reportStore.publish(any()) }
-    }
-
-    @Test
-    fun `blank tenant throws and never publishes`() {
-        val runner = runner(orgId = "   ")
-
-        assertThrows(IllegalArgumentException::class.java) { runner.run(args) }
-        coVerify(exactly = 0) { reportStore.publish(any()) }
     }
 
     @Test
@@ -90,9 +74,9 @@ class ScanRunnerTest {
         coVerify(exactly = 0) { reportStore.publish(any()) }
     }
 
-    private fun runner(orgId: String?, components: List<String> = emptyList()): ScanRunner =
+    private fun runner(orgId: String, components: List<String> = emptyList()): ScanRunner =
         ScanRunner(
-            config = ScannerProperties(orgId = orgId, components = components),
+            config = ScannerProperties(orgId = OrgId(orgId), components = components),
             authService = authService,
             indexBuilder = indexBuilder,
             indexValidator = indexValidator,
@@ -111,7 +95,7 @@ class ScanRunnerTest {
         components = emptyList(),
     )
 
-    private fun reportRow(orgId: String) = ReportRow(
+    private fun reportProblem(orgId: String) = ReportProblem(
         orgId = OrgId(orgId),
         component = "utdanning_elev",
         resource = "elev",

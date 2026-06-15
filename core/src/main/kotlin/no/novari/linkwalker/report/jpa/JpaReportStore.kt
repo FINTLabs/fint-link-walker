@@ -5,11 +5,11 @@ import jakarta.persistence.PersistenceContext
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.report.LatestReport
 import no.novari.linkwalker.report.LatestReportSummary
-import no.novari.linkwalker.report.PagedRows
+import no.novari.linkwalker.report.PagedProblems
+import no.novari.linkwalker.report.ProblemFilter
 import no.novari.linkwalker.report.ProblemType
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.ReportProblem
 import no.novari.linkwalker.report.ReportStore
-import no.novari.linkwalker.report.RowFilter
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -23,7 +23,7 @@ import java.util.UUID
 class JpaReportStore(
     private val mapper: ObjectMapper,
     private val summaryRepo: ReportSummaryRepository,
-    private val rowRepo: ReportRowRepository,
+    private val problemRepo: ReportProblemRepository,
     @PersistenceContext private val entityManager: EntityManager,
 ) : ReportStore {
 
@@ -33,21 +33,21 @@ class JpaReportStore(
     override fun publish(report: LatestReport) {
         val scanId = UUID.randomUUID()
         summaryRepo.saveAndFlush(summaryEntity(scanId, report))
-        saveRowsInChunks(scanId, report)
+        saveProblemsInChunks(scanId, report)
 
         logger.info(
-            "Persisted scan org-id={} scan-id={} rows={}",
-            report.orgId, scanId, report.rows.size,
+            "Persisted scan org-id={} scan-id={} problems={}",
+            report.orgId, scanId, report.problems.size,
         )
     }
 
-    // Chunk to bound the persistence context: saveAll on millions of rows in one go
+    // Chunk to bound the persistence context: saveAll on millions of problems in one go
     // would hold every entity in the session until commit. Flushing and clearing
-    // every CHUNK_SIZE rows keeps the heap footprint flat; Hibernate's
+    // every CHUNK_SIZE problems keeps the heap footprint flat; Hibernate's
     // jdbc.batch_size setting controls how many INSERTs go in each network round-trip.
-    private fun saveRowsInChunks(scanId: UUID, report: LatestReport) {
-        report.rows.chunked(CHUNK_SIZE).forEach { chunk ->
-            rowRepo.saveAll(chunk.map { rowEntity(scanId, report, it) })
+    private fun saveProblemsInChunks(scanId: UUID, report: LatestReport) {
+        report.problems.chunked(CHUNK_SIZE).forEach { chunk ->
+            problemRepo.saveAll(chunk.map { problemEntity(scanId, report, it) })
             entityManager.flush()
             entityManager.clear()
         }
@@ -57,22 +57,22 @@ class JpaReportStore(
         summaryRepo.findFirstByOrgIdOrderByScanCompletedAtDesc(orgId.value)
             ?.let { mapper.readValue(it.summaryJson, LatestReportSummary::class.java) }
 
-    override fun findRows(orgId: OrgId, filter: RowFilter, page: Int, size: Int): PagedRows? {
+    override fun findProblems(orgId: OrgId, filter: ProblemFilter, page: Int, size: Int): PagedProblems? {
         val latest = summaryRepo.findFirstByOrgIdOrderByScanCompletedAtDesc(orgId.value) ?: return null
         val pageSize = size.coerceIn(1, ReportStore.MAX_PAGE_SIZE)
         val pageIndex = page.coerceAtLeast(0)
-        val result = rowRepo.findFiltered(
+        val result = problemRepo.findFiltered(
             scanId = latest.scanId,
             component = filter.component,
             resource = filter.resource,
             problemType = filter.problemType?.wire,
             pageable = PageRequest.of(pageIndex, pageSize, Sort.by("id")),
         )
-        return PagedRows(
-            rows = result.content.map { it.toRow() },
+        return PagedProblems(
+            problems = result.content.map { it.toProblem() },
             page = pageIndex,
             size = pageSize,
-            totalRows = result.totalElements,
+            totalProblems = result.totalElements,
             totalPages = result.totalPages,
             scanCompletedAt = latest.scanCompletedAt,
         )
@@ -102,25 +102,25 @@ class JpaReportStore(
         )
     }
 
-    private fun rowEntity(scanId: UUID, report: LatestReport, row: ReportRow) = ReportRowEntity(
+    private fun problemEntity(scanId: UUID, report: LatestReport, problem: ReportProblem) = ReportProblemEntity(
         scanId = scanId,
         orgId = report.orgId.value,
         scanCompletedAt = report.scanCompletedAt,
-        component = row.component,
-        resource = row.resource,
-        problemType = row.problemType.wire,
-        sourceSelf = row.sourceSelf,
-        targetHref = row.targetHref,
-        relationName = row.relationName,
-        expectedInverseName = row.expectedInverseName,
+        component = problem.component,
+        resource = problem.resource,
+        problemType = problem.problemType.wire,
+        sourceSelf = problem.sourceSelf,
+        targetHref = problem.targetHref,
+        relationName = problem.relationName,
+        expectedInverseName = problem.expectedInverseName,
     )
 
-    private fun ReportRowEntity.toRow(): ReportRow = ReportRow(
+    private fun ReportProblemEntity.toProblem(): ReportProblem = ReportProblem(
         orgId = OrgId(orgId),
         component = component,
         resource = resource,
         problemType = ProblemType.parseOrNull(problemType)
-            ?: error("Persisted row has unknown problemType: '$problemType'"),
+            ?: error("Persisted problem has unknown problemType: '$problemType'"),
         sourceSelf = sourceSelf,
         targetHref = targetHref,
         relationName = relationName,

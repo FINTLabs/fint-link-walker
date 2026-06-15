@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import no.novari.linkwalker.FintClient
 import no.novari.linkwalker.NoDataException
 import no.novari.linkwalker.NoRouteException
@@ -33,36 +32,37 @@ class IndexBuilder(
     // Caps the number of in-flight HTTP fetches across the whole scan.
     // limitedParallelism wraps Dispatchers.IO so coroutines beyond the cap suspend
     // (they don't block IO threads) until a permit frees up.
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val fetchDispatcher: CoroutineDispatcher =
         Dispatchers.IO.limitedParallelism(httpConfig.maxConcurrentFetches)
 
     suspend fun buildIndex(components: List<String>, bearer: String): TenantIndex = coroutineScope {
-        val records = resolveTargets(components)
+        resolveTargets(components)
             .map { async(fetchDispatcher) { fetchAndExtract(it, bearer) } }
             .awaitAll()
             .flatten()
-        toTenantIndex(records)
+            .toTenantIndex()
     }
 
     private fun resolveTargets(components: List<String>): List<FetchTarget> =
-        components.flatMap { component ->
-            val id = ComponentId.parse(component) ?: run {
-                logger.warn("Component '{}' is not in 'domain_pkg' form — skipping", component)
-                return@flatMap emptyList()
-            }
-            val resources = metamodelService.getResources(id.domain, id.pkg)
-            if (resources.isEmpty()) {
-                logger.warn("No resources in metamodel for {}/{}", id.domain, id.pkg)
-                return@flatMap emptyList()
-            }
-            resources.map { FetchTarget(component, "${id.domain}/${id.pkg}/${it.name}", it.name) }
-        }
+        components.flatMap { targetsFor(it) }
 
-    private fun toTenantIndex(records: List<MinimalRecord>): TenantIndex {
-        val byKey = HashMap<String, MinimalRecord>(records.size * 2)
-        records.forEach { r -> r.canonicalKeys.forEach { key -> byKey[key] = r } }
-        return TenantIndex(records = records, byKey = byKey)
+    private fun targetsFor(component: String): List<FetchTarget> {
+        val id = ComponentId.parse(component) ?: run {
+            logger.warn("Component '{}' is not in 'domain_pkg' form — skipping", component)
+            return emptyList()
+        }
+        val resources = metamodelService.getResources(id.domain, id.pkg)
+        if (resources.isEmpty()) {
+            logger.warn("No resources in metamodel for {}/{}", id.domain, id.pkg)
+            return emptyList()
+        }
+        return resources.map { FetchTarget(component, "${id.domain}/${id.pkg}/${it.name}", it.name) }
+    }
+
+    private fun List<MinimalRecord>.toTenantIndex(): TenantIndex {
+        val byKey = HashMap<String, MinimalRecord>(size * 2)
+        forEach { r -> r.canonicalKeys.forEach { key -> byKey[key] = r } }
+        return TenantIndex(records = this, byKey = byKey)
     }
 
     // Returns empty for "this resource doesn't apply to this tenant" cases
@@ -126,6 +126,9 @@ class IndexBuilder(
         offset: Long,
         bearer: String,
     ): PageExtraction {
+        // IDE flags createTempFile as blocking, but we're already on Dispatchers.IO
+        // via the caller's async(fetchDispatcher) — no thread starvation risk.
+        @Suppress("BlockingMethodInNonBlockingContext")
         val tempFile: Path = Files.createTempFile("link-walker-", "-${target.resourceName}.json")
         return try {
             fintClient.streamToFile(pageUrl(target, offset), bearer, tempFile)

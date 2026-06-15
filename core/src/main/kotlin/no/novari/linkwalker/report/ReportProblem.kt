@@ -3,7 +3,7 @@ package no.novari.linkwalker.report
 import no.novari.linkwalker.OrgId
 import java.time.Instant
 
-data class ReportRow(
+data class ReportProblem(
     val orgId: OrgId,
     val component: String,
     val resource: String,
@@ -19,7 +19,7 @@ data class LatestReport(
     val orgId: OrgId,
     val components: List<String>,
     val summary: ScanSummary,
-    val rows: List<ReportRow>,
+    val problems: List<ReportProblem>,
 )
 
 data class LatestReportSummary(

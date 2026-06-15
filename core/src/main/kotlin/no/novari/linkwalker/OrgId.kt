@@ -16,8 +16,10 @@ value class OrgId(val value: String) {
     override fun toString(): String = value
 
     companion object {
+        // Lowercase ASCII + digits + underscore, fully anchored. Matches the FINT tenant
+        // naming convention (e.g. `afk_no`, `agderfk_no`) that flais-gateway stores under
+        // `ou=<orgId>,ou=organisations,o=fint` — anything outside this charset would break
+        // the LDAP DN, the URL path-variable pattern, or the DB column constraint.
         val REGEX: Regex = Regex("^[a-z0-9_]+\$")
-
-        fun parseOrNull(raw: String): OrgId? = if (REGEX.matches(raw)) OrgId(raw) else null
     }
 }

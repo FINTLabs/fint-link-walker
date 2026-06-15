@@ -3,13 +3,13 @@ package no.novari.linkwalker.reader
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.report.ComponentSummary
 import no.novari.linkwalker.report.LatestReport
+import no.novari.linkwalker.report.ProblemFilter
 import no.novari.linkwalker.report.ProblemType
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.ReportProblem
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
-import no.novari.linkwalker.report.RowFilter
 import no.novari.linkwalker.report.ScanSummary
-import no.novari.linkwalker.report.jpa.ReportRowRepository
+import no.novari.linkwalker.report.jpa.ReportProblemRepository
 import no.novari.linkwalker.report.jpa.ReportSummaryRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,27 +34,27 @@ import kotlin.test.assertTrue
 class JpaReportStoreIntegrationTest @Autowired constructor(
     private val reportStore: ReportStore,
     private val summaryRepo: ReportSummaryRepository,
-    private val rowRepo: ReportRowRepository,
+    private val problemRepo: ReportProblemRepository,
 ) {
 
     @BeforeEach
     fun cleanup() {
         // deleteAllInBatch issues a single `DELETE FROM …` — deleteAll() fetches every
         // row first and OOMs against tables with real-scanner-sized data left behind.
-        rowRepo.deleteAllInBatch()
+        problemRepo.deleteAllInBatch()
         summaryRepo.deleteAllInBatch()
     }
 
     @Test
-    fun `publish then read summary + paginated filtered rows`() {
+    fun `publish then read summary + paginated filtered problems`() {
         val orgId = OrgId("test_org")
-        val rows = buildRows(orgId, components = listOf("utdanning_elev", "utdanning_vurdering"))
+        val problems = buildProblems(orgId, components = listOf("utdanning_elev", "utdanning_vurdering"))
         val report = LatestReport(
             scanCompletedAt = Instant.now(),
             orgId = orgId,
             components = listOf("utdanning_elev", "utdanning_vurdering"),
-            summary = sampleSummary(rows),
-            rows = rows,
+            summary = sampleSummary(problems),
+            problems = problems,
         )
 
         reportStore.publish(report)
@@ -62,42 +62,42 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         val summary = reportStore.getSummary(orgId)
         assertNotNull(summary)
         assertEquals(orgId, summary.orgId)
-        assertEquals(rows.size.toLong(), summary.summary.brokenLinkCount)
+        assertEquals(problems.size.toLong(), summary.summary.brokenLinkCount)
 
-        val firstPage = reportStore.findRows(orgId, RowFilter(), page = 0, size = 100)!!
-        assertEquals(100, firstPage.rows.size)
-        assertEquals(250L, firstPage.totalRows)
+        val firstPage = reportStore.findProblems(orgId, ProblemFilter(), page = 0, size = 100)!!
+        assertEquals(100, firstPage.problems.size)
+        assertEquals(250L, firstPage.totalProblems)
         assertEquals(3, firstPage.totalPages)
 
-        val secondPage = reportStore.findRows(orgId, RowFilter(), page = 1, size = 100)!!
-        assertEquals(100, secondPage.rows.size)
+        val secondPage = reportStore.findProblems(orgId, ProblemFilter(), page = 1, size = 100)!!
+        assertEquals(100, secondPage.problems.size)
 
-        val thirdPage = reportStore.findRows(orgId, RowFilter(), page = 2, size = 100)!!
-        assertEquals(50, thirdPage.rows.size)
+        val thirdPage = reportStore.findProblems(orgId, ProblemFilter(), page = 2, size = 100)!!
+        assertEquals(50, thirdPage.problems.size)
 
-        // pages share no rows
-        val firstIds = firstPage.rows.map { it.targetHref }.toSet()
-        val secondIds = secondPage.rows.map { it.targetHref }.toSet()
+        // pages share no problems
+        val firstIds = firstPage.problems.map { it.targetHref }.toSet()
+        val secondIds = secondPage.problems.map { it.targetHref }.toSet()
         assertTrue(firstIds.intersect(secondIds).isEmpty())
 
-        val onlyVurdering = reportStore.findRows(
+        val onlyVurdering = reportStore.findProblems(
             orgId,
-            RowFilter(component = "utdanning_vurdering"),
+            ProblemFilter(component = "utdanning_vurdering"),
             page = 0,
             size = 1000,
         )!!
-        assertTrue(onlyVurdering.rows.all { it.component == "utdanning_vurdering" })
-        assertEquals(125L, onlyVurdering.totalRows)
+        assertTrue(onlyVurdering.problems.all { it.component == "utdanning_vurdering" })
+        assertEquals(125L, onlyVurdering.totalProblems)
 
-        val onlyMissing = reportStore.findRows(
+        val onlyMissing = reportStore.findProblems(
             orgId,
-            RowFilter(problemType = ProblemType.MissingResource),
+            ProblemFilter(problemType = ProblemType.MissingResource),
             page = 0,
             size = 1000,
         )!!
-        assertTrue(onlyMissing.rows.all { it.problemType == ProblemType.MissingResource })
+        assertTrue(onlyMissing.problems.all { it.problemType == ProblemType.MissingResource })
 
-        val unknownOrg = reportStore.findRows(OrgId("does_not_exist"), RowFilter(), 0, 10)
+        val unknownOrg = reportStore.findProblems(OrgId("does_not_exist"), ProblemFilter(), 0, 10)
         assertNull(unknownOrg)
     }
 
@@ -109,14 +109,14 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
             orgId = orgId,
             components = listOf("utdanning_elev"),
             summary = ScanSummary(10, 100, 1, 99.0, mapOf("missing-resource" to 1L), emptyList()),
-            rows = listOf(sampleRow(orgId, 0, "utdanning_elev")),
+            problems = listOf(sampleProblem(orgId, 0, "utdanning_elev")),
         )
         val newer = LatestReport(
             scanCompletedAt = Instant.parse("2026-05-01T00:00:00Z"),
             orgId = orgId,
             components = listOf("utdanning_elev"),
             summary = ScanSummary(20, 200, 5, 97.5, mapOf("missing-resource" to 5L), emptyList()),
-            rows = (0..4).map { sampleRow(orgId, it, "utdanning_elev") },
+            problems = (0..4).map { sampleProblem(orgId, it, "utdanning_elev") },
         )
 
         reportStore.publish(older)
@@ -126,14 +126,14 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         assertEquals(20L, summary.summary.totalRecords)
         assertEquals(5L, summary.summary.brokenLinkCount)
 
-        val rows = reportStore.findRows(orgId, RowFilter(), 0, 100)!!
-        assertEquals(5L, rows.totalRows)
+        val problems = reportStore.findProblems(orgId, ProblemFilter(), 0, 100)!!
+        assertEquals(5L, problems.totalProblems)
 
         // Both scans persisted (history kept), but reader sees only the latest.
         assertEquals(2, summaryRepo.findAll().count())
     }
 
-    private fun buildRows(orgId: OrgId, components: List<String>): List<ReportRow> {
+    private fun buildProblems(orgId: OrgId, components: List<String>): List<ReportProblem> {
         val problemTypes = listOf(
             ProblemType.MissingResource,
             ProblemType.UnknownLink,
@@ -141,7 +141,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         )
         val resources = listOf("elevforhold", "vurdering")
         return (0 until 250).map { i ->
-            ReportRow(
+            ReportProblem(
                 orgId = orgId,
                 component = components[i % components.size],
                 resource = resources[i % resources.size],
@@ -154,28 +154,28 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         }
     }
 
-    private fun sampleSummary(rows: List<ReportRow>): ScanSummary = ScanSummary(
+    private fun sampleSummary(problems: List<ReportProblem>): ScanSummary = ScanSummary(
         totalRecords = 1000L,
         totalRefs = 5000L,
-        brokenLinkCount = rows.size.toLong(),
+        brokenLinkCount = problems.size.toLong(),
         integrityPercent = 95.0,
-        byProblemType = rows.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
-        components = rows.groupBy { it.component }.map { (compName, compRows) ->
+        byProblemType = problems.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
+        components = problems.groupBy { it.component }.map { (compName, compProblems) ->
             ComponentSummary(
                 component = compName,
                 totalRecords = 500L,
                 totalRefs = 2500L,
-                brokenLinkCount = compRows.size.toLong(),
+                brokenLinkCount = compProblems.size.toLong(),
                 integrityPercent = 95.0,
-                byProblemType = compRows.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
-                resources = compRows.groupBy { it.resource }.map { (resName, resRows) ->
+                byProblemType = compProblems.groupingBy { it.problemType.wire }.eachCount().mapValues { it.value.toLong() },
+                resources = compProblems.groupBy { it.resource }.map { (resName, resProblems) ->
                     ResourceSummary(
                         resource = resName,
                         totalRecords = 250L,
                         totalRefs = 1250L,
-                        brokenLinkCount = resRows.size.toLong(),
+                        brokenLinkCount = resProblems.size.toLong(),
                         integrityPercent = 95.0,
-                        byProblemType = resRows.groupingBy { it.problemType.wire }.eachCount()
+                        byProblemType = resProblems.groupingBy { it.problemType.wire }.eachCount()
                             .mapValues { it.value.toLong() },
                     )
                 },
@@ -183,7 +183,7 @@ class JpaReportStoreIntegrationTest @Autowired constructor(
         },
     )
 
-    private fun sampleRow(orgId: OrgId, idx: Int, component: String): ReportRow = ReportRow(
+    private fun sampleProblem(orgId: OrgId, idx: Int, component: String): ReportProblem = ReportProblem(
         orgId = orgId,
         component = component,
         resource = "elevforhold",

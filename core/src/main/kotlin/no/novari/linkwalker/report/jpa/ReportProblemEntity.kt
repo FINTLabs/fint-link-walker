@@ -13,7 +13,7 @@ import java.util.UUID
 
 // kotlin("plugin.jpa") generates the no-arg constructor Hibernate needs.
 // The `internal` constructor below is the only way to make instances by hand;
-// JpaReportStore.rowEntity() is the lone caller.
+// JpaReportStore.problemEntity() is the lone caller.
 @Entity
 @Table(
     name = "report_row",
@@ -23,7 +23,7 @@ import java.util.UUID
     ],
 )
 @SequenceGenerator(name = "report_row_seq", sequenceName = "report_row_seq", allocationSize = 1000)
-class ReportRowEntity internal constructor(
+class ReportProblemEntity internal constructor(
     @Column(name = "scan_id", nullable = false)
     val scanId: UUID,
 

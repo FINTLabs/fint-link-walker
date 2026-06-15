@@ -13,19 +13,19 @@ class SummaryBuilderTest {
     private val builder = SummaryBuilder()
 
     @Test
-    fun `aggregates totals across records and rows`() {
+    fun `aggregates totals across records and problems`() {
         val records = listOf(
             recordOf("utdanning_elev", "elev", refs = 5),
             recordOf("utdanning_elev", "elev", refs = 3),
             recordOf("utdanning_elev", "person", refs = 2, malformed = 1),
         )
-        val rows = listOf(
-            row("utdanning_elev", "elev", "missing-resource"),
-            row("utdanning_elev", "elev", "missing-resource"),
-            row("utdanning_elev", "person", "unknown-link"),
+        val problems = listOf(
+            problem("utdanning_elev", "elev", "missing-resource"),
+            problem("utdanning_elev", "elev", "missing-resource"),
+            problem("utdanning_elev", "person", "unknown-link"),
         )
 
-        val summary = builder.build(indexOf(records), rows)
+        val summary = builder.build(indexOf(records), problems)
 
         assertEquals(3L, summary.totalRecords)
         assertEquals(11L, summary.totalRefs) // 5 + 3 + (2 + 1 malformed) = 11
@@ -42,13 +42,13 @@ class SummaryBuilderTest {
             recordOf("utdanning_elev", "elev", refs = 10),
             recordOf("utdanning_vurdering", "fag", refs = 5),
         )
-        val rows = listOf(
-            row("utdanning_elev", "elev", "missing-resource"),
-            row("utdanning_vurdering", "fag", "missing-back-link-adapter"),
-            row("utdanning_vurdering", "fag", "missing-back-link-adapter"),
+        val problems = listOf(
+            problem("utdanning_elev", "elev", "missing-resource"),
+            problem("utdanning_vurdering", "fag", "missing-back-link-adapter"),
+            problem("utdanning_vurdering", "fag", "missing-back-link-adapter"),
         )
 
-        val summary = builder.build(indexOf(records), rows)
+        val summary = builder.build(indexOf(records), problems)
         val byComp = summary.components.associateBy { it.component }
 
         assertEquals(1L, byComp["utdanning_elev"]?.brokenLinkCount)
@@ -58,7 +58,7 @@ class SummaryBuilderTest {
     }
 
     @Test
-    fun `100 percent integrity when no broken rows`() {
+    fun `100 percent integrity when no broken problems`() {
         val records = listOf(recordOf("c", "r", refs = 5))
         val summary = builder.build(indexOf(records), emptyList())
         assertEquals(100.0, summary.integrityPercent)
@@ -78,16 +78,16 @@ class SummaryBuilderTest {
             recordOf("mid", "r", refs = 1),
             recordOf("high", "r", refs = 1),
         )
-        val rows = listOf(
-            row("high", "r", "missing-resource"),
-            row("high", "r", "missing-resource"),
-            row("high", "r", "missing-resource"),
-            row("mid", "r", "missing-resource"),
-            row("mid", "r", "missing-resource"),
-            row("low", "r", "missing-resource"),
+        val problems = listOf(
+            problem("high", "r", "missing-resource"),
+            problem("high", "r", "missing-resource"),
+            problem("high", "r", "missing-resource"),
+            problem("mid", "r", "missing-resource"),
+            problem("mid", "r", "missing-resource"),
+            problem("low", "r", "missing-resource"),
         )
 
-        val summary = builder.build(indexOf(records), rows)
+        val summary = builder.build(indexOf(records), problems)
 
         assertEquals(listOf("high", "mid", "low"), summary.components.map { it.component })
     }
@@ -107,7 +107,7 @@ class SummaryBuilderTest {
         malformedHrefs = (1..malformed).map { "garbage-$it" },
     )
 
-    private fun row(component: String, resource: String, problemType: String) = ReportRow(
+    private fun problem(component: String, resource: String, problemType: String) = ReportProblem(
         orgId = OrgId("test"),
         component = component,
         resource = resource,

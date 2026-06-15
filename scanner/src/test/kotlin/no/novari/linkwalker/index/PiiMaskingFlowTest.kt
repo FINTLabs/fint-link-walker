@@ -21,7 +21,7 @@ class PiiMaskingFlowTest {
     private val validator = IndexValidator(metamodel, rules, sanitizer)
 
     @Test
-    fun `missing-resource ReportRow masks PII fodselsnummer in source and target hrefs`() {
+    fun `missing-resource ReportProblem masks PII fodselsnummer in source and target hrefs`() {
         val sourceFnrHref = "https://api/administrasjon/personal/personalressurs/fodselsnummer/12345678901"
         val targetFnrHref = "https://api/administrasjon/personal/person/fodselsnummer/12345678901"
 
@@ -34,15 +34,15 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceFnrHref to source))
 
-        val rows = validator.validate(OrgId("afk_no"), index)
+        val problems = validator.validate(OrgId("afk_no"), index)
 
-        assertEquals(1, rows.size)
-        val row = rows.single()
-        assertEquals(ProblemType.MissingResource, row.problemType)
-        assertTrue(row.sourceSelf.endsWith("/fodselsnummer/***"), "sourceSelf must mask PII value: ${row.sourceSelf}")
-        assertTrue(row.targetHref.endsWith("/fodselsnummer/***"), "targetHref must mask PII value: ${row.targetHref}")
-        assertFalse("12345678901" in row.sourceSelf, "fodselsnummer leaked in sourceSelf")
-        assertFalse("12345678901" in row.targetHref, "fodselsnummer leaked in targetHref")
+        assertEquals(1, problems.size)
+        val problem = problems.single()
+        assertEquals(ProblemType.MissingResource, problem.problemType)
+        assertTrue(problem.sourceSelf.endsWith("/fodselsnummer/***"), "sourceSelf must mask PII value: ${problem.sourceSelf}")
+        assertTrue(problem.targetHref.endsWith("/fodselsnummer/***"), "targetHref must mask PII value: ${problem.targetHref}")
+        assertFalse("12345678901" in problem.sourceSelf, "fodselsnummer leaked in sourceSelf")
+        assertFalse("12345678901" in problem.targetHref, "fodselsnummer leaked in targetHref")
     }
 
     @Test
@@ -60,10 +60,10 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(systemIdHref to source))
 
-        val rows = validator.validate(OrgId("afk_no"), index)
+        val problems = validator.validate(OrgId("afk_no"), index)
 
-        assertEquals(1, rows.size)
-        assertEquals(systemIdHref, rows.single().sourceSelf, "Should prefer non-PII canonical key over fodselsnummer")
+        assertEquals(1, problems.size)
+        assertEquals(systemIdHref, problems.single().sourceSelf, "Should prefer non-PII canonical key over fodselsnummer")
     }
 
     @Test
@@ -80,12 +80,12 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceHref to source))
 
-        val rows = validator.validate(OrgId("afk_no"), index)
+        val problems = validator.validate(OrgId("afk_no"), index)
 
-        assertEquals(1, rows.size)
-        val row = rows.single()
-        assertEquals(ProblemType.UnknownLink, row.problemType)
-        assertFalse("12345678901" in row.targetHref, "fodselsnummer leaked in malformed targetHref: ${row.targetHref}")
+        assertEquals(1, problems.size)
+        val problem = problems.single()
+        assertEquals(ProblemType.UnknownLink, problem.problemType)
+        assertFalse("12345678901" in problem.targetHref, "fodselsnummer leaked in malformed targetHref: ${problem.targetHref}")
     }
 
     @Test
@@ -102,11 +102,11 @@ class PiiMaskingFlowTest {
         )
         val index = TenantIndex(records = listOf(source), byKey = mapOf(feideHref to source))
 
-        val rows = validator.validate(OrgId("afk_no"), index)
+        val problems = validator.validate(OrgId("afk_no"), index)
 
-        assertEquals(1, rows.size)
-        assertFalse("alice" in rows.single().sourceSelf, "feidenavn leaked in sourceSelf: ${rows.single().sourceSelf}")
-        assertFalse("alice" in rows.single().targetHref, "feidenavn leaked in targetHref: ${rows.single().targetHref}")
+        assertEquals(1, problems.size)
+        assertFalse("alice" in problems.single().sourceSelf, "feidenavn leaked in sourceSelf: ${problems.single().sourceSelf}")
+        assertFalse("alice" in problems.single().targetHref, "feidenavn leaked in targetHref: ${problems.single().targetHref}")
     }
 
     @Test
@@ -135,12 +135,12 @@ class PiiMaskingFlowTest {
             ),
         )
 
-        val rows = validator.validate(OrgId("afk_no"), index)
+        val problems = validator.validate(OrgId("afk_no"), index)
 
-        // Resource was found via PII key → no missing-resource row should appear for this ref.
+        // Resource was found via PII key → no missing-resource problem should appear for this ref.
         assertTrue(
-            rows.none { it.problemType == ProblemType.MissingResource },
-            "Index lookup must use unmasked canonical keys; got rows: $rows",
+            problems.none { it.problemType == ProblemType.MissingResource },
+            "Index lookup must use unmasked canonical keys; got problems: $problems",
         )
     }
 }

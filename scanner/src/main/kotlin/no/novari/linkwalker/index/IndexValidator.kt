@@ -3,7 +3,7 @@ package no.novari.linkwalker.index
 import no.novari.fint.model.FintRelation
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.report.ProblemType
-import no.novari.linkwalker.report.ReportRow
+import no.novari.linkwalker.report.ReportProblem
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Resource
 import org.springframework.stereotype.Component
@@ -15,17 +15,17 @@ class IndexValidator(
     private val sanitizer: HrefSanitizer,
 ) {
 
-    fun validate(orgId: OrgId, index: TenantIndex): List<ReportRow> {
-        val rows = mutableListOf<ReportRow>()
+    fun validate(orgId: OrgId, index: TenantIndex): List<ReportProblem> {
+        val problems = mutableListOf<ReportProblem>()
         val resourceCache = mutableMapOf<Pair<String, String>, ResourceInfo?>()
 
         index.records.forEach { record ->
             val info = resourceCache.getOrPut(record.component to record.resourceName) {
                 buildResourceInfo(record.component, record.resourceName)
             }
-            validateRecord(orgId, record, info, index, rows)
+            validateRecord(orgId, record, info, index, problems)
         }
-        return rows
+        return problems
     }
 
     private fun validateRecord(
@@ -33,14 +33,14 @@ class IndexValidator(
         record: MinimalRecord,
         info: ResourceInfo?,
         index: TenantIndex,
-        rows: MutableList<ReportRow>,
+        problems: MutableList<ReportProblem>,
     ) {
         val sourceCanonical: Set<String> = record.canonicalKeys.toSet()
         record.outboundRefs.forEach { ref ->
-            checkOutboundRef(orgId, record, info, index, sourceCanonical, ref)?.let(rows::add)
+            checkOutboundRef(orgId, record, info, index, sourceCanonical, ref)?.let(problems::add)
         }
         record.malformedHrefs.forEach { badHref ->
-            rows += unknownLinkRow(orgId, record, badHref)
+            problems += unknownLinkProblem(orgId, record, badHref)
         }
     }
 
@@ -51,9 +51,9 @@ class IndexValidator(
         index: TenantIndex,
         sourceCanonical: Set<String>,
         ref: OutboundRef,
-    ): ReportRow? {
+    ): ReportProblem? {
         val target = index.recordAt(ref.targetCanonical)
-            ?: return missingResourceRow(orgId, record, ref)
+            ?: return missingResourceProblem(orgId, record, ref)
 
         val inverseName = info?.relationsByName?.get(ref.relationName.lowercase())?.inverseName
             ?: return null
@@ -64,10 +64,10 @@ class IndexValidator(
         }
         if (pointsBack) return null
 
-        return missingBackLinkRow(orgId, record, target, ref, inverseName)
+        return missingBackLinkProblem(orgId, record, target, ref, inverseName)
     }
 
-    private fun missingResourceRow(orgId: OrgId, record: MinimalRecord, ref: OutboundRef) = ReportRow(
+    private fun missingResourceProblem(orgId: OrgId, record: MinimalRecord, ref: OutboundRef) = ReportProblem(
         orgId = orgId,
         component = record.component,
         resource = record.resourceName,
@@ -77,19 +77,19 @@ class IndexValidator(
         relationName = ref.relationName,
     )
 
-    private fun missingBackLinkRow(
+    private fun missingBackLinkProblem(
         orgId: OrgId,
         record: MinimalRecord,
         target: MinimalRecord,
         ref: OutboundRef,
         inverseName: String,
-    ): ReportRow {
+    ): ReportProblem {
         val isAutoRelation = autoRelationRules.isAutoRelation(
             component = record.component,
             resourceName = record.resourceName,
             relationName = ref.relationName,
         )
-        return ReportRow(
+        return ReportProblem(
             orgId = orgId,
             component = record.component,
             resource = record.resourceName,
@@ -101,7 +101,7 @@ class IndexValidator(
         )
     }
 
-    private fun unknownLinkRow(orgId: OrgId, record: MinimalRecord, badHref: String) = ReportRow(
+    private fun unknownLinkProblem(orgId: OrgId, record: MinimalRecord, badHref: String) = ReportProblem(
         orgId = orgId,
         component = record.component,
         resource = record.resourceName,

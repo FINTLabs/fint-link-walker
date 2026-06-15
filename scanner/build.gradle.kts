@@ -13,9 +13,22 @@ java {
     targetCompatibility = JavaVersion.VERSION_24
 }
 
+val fintVersion = "4.0.10"
+
 dependencies {
     implementation(project(":core"))
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j")
+
+    implementation("no.novari:fint-utdanning-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-administrasjon-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-personvern-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-okonomi-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-ressurs-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-arkiv-resource-model-java:${fintVersion}")
+    implementation("no.novari:fint-core-metamodel:3.0.0")
+
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -23,6 +36,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.13")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
