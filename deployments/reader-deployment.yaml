@@ -15,7 +15,7 @@ spec:
   orgId: fintlabs.no
   replicas: 1
   port: 8080
-  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.17
+  image: ghcr.io/fintlabs/fint-link-walker-reader:3.0.0-rc.18
   database:
     database: fint-core
   resources:

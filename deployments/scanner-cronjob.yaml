@@ -42,7 +42,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=afk_no"
@@ -113,7 +113,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=agderfk_no"
@@ -184,7 +184,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=bfk_no"
@@ -255,7 +255,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=ffk_no"
@@ -326,7 +326,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=innlandetfylke_no"
@@ -397,7 +397,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=mrfylke_no"
@@ -468,7 +468,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=nfk_no"
@@ -539,7 +539,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=ofk_no"
@@ -610,7 +610,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=rogfk_no"
@@ -681,7 +681,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=telemarkfylke_no"
@@ -752,7 +752,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=tromsfylke_no"
@@ -823,7 +823,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=trondelagfylke_no"
@@ -894,7 +894,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=ude_oslo_kommune_no"
@@ -965,7 +965,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=vestfoldfylke_no"
@@ -1036,7 +1036,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: scanner
-              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.17
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
               imagePullPolicy: IfNotPresent
               args:
                 - "--fint.link-walker.scanner.org-id=vlfk_no"

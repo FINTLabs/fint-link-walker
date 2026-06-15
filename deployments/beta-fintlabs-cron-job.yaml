@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-fintlabs-no
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: fintlabs-no
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: fintlabs-no
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: fintlabs-no
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: fintlabs-no
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: fintlabs-no
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: fintlabs-no
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:3.0.0-rc.18
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--fint.link-walker.scanner.org-id=fintlabs_no"
+              env:
+                - name: FINT_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
+                - name: FINT_DATABASE_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
+                - name: FINT_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "10Gi"
