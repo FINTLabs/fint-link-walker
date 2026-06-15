@@ -1,7 +1,7 @@
 package no.novari.linkwalker.auth
 
 import kotlinx.coroutines.runBlocking
-import no.novari.linkwalker.auth.model.AuthObject
+import no.novari.linkwalker.auth.model.FintCredentials
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
@@ -49,7 +49,7 @@ class IdpClientTest {
                 ),
         )
 
-        val token = client.getTokenResponse(authObject(name = "user@client", clientId = "cid", clientSecret = "csec", password = "pw"))
+        val token = client.getTokenResponse(credentials(username = "user@client", clientId = "cid", clientSecret = "csec", password = "pw"))
 
         assertEquals("ya29.eyJabc", token?.accessToken)
 
@@ -79,18 +79,19 @@ class IdpClientTest {
                 .setBody("""{"error":"invalid_grant"}"""),
         )
 
-        val ex = runCatching { runBlocking { client.getTokenResponse(authObject()) } }.exceptionOrNull()
+        val ex = runCatching { runBlocking { client.getTokenResponse(credentials()) } }.exceptionOrNull()
         assertTrue(ex != null, "Expected an exception on 401")
     }
 
-    private fun authObject(
-        name: String = "n",
+    private fun credentials(
+        username: String = "n",
         clientId: String = "c",
         clientSecret: String = "s",
         password: String = "p",
-    ) = AuthObject(
-        dn = "", name = name, shortDescription = "", assetId = "", asset = "", note = "",
-        password = password, clientSecret = clientSecret, publicKey = "", clientId = clientId,
-        components = emptyList(), accessPackages = emptyList(), managed = true,
+    ) = FintCredentials(
+        clientId = clientId,
+        clientSecret = clientSecret,
+        username = username,
+        password = password,
     )
 }

@@ -2,7 +2,7 @@ package no.novari.linkwalker.auth
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import no.novari.linkwalker.auth.model.AuthObject
+import no.novari.linkwalker.auth.model.FintCredentials
 import no.novari.linkwalker.auth.model.TokenResponse
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
@@ -18,22 +18,22 @@ class IdpClient(
     private val restClient: RestClient,
 ) {
 
-    suspend fun getTokenResponse(authObject: AuthObject): TokenResponse? =
+    suspend fun getTokenResponse(credentials: FintCredentials): TokenResponse? =
         withContext(Dispatchers.IO) {
             restClient.post()
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(createFormData(authObject))
+                .body(createFormData(credentials))
                 .retrieve()
                 .body<TokenResponse>()
         }
 
-    private fun createFormData(authObject: AuthObject): MultiValueMap<String, String> =
+    private fun createFormData(credentials: FintCredentials): MultiValueMap<String, String> =
         LinkedMultiValueMap<String, String>().apply {
             add("grant_type", "password")
-            add("client_id", authObject.clientId)
-            add("client_secret", authObject.clientSecret)
-            add("username", authObject.name)
-            add("password", authObject.password)
+            add("client_id", credentials.clientId)
+            add("client_secret", credentials.clientSecret)
+            add("username", credentials.username)
+            add("password", credentials.password)
             add("scope", "fint-client")
         }
 }
