@@ -8,6 +8,7 @@ data class ScannerProperties(
     val orgId: OrgId,
     val baseUrl: String = "https://api.felleskomponent.no",
     val components: List<String> = ALL_FINT_COMPONENTS,
+    val publishOnError: Boolean = false,
 ) {
     private companion object {
         val ALL_FINT_COMPONENTS = listOf(
