@@ -64,6 +64,7 @@ class FintClient(
 
                     else -> {
                         val body = response.body.bufferedReader().use { it.readText() }
+                        logger.warn("FINT fetch error {} from {} — {}", status.value(), url, body.take(300))
                         throw HttpClientErrorException.create(status, status.toString(), response.headers, body.toByteArray(), null)
                     }
                 }
