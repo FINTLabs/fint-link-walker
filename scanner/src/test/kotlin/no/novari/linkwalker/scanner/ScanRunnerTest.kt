@@ -76,7 +76,7 @@ class ScanRunnerTest {
 
     private fun runner(orgId: String, components: List<String> = emptyList()): ScanRunner =
         ScanRunner(
-            config = ScannerProperties(orgId = OrgId(orgId), components = components),
+            config = ScannerProperties(orgId = orgId, components = components),
             authService = authService,
             indexBuilder = indexBuilder,
             indexValidator = indexValidator,

@@ -29,7 +29,7 @@ class FlaisGatewayTest {
         server = MockWebServer().apply { start() }
         gateway = FlaisGateway(
             restClient = RestClient.builder().baseUrl(server.url("/").toString()).build(),
-            config = ScannerProperties(orgId = OrgId("test"), components = listOf("utdanning_elev")),
+            config = ScannerProperties(orgId = "test", components = listOf("utdanning_elev")),
         )
     }
 

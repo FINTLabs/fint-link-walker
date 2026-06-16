@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import no.novari.linkwalker.FintClient
 import no.novari.linkwalker.NoDataException
 import no.novari.linkwalker.NoRouteException
-import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
 import no.novari.metamodel.MetamodelService
@@ -25,7 +24,7 @@ class IndexBuilderTest {
     private val metamodel = mockk<MetamodelService>()
     private val extractor = mockk<RecordExtractor>(relaxed = true)
 
-    private val scannerConfig = ScannerProperties(orgId = OrgId("test"), baseUrl = "https://api.test")
+    private val scannerConfig = ScannerProperties(orgId = "test", baseUrl = "https://api.test")
     private val httpConfig = HttpProperties(maxConcurrentFetches = 4)
 
     private val builder = IndexBuilder(scannerConfig, httpConfig, fintClient, metamodel, extractor)
@@ -125,7 +124,7 @@ class IndexBuilderTest {
     @Test
     fun `publish-on-error skips the failed resource and returns a partial index`() = runBlocking {
         val lenientConfig =
-            ScannerProperties(orgId = OrgId("test"), baseUrl = "https://api.test", publishOnError = true)
+            ScannerProperties(orgId = "test", baseUrl = "https://api.test", publishOnError = true)
         val lenientBuilder = IndexBuilder(lenientConfig, httpConfig, fintClient, metamodel, extractor)
 
         every { metamodel.getResources("foo", "bar") } returns listOf(

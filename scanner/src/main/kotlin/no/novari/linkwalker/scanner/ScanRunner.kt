@@ -35,10 +35,11 @@ class ScanRunner(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun run(args: ApplicationArguments) {
+        val orgId = OrgId(config.orgId)
         MDC.put("scanId", UUID.randomUUID().toString())
-        MDC.put("orgId", config.orgId.value)
+        MDC.put("orgId", orgId.value)
         try {
-            runBlocking(MDCContext()) { runScan(config.orgId) }
+            runBlocking(MDCContext()) { runScan(orgId) }
         } finally {
             MDC.clear()
         }
