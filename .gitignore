@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Deployment manifests (kept out of git — may hold secrets) ###
+deployments/
