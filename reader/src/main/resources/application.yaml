@@ -1,0 +1,27 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${fint.database.url}
+    username: ${fint.database.username}
+    password: ${fint.database.password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+server:
+  port: 8080
+  servlet:
+    context-path: /link-walker
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health
+  endpoint:
+    health:
+      probes:
+        enabled: true

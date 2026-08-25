@@ -1,0 +1,533 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "fixed", "fixedColor": "blue"},
+          "mappings": [],
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sum(link_walker_records_count{orgId=~\"$orgId\", component=~\"$component\"})",
+          "instant": true,
+          "legendFormat": "Records",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Records scanned",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "fixed", "fixedColor": "purple"},
+          "mappings": [],
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sum(link_walker_refs_count{orgId=~\"$orgId\", component=~\"$component\"})",
+          "instant": true,
+          "legendFormat": "Refs",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Outbound refs",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "fixed", "fixedColor": "#f2495c"},
+          "mappings": [],
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sum(link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "instant": true,
+          "legendFormat": "Broken",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Broken links",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "#f2495c", "value": null},
+              {"color": "#ff9830", "value": 85},
+              {"color": "#fade2a", "value": 95},
+              {"color": "#73bf69", "value": 99}
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "textMode": "value_and_name",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "avg(link_walker_org_integrity_percent{orgId=~\"$orgId\"})",
+          "instant": true,
+          "legendFormat": "Integrity",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Integrity",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "missing-resource"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-red"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "missing-back-link-autorelation"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-blue"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "missing-back-link-adapter"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-orange"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "unknown-link"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-purple"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 10, "w": 8, "x": 16, "y": 4},
+      "id": 2,
+      "options": {
+        "displayLabels": ["percent"],
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": ["value", "percent"]
+        },
+        "pieType": "donut",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "tooltip": {"mode": "single"}
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (problem_type) (link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "instant": true,
+          "legendFormat": "{{problem_type}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Broken links by problem type",
+      "type": "piechart"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "#f2495c", "value": null},
+              {"color": "#ff9830", "value": 85},
+              {"color": "#fade2a", "value": 95},
+              {"color": "#73bf69", "value": 99}
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 10, "w": 16, "x": 0, "y": 4},
+      "id": 3,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sort(avg by (component) (link_walker_integrity_percent{orgId=~\"$orgId\", component=~\"$component\"}))",
+          "instant": true,
+          "legendFormat": "{{component}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Integrity by component (worst first)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "align": "left",
+            "cellOptions": {"type": "auto"},
+            "inspect": false,
+            "minWidth": 100
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "transparent", "value": null}]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Value"},
+            "properties": [
+              {"id": "unit", "value": "percent"},
+              {"id": "decimals", "value": 2},
+              {"id": "displayName", "value": "Integrity %"},
+              {"id": "min", "value": 0},
+              {"id": "max", "value": 100},
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"color": "#f2495c", "value": null},
+                    {"color": "#ff9830", "value": 85},
+                    {"color": "#fade2a", "value": 95},
+                    {"color": "#73bf69", "value": 99}
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {"mode": "basic", "type": "color-background"}
+              },
+              {"id": "custom.align", "value": "right"},
+              {"id": "custom.width", "value": 140}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "orgId"},
+            "properties": [
+              {"id": "displayName", "value": "Org"},
+              {"id": "custom.width", "value": 110}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "component"},
+            "properties": [
+              {"id": "displayName", "value": "Component"},
+              {"id": "custom.width", "value": 220}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "resource"},
+            "properties": [
+              {"id": "displayName", "value": "Resource"}
+            ]
+          }
+        ]
+      },
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 14},
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false},
+        "showHeader": true,
+        "sortBy": [{"desc": false, "displayName": "Integrity %"}]
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "bottomk(20, avg by (component, resource) (link_walker_integrity_percent{orgId=~\"$orgId\", component=~\"$component\"}))",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "20 worst resources by integrity",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true,
+              "app": true
+            },
+            "indexByName": {
+              "component": 0,
+              "resource": 1,
+              "Value": 2
+            },
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisLabel": "broken-link rows",
+            "axisPlacement": "auto",
+            "fillOpacity": 85,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineWidth": 0
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "missing-resource"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-red"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "missing-back-link-autorelation"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-blue"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "missing-back-link-adapter"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-orange"}}]
+          },
+          {
+            "matcher": {"id": "byName", "options": "unknown-link"},
+            "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "semi-dark-purple"}}]
+          }
+        ]
+      },
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 26},
+      "id": 5,
+      "options": {
+        "barRadius": 0.05,
+        "barWidth": 0.85,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "normal",
+        "tooltip": {"mode": "multi", "sort": "desc"},
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.3.0",
+      "targets": [
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "editorMode": "code",
+          "expr": "sum by (component, problem_type) (link_walker_broken_links{orgId=~\"$orgId\", component=~\"$component\", problem_type=~\"$problem_type\"})",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "{{problem_type}}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Broken links by component (stacked by problem type)",
+      "type": "barchart"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["link-walker"],
+  "templating": {
+    "list": [
+      {
+        "name": "orgId",
+        "label": "Tenant",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "definition": "label_values(link_walker_org_integrity_percent, orgId)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(link_walker_org_integrity_percent, orgId)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "current": {"selected": true, "text": ["All"], "value": ["$__all"]},
+        "includeAll": true,
+        "multi": true,
+        "options": [],
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "hide": 0
+      },
+      {
+        "name": "component",
+        "label": "Component",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "definition": "label_values(link_walker_integrity_percent, component)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(link_walker_integrity_percent, component)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "current": {"selected": true, "text": ["All"], "value": ["$__all"]},
+        "includeAll": true,
+        "multi": true,
+        "options": [],
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "hide": 0
+      },
+      {
+        "name": "problem_type",
+        "label": "Problem type",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "definition": "label_values(link_walker_broken_links, problem_type)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(link_walker_broken_links, problem_type)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "current": {"selected": true, "text": ["All"], "value": ["$__all"]},
+        "includeAll": true,
+        "multi": true,
+        "options": [],
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "hide": 0
+      }
+    ]
+  },
+  "time": {"from": "now-15m", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Link-Walker Overview",
+  "uid": "link-walker-overview",
+  "version": 3,
+  "weekStart": ""
+}

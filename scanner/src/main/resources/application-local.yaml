@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/linkwalker
+    username: linkwalker
+    password: linkwalker
+
+fint:
+  link-walker:
+    auth:
+      flais-gateway: "http://localhost:9095"
