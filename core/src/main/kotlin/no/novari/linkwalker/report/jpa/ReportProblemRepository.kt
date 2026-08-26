@@ -3,8 +3,10 @@ package no.novari.linkwalker.report.jpa
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 interface ReportProblemRepository : JpaRepository<ReportProblemEntity, Long> {
@@ -32,4 +34,22 @@ interface ReportProblemRepository : JpaRepository<ReportProblemEntity, Long> {
         @Param("problemType") problemType: String?,
         pageable: Pageable,
     ): Page<ReportProblemEntity>
+
+    @Modifying
+    @Transactional
+    @Query(
+        value = """
+        delete from report_row where id in (
+            select id from report_row
+            where org_id = :orgId and scan_id <> :keepScanId
+            limit :limit
+        )
+        """,
+        nativeQuery = true,
+    )
+    fun deleteBatchForOtherScans(
+        @Param("orgId") orgId: String,
+        @Param("keepScanId") keepScanId: UUID,
+        @Param("limit") limit: Int,
+    ): Int
 }
