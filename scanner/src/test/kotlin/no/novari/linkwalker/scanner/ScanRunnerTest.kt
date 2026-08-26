@@ -5,6 +5,8 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
+import io.mockk.verifyOrder
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.AuthService
 import no.novari.linkwalker.config.ScannerProperties
@@ -14,6 +16,7 @@ import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
 import no.novari.linkwalker.report.LatestReport
 import no.novari.linkwalker.report.ReportProblem
+import no.novari.linkwalker.report.ReportRetention
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ScanSummary
 import no.novari.linkwalker.report.SummaryBuilder
@@ -29,6 +32,7 @@ class ScanRunnerTest {
     private val indexValidator = mockk<IndexValidator>()
     private val summaryBuilder = mockk<SummaryBuilder>()
     private val reportStore = mockk<ReportStore>(relaxed = true)
+    private val reportRetention = mockk<ReportRetention>(relaxed = true)
     private val args = mockk<ApplicationArguments>(relaxed = true)
 
     @Test
@@ -48,7 +52,10 @@ class ScanRunnerTest {
 
         runner.run(args)
 
-        coVerify { reportStore.publish(any()) }
+        verifyOrder {
+            reportStore.publish(any())
+            reportRetention.purgeOldScans(OrgId("afk_no"))
+        }
         assertEquals(OrgId("afk_no"), captured.captured.orgId)
         assertEquals(listOf("utdanning_elev"), captured.captured.components)
         assertEquals(problems, captured.captured.problems)
@@ -72,6 +79,25 @@ class ScanRunnerTest {
 
         assertThrows(RuntimeException::class.java) { runner.run(args) }
         coVerify(exactly = 0) { reportStore.publish(any()) }
+        verify(exactly = 0) { reportRetention.purgeOldScans(OrgId("afk_no")) }
+    }
+
+    @Test
+    fun `purge failure does not fail the scan`() {
+        val runner = runner(orgId = "afk_no", components = listOf("utdanning_elev"))
+        val index = emptyIndex()
+        val problems = listOf(reportProblem("afk_no"))
+
+        coEvery { authService.getBearerToken(OrgId("afk_no")) } returns "bearer-x"
+        coEvery { indexBuilder.buildIndex(any(), any()) } returns index
+        every { indexValidator.validate(OrgId("afk_no"), index) } returns problems
+        every { summaryBuilder.build(index, problems) } returns summary(integrity = 99.5)
+        every { reportRetention.purgeOldScans(OrgId("afk_no")) } throws RuntimeException("purge blew up")
+
+        runner.run(args)
+
+        coVerify { reportStore.publish(any()) }
+        verify { reportRetention.purgeOldScans(OrgId("afk_no")) }
     }
 
     private fun runner(orgId: String, components: List<String> = emptyList()): ScanRunner =
@@ -82,6 +108,7 @@ class ScanRunnerTest {
             indexValidator = indexValidator,
             summaryBuilder = summaryBuilder,
             reportStore = reportStore,
+            reportRetention = reportRetention,
         )
 
     private fun emptyIndex(): TenantIndex = TenantIndex(records = emptyList(), byKey = emptyMap())

@@ -122,27 +122,6 @@ class IndexBuilderTest {
     }
 
     @Test
-    fun `publish-on-error skips the failed resource and returns a partial index`() = runBlocking {
-        val lenientConfig =
-            ScannerProperties(orgId = "test", baseUrl = "https://api.test", publishOnError = true)
-        val lenientBuilder = IndexBuilder(lenientConfig, httpConfig, fintClient, metamodel, extractor)
-
-        every { metamodel.getResources("foo", "bar") } returns listOf(
-            fakeResource("good"),
-            fakeResource("bad"),
-        )
-        coEvery { fintClient.streamToFile(match { it.contains("/good?") }, any(), any()) } returns Unit
-        coEvery { fintClient.streamToFile(match { it.contains("/bad?") }, any(), any()) } throws
-            RuntimeException("boom")
-        every { extractor.extractFromFile(any(), "foo_bar", "good") } returns
-            PageExtraction(listOf(record("https://api.test/foo/bar/good/systemid/g-1")), totalItems = 1)
-
-        val index = lenientBuilder.buildIndex(listOf("foo_bar"), "bearer")
-
-        assertEquals(1, index.records.size)
-    }
-
-    @Test
     fun `unparseable component name is skipped without failing the build`() = runBlocking {
         val index = builder.buildIndex(listOf("singleword"), "bearer")
         assertTrue(index.records.isEmpty())

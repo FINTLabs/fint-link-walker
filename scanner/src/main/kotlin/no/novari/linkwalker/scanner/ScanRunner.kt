@@ -10,6 +10,7 @@ import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
 import no.novari.linkwalker.report.LatestReport
 import no.novari.linkwalker.report.ReportProblem
+import no.novari.linkwalker.report.ReportRetention
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ScanSummary
 import no.novari.linkwalker.report.SummaryBuilder
@@ -30,6 +31,7 @@ class ScanRunner(
     private val indexValidator: IndexValidator,
     private val summaryBuilder: SummaryBuilder,
     private val reportStore: ReportStore,
+    private val reportRetention: ReportRetention,
 ) : ApplicationRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -53,6 +55,7 @@ class ScanRunner(
         val completedAt = Instant.now()
         val summary = summaryBuilder.build(result.index, result.problems)
         publish(orgId, summary, result.problems, completedAt)
+        purgeOldScans(orgId)
         logFinished(summary, result.problems, started, completedAt)
     }
 
@@ -76,6 +79,11 @@ class ScanRunner(
                 problems = problems,
             )
         )
+    }
+
+    private fun purgeOldScans(orgId: OrgId) {
+        runCatching { reportRetention.purgeOldScans(orgId) }
+            .onFailure { logger.error("Purge of old scans failed; stale scans remain until next run", it) }
     }
 
     private fun logFinished(summary: ScanSummary, problems: List<ReportProblem>, started: Instant, completedAt: Instant) {

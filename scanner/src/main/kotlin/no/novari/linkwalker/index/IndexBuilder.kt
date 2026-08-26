@@ -1,6 +1,5 @@
 package no.novari.linkwalker.index
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -29,7 +28,6 @@ class IndexBuilder(
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val baseUrl: String = scannerConfig.baseUrl.trimEnd('/')
-    private val publishOnError: Boolean = scannerConfig.publishOnError
 
     // Caps the number of in-flight HTTP fetches across the whole scan.
     // limitedParallelism wraps Dispatchers.IO so coroutines beyond the cap suspend
@@ -69,8 +67,8 @@ class IndexBuilder(
 
     // Returns empty for "this resource doesn't apply to this tenant" cases
     // (route absent / cache empty). A real fetch failure aborts the whole scan
-    // (coroutineScope cancels siblings, buildIndex fails) unless publishOnError is
-    // set, in which case the target is skipped and the partial index is published.
+    // (coroutineScope cancels siblings, buildIndex fails) — a report is either
+    // complete or not published at all.
     private suspend fun fetchAndExtract(target: FetchTarget, bearer: String): List<MinimalRecord> =
         try {
             val first = fetchPage(target, offset = 0L, bearer)
@@ -80,12 +78,6 @@ class IndexBuilder(
             emptyList()
         } catch (ex: NoDataException) {
             logger.info("No data for {} — {}", target.label, ex.message)
-            emptyList()
-        } catch (ex: CancellationException) {
-            throw ex
-        } catch (ex: Exception) {
-            if (!publishOnError) throw ex
-            logger.warn("Skipping {} after fetch failure (publish-on-error) — {}", target.label, ex.message)
             emptyList()
         }
 

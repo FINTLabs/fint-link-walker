@@ -33,6 +33,9 @@ class SummaryMetrics(
     private val orgIntegrity: MultiGauge = gauge(registry, "link_walker_org_integrity_percent",
         "Overall integrity percent per orgId")
 
+    private val lastScanTimestamp: MultiGauge = gauge(registry, "link_walker_last_scan_timestamp_seconds",
+        "Epoch seconds of the last successful scan per orgId")
+
     @Scheduled(fixedDelay = 60_000, initialDelay = 5_000)
     fun refresh() {
         // A transient DB error shouldn't take the scheduler down or
@@ -54,6 +57,7 @@ class SummaryMetrics(
         val perOrg = summaries.map { it.orgId.value to it.summary }
 
         orgIntegrity.register(orgIntegrityRows(perOrg), true)
+        lastScanTimestamp.register(lastScanRows(summaries), true)
         integrityPercent.register(perOrg.flatMap { (org, s) -> resourceRows(org, s) { it.integrityPercent } }, true)
         recordsTotal.register(perOrg.flatMap { (org, s) -> resourceRows(org, s) { it.totalRecords.toDouble() } }, true)
         refsTotal.register(perOrg.flatMap { (org, s) -> resourceRows(org, s) { it.totalRefs.toDouble() } }, true)
@@ -64,6 +68,11 @@ class SummaryMetrics(
             perOrg.size, perOrg.joinToString { "${it.first}=${it.second.integrityPercent}%" },
         )
     }
+
+    private fun lastScanRows(summaries: List<LatestReportSummary>): List<MultiGauge.Row<Number>> =
+        summaries.map {
+            MultiGauge.Row.of(Tags.of("orgId", it.orgId.value), it.scanCompletedAt.epochSecond.toDouble())
+        }
 
     private fun orgIntegrityRows(
         perOrg: List<Pair<String, ScanSummary>>,
