@@ -72,6 +72,18 @@ class SummaryMetricsTest {
     }
 
     @Test
+    fun `last scan timestamp is published per org`() {
+        every { store.listSummaries() } returns listOf(report("afk_no", integrity = 99.5))
+
+        metrics.refresh()
+
+        assertEquals(
+            Instant.parse("2026-01-01T00:00:00Z").epochSecond.toDouble(),
+            registry.find("link_walker_last_scan_timestamp_seconds").tag("orgId", "afk_no").gauge()?.value(),
+        )
+    }
+
+    @Test
     fun `stale tenant rows are dropped on subsequent refresh`() {
         every { store.listSummaries() } returns listOf(report("afk_no", integrity = 99.0))
         metrics.refresh()
