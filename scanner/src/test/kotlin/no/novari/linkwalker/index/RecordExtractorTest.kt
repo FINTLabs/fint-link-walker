@@ -237,6 +237,104 @@ class RecordExtractorTest {
         assertEquals(1_497_067L, page.totalItems)
     }
 
+    @Test
+    fun `extractFromFile reads the next link from the top-level _links`(@TempDir tmp: Path) {
+        val file = tmp.resolve("first.json")
+        file.writeText(
+            """
+            {
+              "total_items": 3,
+              "size": 1,
+              "_links": {
+                "self": [{ "href": "https://api.f.no/utdanning/elev/elev?size=1" }],
+                "next": [{ "href": "https://api.f.no/utdanning/elev/elev?size=1&cursor=abc" }]
+              },
+              "_embedded": {
+                "_entries": [
+                  { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals("https://api.f.no/utdanning/elev/elev?size=1&cursor=abc", page.nextHref)
+        assertEquals(1, page.entryCount)
+        assertEquals(1, page.records.size)
+    }
+
+    @Test
+    fun `extractFromFile accepts next as a single link object after _embedded`(@TempDir tmp: Path) {
+        val file = tmp.resolve("object-link.json")
+        file.writeText(
+            """
+            {
+              "_embedded": {
+                "_entries": [
+                  { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } }
+                ]
+              },
+              "_links": {
+                "next": { "href": "https://api.f.no/utdanning/elev/elev?size=1&cursor=abc" }
+              }
+            }
+            """.trimIndent()
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals("https://api.f.no/utdanning/elev/elev?size=1&cursor=abc", page.nextHref)
+    }
+
+    @Test
+    fun `extractFromFile leaves nextHref null when _links has no next`(@TempDir tmp: Path) {
+        val file = tmp.resolve("last.json")
+        file.writeText(
+            """
+            {
+              "total_items": 1,
+              "_links": {
+                "self": [{ "href": "https://api.f.no/utdanning/elev/elev?size=1&cursor=zzz" }]
+              },
+              "_embedded": {
+                "_entries": [
+                  { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(null, page.nextHref)
+    }
+
+    @Test
+    fun `extractFromFile counts entries dropped for a missing self link`(@TempDir tmp: Path) {
+        val file = tmp.resolve("dropped.json")
+        file.writeText(
+            """
+            {
+              "total_items": 2,
+              "_embedded": {
+                "_entries": [
+                  { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } },
+                  { "_links": { "person": [{ "href": "https://api.f.no/utdanning/elev/person/systemid/p" }] } }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(1, page.records.size)
+        assertEquals(2, page.entryCount)
+    }
+
     private fun extractor(excludeRelations: List<String> = emptyList()) =
         RecordExtractor(mapper, IndexProperties(excludeRelations = excludeRelations))
 }

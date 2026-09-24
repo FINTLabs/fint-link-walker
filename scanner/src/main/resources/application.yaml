@@ -20,6 +20,9 @@ fint:
   link-walker:
     scanner:
       base-url: "https://api.felleskomponent.no"
+      page-size: 10000
+      page-sizes:
+        skole: 3
       # default for local dev; in k8s pass --fint.link-walker.scanner.org-id=<orgId>
       org-id: afk_no
       # Defaults to all FINT components (see ScannerProperties.ALL_FINT_COMPONENTS).
@@ -49,4 +52,5 @@ fint:
         - "utdanning_timeplan"
         - "utdanning_kodeverk"
     http:
+      max-concurrent-fetches: 1
       max-attempts: 5

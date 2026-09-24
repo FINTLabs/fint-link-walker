@@ -2,6 +2,7 @@ package no.novari.linkwalker.index
 
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
@@ -42,26 +43,133 @@ class IndexBuilderTest {
     }
 
     @Test
-    fun `walks pages using total_items until fully drained`() = runBlocking {
+    fun `first page is requested with the configured page size and no cursor`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
         coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
-        // total_items = 250_000 with PAGE_SIZE = 100_000 → 3 fetches at offset 0, 100_000, 200_000.
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/only")), totalItems = 1)
+
+        builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        coVerify(exactly = 1) { fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000", any(), any()) }
+    }
+
+    @Test
+    fun `per-resource page size overrides the default and matches case-insensitively`() = runBlocking {
+        val sizedConfig = ScannerProperties(orgId = "test", baseUrl = "https://api.test", pageSizes = mapOf("Skole" to 3))
+        val sizedBuilder = IndexBuilder(sizedConfig, httpConfig, fintClient, metamodel, extractor)
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("skole"), fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", any()) } returns PageExtraction(emptyList(), totalItems = 0)
+
+        sizedBuilder.buildIndex(listOf("foo_bar"), "bearer")
+
+        coVerify(exactly = 1) { fintClient.streamToFile("https://api.test/foo/bar/skole?size=3", any(), any()) }
+        coVerify(exactly = 1) { fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000", any(), any()) }
+    }
+
+    @Test
+    fun `follows next links in order until a page has none`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returnsMany listOf(
-            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/a")), totalItems = 250_000),
-            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/b")), totalItems = 250_000),
-            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/c")), totalItems = 250_000),
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/a")),
+                totalItems = 3,
+                nextHref = "https://api.test/foo/bar/baz?size=10000&cursor=p2",
+            ),
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/b")),
+                totalItems = 3,
+                nextHref = "https://api.test/foo/bar/baz?size=10000&cursor=p3",
+            ),
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/c")),
+                totalItems = 3,
+                nextHref = null,
+            ),
         )
 
         val index = builder.buildIndex(listOf("foo_bar"), "bearer")
 
         assertEquals(3, index.records.size)
-        coVerify(exactly = 1) { fintClient.streamToFile(match { it.contains("offset=0") }, any(), any()) }
-        coVerify(exactly = 1) { fintClient.streamToFile(match { it.contains("offset=100000") }, any(), any()) }
-        coVerify(exactly = 1) { fintClient.streamToFile(match { it.contains("offset=200000") }, any(), any()) }
+        coVerifyOrder {
+            fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000", any(), any())
+            fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000&cursor=p2", any(), any())
+            fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000&cursor=p3", any(), any())
+        }
+        coVerify(exactly = 3) { fintClient.streamToFile(any(), any(), any()) }
     }
 
     @Test
-    fun `stops on short page when total_items is absent`() = runBlocking {
+    fun `relative next link is resolved against the base url`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returnsMany listOf(
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/a")),
+                totalItems = 2,
+                nextHref = "/foo/bar/baz?size=10000&cursor=p2",
+            ),
+            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/b")), totalItems = 2),
+        )
+
+        builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        coVerify(exactly = 1) {
+            fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000&cursor=p2", any(), any())
+        }
+    }
+
+    @Test
+    fun `a next link that was already fetched fails the scan`() {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/a")),
+                totalItems = null,
+                nextHref = "https://api.test/foo/bar/baz?size=10000&cursor=p2",
+            )
+
+        assertThrows(IncompleteIndexException::class.java) {
+            runBlocking { builder.buildIndex(listOf("foo_bar"), "bearer") }
+        }
+        coVerify(exactly = 2) { fintClient.streamToFile(any(), any(), any()) }
+    }
+
+    @Test
+    fun `running out of next links before total_items is reached fails the scan`() {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/a")),
+                totalItems = 250_000,
+                nextHref = null,
+                entryCount = 10_000,
+            )
+
+        val ex = assertThrows(IncompleteIndexException::class.java) {
+            runBlocking { builder.buildIndex(listOf("foo_bar"), "bearer") }
+        }
+        assertTrue(ex.message!!.contains("10000 of 250000"), ex.message)
+    }
+
+    @Test
+    fun `entries dropped at extraction still count toward total_items`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(emptyList(), totalItems = 2, nextHref = null, entryCount = 2)
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertTrue(index.records.isEmpty())
+    }
+
+    @Test
+    fun `missing total_items skips the completeness check`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
         coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns

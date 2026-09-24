@@ -8,6 +8,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -24,16 +25,14 @@ class FintClient(
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    // Suspend so callers can compose, but runs synchronously on the caller's dispatcher.
-    // IndexBuilder dispatches through a parallelism-limited view of Dispatchers.IO;
-    // a withContext(Dispatchers.IO) here would break that cap.
     suspend fun streamToFile(url: String, bearer: String, destination: Path) {
-        withRetry(url) { fetchAndCopy(url, bearer, destination) }
+        val uri = URI.create(url)
+        withRetry(url) { fetchAndCopy(uri, bearer, destination) }
     }
 
-    private fun fetchAndCopy(url: String, bearer: String, destination: Path) {
+    private fun fetchAndCopy(uri: URI, bearer: String, destination: Path) {
         fintRestClient.get()
-            .uri(url)
+            .uri(uri)
             .headers { it.setBearerAuth(bearer) }
             .accept(MediaType.APPLICATION_JSON)
             .exchange { _, response ->
@@ -51,20 +50,20 @@ class FintClient(
 
                     status.is2xxSuccessful ->
                         throw NoRouteException(
-                            "Non-JSON response (Content-Type=$contentType) from $url"
+                            "Non-JSON response (Content-Type=$contentType) from $uri"
                         )
 
                     status == HttpStatus.SERVICE_UNAVAILABLE -> {
                         val body = response.body.bufferedReader().use { it.readText() }
                         if (body.contains("CacheNotFoundException", ignoreCase = true)) {
-                            throw NoDataException("CacheNotFoundException from $url (no data in core)")
+                            throw NoDataException("CacheNotFoundException from $uri (no data in core)")
                         }
                         throw HttpClientErrorException.create(status, status.toString(), response.headers, body.toByteArray(), null)
                     }
 
                     else -> {
                         val body = response.body.bufferedReader().use { it.readText() }
-                        logger.warn("FINT fetch error {} from {} — {}", status.value(), url, body.take(300))
+                        logger.warn("FINT fetch error {} from {}: {}", status.value(), uri, body.take(300))
                         throw HttpClientErrorException.create(status, status.toString(), response.headers, body.toByteArray(), null)
                     }
                 }
