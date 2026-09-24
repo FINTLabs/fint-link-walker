@@ -44,15 +44,17 @@ class AutoRelationsYamlParityTest {
         val rules = mutableSetOf<Rule>()
         Files.readAllLines(rulesDocument()).forEach { line ->
             heading.matchEntire(line)?.let {
-                source = it.groupValues[1]
+                source = it.groupValues[1].dashed()
                 return@forEach
             }
             val match = row.matchEntire(line) ?: return@forEach
             val (relation, target, backRelation) = match.destructured
-            rules += Rule(checkNotNull(source) { "table row before any heading: $line" }, relation, target, backRelation)
+            rules += Rule(checkNotNull(source) { "table row before any heading: $line" }, relation, target.dashed(), backRelation)
         }
         return rules
     }
+
+    private fun String.dashed(): String = replace('/', '-')
 
     private fun rulesDocument(): Path =
         generateSequence(Path.of("").toAbsolutePath()) { it.parent }

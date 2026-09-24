@@ -1,4 +1,4 @@
-# Derived from core-consumer RELATION_RULES.md, mirrored as AUTORELATION_RULES.md in the repo root
+# Mirrors fint-core's RELATION_RULES.md (RelationRules in fint-core-shared), copied to AUTORELATION_RULES.md in the repo root
 fint:
   link-walker:
     index:
@@ -395,6 +395,10 @@ fint:
           relation: skole
           target: utdanning-utdanningsprogram-skole
           back-relation: utdanningsprogram
+        - source: utdanning-vurdering-aktivitetsfravar
+          relation: elevfravar
+          target: utdanning-vurdering-elevfravar
+          back-relation: aktivitetsfravar
         - source: utdanning-vurdering-eksamensgruppe
           relation: eksamen
           target: utdanning-timeplan-eksamen
