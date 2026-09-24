@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner-ORG
+  namespace: fint-core
+  labels:
+    app: fint-link-walker-scanner
+    tenant: ORG
+    app.kubernetes.io/name: fint-link-walker-scanner
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: fint-felleskomponent
+    fintlabs.no/team: core
+    fintlabs.no/org-id: ORG
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app: fint-link-walker-scanner
+        tenant: ORG
+        app.kubernetes.io/name: fint-link-walker-scanner
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: fint-felleskomponent
+        fintlabs.no/team: core
+        fintlabs.no/org-id: ORG
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: fint-link-walker-scanner
+            tenant: ORG
+            app.kubernetes.io/name: fint-link-walker-scanner
+            app.kubernetes.io/component: backend
+            app.kubernetes.io/part-of: fint-felleskomponent
+            fintlabs.no/team: core
+            fintlabs.no/org-id: ORG
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scanner
+              image: ghcr.io/fintlabs/fint-link-walker-scanner:REPLACE
+              imagePullPolicy: IfNotPresent
+              args:
+                - "--fint.link-walker.scanner.org-id=ORG"
+                - "--fint.link-walker.scanner.base-url=BASE_URL"
+              envFrom:
+                - secretRef:
+                    name: fint-link-walker-client-ORG
+              env:
+                - name: FINT_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.url
+                - name: FINT_DATABASE_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.username
+                - name: FINT_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: fint-link-walker-reader-db
+                      key: fint.database.password
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_0
+                  value: "utdanning_elev"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_1
+                  value: "utdanning_kodeverk"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_2
+                  value: "utdanning_larling"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_3
+                  value: "utdanning_ot"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_4
+                  value: "utdanning_timeplan"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_5
+                  value: "utdanning_utdanningsprogram"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_6
+                  value: "utdanning_vurdering"
+              resources:
+                requests:
+                  memory: "4Gi"
+                  cpu: "500m"
+                limits:
+                  memory: "10Gi"
