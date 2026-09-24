@@ -192,6 +192,59 @@ class RecordExtractorTest {
     }
 
     @Test
+    fun `an entry whose only self href is damaged is not indexed and is counted`(@TempDir tmp: Path) {
+        val file = tmp.resolve("page.json")
+        file.writeText(
+            """
+            {
+              "total_items": 2,
+              "_embedded": { "_entries": [
+                { "_links": { "self": [{ "href": "https://api.f.no/utdanning/elev/elev/systemid/a" }] } },
+                { "_links": { "self": [{ "href": "https:https://api.f.noonent.no/utdanning/elev/elev/systemid/b" }] } }
+              ] }
+            }
+            """.trimIndent(),
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(1, page.records.size)
+        assertEquals(2, page.entryCount)
+        assertEquals(1, page.malformedSelfCount)
+    }
+
+    @Test
+    fun `an entry keeps its usable self hrefs when one of them is damaged and is still counted`(@TempDir tmp: Path) {
+        val file = tmp.resolve("page.json")
+        file.writeText(
+            """
+            {
+              "_embedded": { "_entries": [
+                { "_links": { "self": [
+                  { "href": "https://api.f.no/utdanning/elev/elev/systemid/a" },
+                  { "href": "httphttps://api.f.no" }
+                ] } }
+              ] }
+            }
+            """.trimIndent(),
+        )
+
+        val page = extractor().extractFromFile(file, "utdanning_elev", "elev")
+
+        assertEquals(listOf("https://api.f.no/utdanning/elev/elev/systemid/a"), page.records.single().canonicalKeys)
+        assertEquals(1, page.malformedSelfCount)
+    }
+
+    @Test
+    fun `extract returns null when every self href is damaged`() {
+        val json = """{ "_links": { "self": [{ "href": "https://api.f.no" }] } }"""
+
+        val record = extractor().extract(mapper.readTree(json), "utdanning_elev", "elev")
+
+        assertEquals(null, record)
+    }
+
+    @Test
     fun `extractFromFile returns empty when _embedded _entries is empty`(@TempDir tmp: Path) {
         val file = tmp.resolve("empty.json")
         file.writeText("""{"total_items":0,"_embedded":{"_entries":[]}}""")

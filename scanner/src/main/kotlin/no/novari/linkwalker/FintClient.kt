@@ -8,7 +8,6 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestClient
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -17,23 +16,50 @@ import kotlin.random.Random
 class NoRouteException(message: String) : RuntimeException(message)
 class NoDataException(message: String) : RuntimeException(message)
 
+/** What one successful download returned, besides the body written to disk. */
+data class FetchResult(
+    val bytes: Long,
+    val via: String?,
+)
+
 @Component
 class FintClient(
     private val fintRestClient: RestClient,
     private val httpProperties: HttpProperties,
+    private val routing: FetchRouting,
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    suspend fun streamToFile(url: String, bearer: String, destination: Path) {
-        val uri = URI.create(url)
-        withRetry(url) { fetchAndCopy(uri, bearer, destination) }
+    /**
+     * Downloads the page at the public [url] into [destination], going around the Access Gateway
+     * when a fetch base is configured. If the bypass route answers 401, 403 or 404, or cannot be
+     * connected to, the same page is fetched from the public URL instead and a warning is logged.
+     */
+    suspend fun streamToFile(url: String, bearer: String, destination: Path): FetchResult {
+        val routed = routing.route(url)
+        if (routed.bypassesGateway) {
+            try {
+                return withRetry(url) { fetchAndCopy(routed, bearer, destination) }
+            } catch (ex: Exception) {
+                if (!routing.fallsBackToGateway(ex)) throw ex
+                logger.warn("Bypass route failed for {} ({}), fetching through the gateway instead", url, ex.message)
+            }
+        }
+        return withRetry(url) { fetchAndCopy(routing.direct(url), bearer, destination) }
     }
 
-    private fun fetchAndCopy(uri: URI, bearer: String, destination: Path) {
+    /** Downloads [url] through the public host, whatever fetch base is configured. */
+    suspend fun streamToFileThroughGateway(url: String, bearer: String, destination: Path): FetchResult =
+        withRetry(url) { fetchAndCopy(routing.direct(url), bearer, destination) }
+
+    private fun fetchAndCopy(request: RoutedRequest, bearer: String, destination: Path): FetchResult =
         fintRestClient.get()
-            .uri(uri)
-            .headers { it.setBearerAuth(bearer) }
+            .uri(request.uri)
+            .headers { headers ->
+                headers.setBearerAuth(bearer)
+                request.headers.forEach { (name, value) -> headers.set(name, value) }
+            }
             .accept(MediaType.APPLICATION_JSON)
             .exchange { _, response ->
                 val status = response.statusCode
@@ -41,44 +67,43 @@ class FintClient(
 
                 when {
                     status.is2xxSuccessful && isJson(contentType) -> {
-                        Files.copy(
+                        val bytes = Files.copy(
                             response.body,
                             destination,
                             StandardCopyOption.REPLACE_EXISTING,
                         )
+                        FetchResult(bytes = bytes, via = response.headers.getFirst("Via"))
                     }
 
                     status.is2xxSuccessful ->
                         throw NoRouteException(
-                            "Non-JSON response (Content-Type=$contentType) from $uri"
+                            "Non-JSON response (Content-Type=$contentType) from ${request.uri}"
                         )
 
                     status == HttpStatus.SERVICE_UNAVAILABLE -> {
                         val body = response.body.bufferedReader().use { it.readText() }
                         if (body.contains("CacheNotFoundException", ignoreCase = true)) {
-                            throw NoDataException("CacheNotFoundException from $uri (no data in core)")
+                            throw NoDataException("CacheNotFoundException from ${request.uri} (no data in core)")
                         }
                         throw HttpClientErrorException.create(status, status.toString(), response.headers, body.toByteArray(), null)
                     }
 
                     else -> {
                         val body = response.body.bufferedReader().use { it.readText() }
-                        logger.warn("FINT fetch error {} from {}: {}", status.value(), uri, body.take(300))
+                        logger.warn("FINT fetch error {} from {}: {}", status.value(), request.uri, body.take(300))
                         throw HttpClientErrorException.create(status, status.toString(), response.headers, body.toByteArray(), null)
                     }
                 }
             }
-    }
 
     // Retry transient HTTP failures (I/O drops, 5xx) with exponential backoff + jitter.
     // 4xx and the typed NoRoute/NoData signals are caller-meaningful — they bypass retry.
-    private suspend fun withRetry(url: String, block: () -> Unit) {
+    private suspend fun <T> withRetry(url: String, block: () -> T): T {
         val maxAttempts = httpProperties.maxAttempts
         var attempt = 0
         while (true) {
             try {
-                block()
-                return
+                return block()
             } catch (ex: NoRouteException) {
                 throw ex
             } catch (ex: NoDataException) {

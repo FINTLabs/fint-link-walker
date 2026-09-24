@@ -5,7 +5,9 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
+import no.novari.linkwalker.FetchResult
 import no.novari.linkwalker.FintClient
 import no.novari.linkwalker.NoDataException
 import no.novari.linkwalker.NoRouteException
@@ -19,7 +21,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.writeBytes
 
 class IndexBuilderTest {
 
@@ -30,12 +34,14 @@ class IndexBuilderTest {
     private val scannerConfig = ScannerProperties(orgId = "test", baseUrl = "https://api.test")
     private val httpConfig = HttpProperties(maxConcurrentFetches = 4)
 
+    private val fetched = FetchResult(bytes = 0, via = null)
+
     private val builder = IndexBuilder(scannerConfig, httpConfig, fintClient, metamodel, extractor)
 
     @Test
     fun `successful fetch indexes records`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/abc")), totalItems = 1)
 
@@ -47,7 +53,7 @@ class IndexBuilderTest {
     @Test
     fun `first page is requested with the configured page size and no cursor`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/only")), totalItems = 1)
 
@@ -61,7 +67,7 @@ class IndexBuilderTest {
         val sizedConfig = ScannerProperties(orgId = "test", baseUrl = "https://api.test", pageSizes = mapOf("Skole" to 3))
         val sizedBuilder = IndexBuilder(sizedConfig, httpConfig, fintClient, metamodel, extractor)
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("skole"), fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", any()) } returns PageExtraction(emptyList(), totalItems = 0)
 
         sizedBuilder.buildIndex(listOf("foo_bar"), "bearer")
@@ -73,7 +79,7 @@ class IndexBuilderTest {
     @Test
     fun `follows next links in order until a page has none`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returnsMany listOf(
             PageExtraction(
                 listOf(record("https://api.test/foo/bar/baz/systemid/a")),
@@ -106,7 +112,7 @@ class IndexBuilderTest {
     @Test
     fun `relative next link is resolved against the base url`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returnsMany listOf(
             PageExtraction(
                 listOf(record("https://api.test/foo/bar/baz/systemid/a")),
@@ -126,7 +132,7 @@ class IndexBuilderTest {
     @Test
     fun `a next link that was already fetched fails the scan`() {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(
                 listOf(record("https://api.test/foo/bar/baz/systemid/a")),
@@ -143,7 +149,7 @@ class IndexBuilderTest {
     @Test
     fun `running out of next links before total_items is reached fails the scan`() {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(
                 listOf(record("https://api.test/foo/bar/baz/systemid/a")),
@@ -161,7 +167,7 @@ class IndexBuilderTest {
     @Test
     fun `entries dropped at extraction still count toward total_items`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(emptyList(), totalItems = 2, nextHref = null, entryCount = 2)
 
@@ -173,7 +179,7 @@ class IndexBuilderTest {
     @Test
     fun `missing total_items skips the completeness check`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
             PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/only")), totalItems = null)
 
@@ -186,7 +192,7 @@ class IndexBuilderTest {
     @Test
     fun `a page that fails to parse is fetched again`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } throws brokenJson() andThen
             PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/a")), totalItems = 1)
 
@@ -201,7 +207,7 @@ class IndexBuilderTest {
         val twoAttempts = HttpProperties(maxConcurrentFetches = 4, maxAttempts = 2)
         val strictBuilder = IndexBuilder(scannerConfig, twoAttempts, fintClient, metamodel, extractor)
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
-        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
         every { extractor.extractFromFile(any(), "foo_bar", "baz") } throws brokenJson()
 
         val ex = assertThrows(PageParseException::class.java) {
@@ -249,7 +255,7 @@ class IndexBuilderTest {
             fakeResource("good"),
             fakeResource("bad"),
         )
-        coEvery { fintClient.streamToFile(match { it.contains("/good?") }, any(), any()) } returns Unit
+        coEvery { fintClient.streamToFile(match { it.contains("/good?") }, any(), any()) } returns fetched
         coEvery { fintClient.streamToFile(match { it.contains("/bad?") }, any(), any()) } throws
             RuntimeException("boom")
         every { extractor.extractFromFile(any(), "foo_bar", "good") } returns
@@ -296,6 +302,7 @@ class IndexBuilderTest {
             maxObserved.updateAndGet { prev -> if (now > prev) now else prev }
             Thread.sleep(30)
             inFlight.decrementAndGet()
+            fetched
         }
 
         capBuilder.buildIndex(listOf("foo_bar"), "bearer")
@@ -305,6 +312,63 @@ class IndexBuilderTest {
             "Max in-flight fetches ${maxObserved.get()} exceeded cap $cap",
         )
         assertTrue(maxObserved.get() > 1, "Test setup error: no concurrency observed")
+    }
+
+
+    @Test
+    fun `a damaged page is fetched again and the clean copy is indexed`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } coAnswers {
+            thirdArg<Path>().writeBytes("""{"href":"https:https://api.test/foo/bar/baz/systemid/a"}""".toByteArray())
+            fetched
+        } andThenAnswer {
+            thirdArg<Path>().writeBytes("""{"href":"https://api.test/foo/bar/baz/systemid/a"}""".toByteArray())
+            fetched
+        }
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/a")), totalItems = 1)
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertEquals(1, index.records.size)
+        coVerify(exactly = 2) { fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000", any(), any()) }
+    }
+
+    @Test
+    fun `a page that stays damaged fails the scan after max attempts`() {
+        val twoAttempts = HttpProperties(maxConcurrentFetches = 4, maxAttempts = 2)
+        val strictBuilder = IndexBuilder(scannerConfig, twoAttempts, fintClient, metamodel, extractor)
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } coAnswers {
+            thirdArg<Path>().writeBytes("""{"a":"x""".toByteArray() + byteArrayOf(0) + """"}""".toByteArray())
+            FetchResult(bytes = 10, via = "1.1 gw (Access Gateway-ag-9)")
+        }
+
+        val ex = assertThrows(PageCorruptException::class.java) {
+            runBlocking { strictBuilder.buildIndex(listOf("foo_bar"), "bearer") }
+        }
+        assertTrue(ex.message!!.contains("nul-byte at byte 7"), ex.message)
+        assertTrue(ex.message!!.contains("2 attempts"), ex.message)
+        assertTrue(ex.message!!.contains("ag-9"), ex.message)
+        coVerify(exactly = 2) { fintClient.streamToFile(any(), any(), any()) }
+        verify(exactly = 0) { extractor.extractFromFile(any(), any(), any()) }
+    }
+
+    @Test
+    fun `entries with a malformed self href are counted and the page still indexes the rest`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns
+            PageExtraction(
+                listOf(record("https://api.test/foo/bar/baz/systemid/a")),
+                totalItems = 2,
+                entryCount = 2,
+                malformedSelfCount = 1,
+            )
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertEquals(1, index.records.size)
     }
 
     private fun brokenJson(): JacksonException =

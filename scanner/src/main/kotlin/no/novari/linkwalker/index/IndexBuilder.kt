@@ -20,6 +20,7 @@ import kotlin.io.path.deleteIfExists
 
 class IncompleteIndexException(message: String) : RuntimeException(message)
 class PageParseException(message: String, cause: Throwable) : RuntimeException(message, cause)
+class PageCorruptException(message: String) : RuntimeException(message)
 
 @Component
 class IndexBuilder(
@@ -36,6 +37,7 @@ class IndexBuilder(
     private val pageSizes: Map<String, Int> = scannerConfig.pageSizes.mapKeys { it.key.lowercase() }
     private val maxConcurrentFetches: Int = httpConfig.maxConcurrentFetches
     private val maxAttempts: Int = httpConfig.maxAttempts
+    private val integrity = PageIntegrity(baseUrl)
 
     // Caps the number of in-flight HTTP fetches across the whole scan.
     // limitedParallelism wraps Dispatchers.IO so coroutines beyond the cap suspend
@@ -146,11 +148,40 @@ class IndexBuilder(
         var attempt = 0
         while (true) {
             attempt++
+            val started = System.nanoTime()
             @Suppress("BlockingMethodInNonBlockingContext")
             val tempFile: Path = Files.createTempFile("link-walker-", "-${target.resourceName}.json")
             try {
-                fintClient.streamToFile(url, bearer, tempFile)
-                return extractor.extractFromFile(tempFile, target.component, target.resourceName)
+                val fetched = fintClient.streamToFile(url, bearer, tempFile)
+                val report = integrity.inspect(tempFile)
+                val finding = report.finding
+                if (finding != null) {
+                    logger.warn(
+                        "[{}] {}: page is damaged ({} at byte {}) on attempt {}, bytes={} sha256={} via={}, re-fetching {}",
+                        position, target.label, finding.signature, finding.offset, attempt,
+                        report.bytes, report.sha256, fetched.via, url,
+                    )
+                    if (attempt >= maxAttempts) {
+                        throw PageCorruptException(
+                            "Page $url for ${target.label} was damaged on $attempt attempts, " +
+                                "last: ${finding.signature} at byte ${finding.offset} (via=${fetched.via})"
+                        )
+                    }
+                    continue
+                }
+                val page = extractor.extractFromFile(tempFile, target.component, target.resourceName)
+                logger.info(
+                    "[{}] {}: page fetched, bytes={} sha256={} attempt={} elapsed={}ms via={} entries={} malformedSelf={}",
+                    position, target.label, report.bytes, report.sha256, attempt,
+                    (System.nanoTime() - started) / 1_000_000, fetched.via, page.entryCount, page.malformedSelfCount,
+                )
+                if (page.malformedSelfCount > 0) {
+                    logger.warn(
+                        "[{}] {}: {} entries had a malformed self href and were not indexed ({})",
+                        position, target.label, page.malformedSelfCount, url,
+                    )
+                }
+                return page
             } catch (ex: JacksonException) {
                 val diagnostic = PageDiagnostics.describe(tempFile, ex)
                 if (attempt >= maxAttempts) {

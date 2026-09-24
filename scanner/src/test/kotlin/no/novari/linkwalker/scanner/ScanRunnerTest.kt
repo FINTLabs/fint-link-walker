@@ -34,6 +34,7 @@ class ScanRunnerTest {
     private val reportStore = mockk<ReportStore>(relaxed = true)
     private val reportRetention = mockk<ReportRetention>(relaxed = true)
     private val args = mockk<ApplicationArguments>(relaxed = true)
+    private val gatewayCanary = mockk<GatewayCanary>()
 
     @Test
     fun `happy path publishes report with summary and problems`() {
@@ -109,7 +110,8 @@ class ScanRunnerTest {
             summaryBuilder = summaryBuilder,
             reportStore = reportStore,
             reportRetention = reportRetention,
-        )
+            gatewayCanary = gatewayCanary,
+        ).also { coEvery { gatewayCanary.probe(any()) } returns null }
 
     private fun emptyIndex(): TenantIndex = TenantIndex(records = emptyList(), byKey = emptyMap())
 
