@@ -1,4 +1,4 @@
-# Derived from core-consumer auto-relation-rules.md
+# Derived from core-consumer RELATION_RULES.md, mirrored as AUTORELATION_RULES.md in the repo root
 fint:
   link-walker:
     index:
@@ -39,6 +39,10 @@ fint:
           relation: leder
           target: administrasjon-personal-personalressurs
           back-relation: leder
+        - source: administrasjon-organisasjon-organisasjonselement
+          relation: overordnet
+          target: administrasjon-organisasjon-organisasjonselement
+          back-relation: underordnet
         - source: administrasjon-personal-arbeidsforhold
           relation: arbeidslokasjon
           target: administrasjon-organisasjon-arbeidslokasjon
@@ -127,6 +131,10 @@ fint:
           relation: kontaktperson
           target: okonomi-regnskap-person
           back-relation: parorende
+        - source: okonomi-regnskap-leverandor
+          relation: leverandorgruppe
+          target: okonomi-regnskap-leverandorgruppe
+          back-relation: leverandor
         - source: okonomi-regnskap-person
           relation: foreldre
           target: okonomi-regnskap-person
@@ -327,6 +335,10 @@ fint:
           relation: skole
           target: utdanning-utdanningsprogram-skole
           back-relation: faggruppe
+        - source: utdanning-timeplan-faggruppemedlemskap
+          relation: elevforhold
+          target: utdanning-elev-elevforhold
+          back-relation: faggruppemedlemskap
         - source: utdanning-timeplan-faggruppemedlemskap
           relation: faggruppe
           target: utdanning-timeplan-faggruppe
