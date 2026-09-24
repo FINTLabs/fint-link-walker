@@ -13,6 +13,8 @@ import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Resource
+import tools.jackson.core.JacksonException
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -182,6 +184,35 @@ class IndexBuilderTest {
     }
 
     @Test
+    fun `a page that fails to parse is fetched again`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } throws brokenJson() andThen
+            PageExtraction(listOf(record("https://api.test/foo/bar/baz/systemid/a")), totalItems = 1)
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertEquals(1, index.records.size)
+        coVerify(exactly = 2) { fintClient.streamToFile("https://api.test/foo/bar/baz?size=10000", any(), any()) }
+    }
+
+    @Test
+    fun `a page that never parses fails the scan after max attempts`() {
+        val twoAttempts = HttpProperties(maxConcurrentFetches = 4, maxAttempts = 2)
+        val strictBuilder = IndexBuilder(scannerConfig, twoAttempts, fintClient, metamodel, extractor)
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns Unit
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } throws brokenJson()
+
+        val ex = assertThrows(PageParseException::class.java) {
+            runBlocking { strictBuilder.buildIndex(listOf("foo_bar"), "bearer") }
+        }
+        assertTrue(ex.message!!.contains("https://api.test/foo/bar/baz?size=10000"), ex.message)
+        assertTrue(ex.message!!.contains("2 attempts"), ex.message)
+        coVerify(exactly = 2) { fintClient.streamToFile(any(), any(), any()) }
+    }
+
+    @Test
     fun `NoRouteException returns empty for the resource (normal not-deployed case)`() = runBlocking {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
         coEvery { fintClient.streamToFile(any(), any(), any()) } throws NoRouteException("not deployed")
@@ -275,6 +306,10 @@ class IndexBuilderTest {
         )
         assertTrue(maxObserved.get() > 1, "Test setup error: no concurrency observed")
     }
+
+    private fun brokenJson(): JacksonException =
+        runCatching { jacksonObjectMapper().readTree("{\"a\":\"\u0000\"}") }
+            .exceptionOrNull() as JacksonException
 
     private fun fakeResource(name: String): Resource = mockk(relaxed = true) {
         every { this@mockk.name } returns name
