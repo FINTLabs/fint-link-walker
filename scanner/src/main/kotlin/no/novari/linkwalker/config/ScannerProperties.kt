@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class ScannerProperties(
     val orgId: String,
     val baseUrl: String = "https://api.felleskomponent.no",
+    val pageSize: Int = 10_000,
+    val pageSizes: Map<String, Int> = emptyMap(),
     val components: List<String> = ALL_FINT_COMPONENTS,
 ) {
     private companion object {

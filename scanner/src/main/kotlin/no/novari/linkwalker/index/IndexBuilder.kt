@@ -17,6 +17,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
 
+class IncompleteIndexException(message: String) : RuntimeException(message)
+
 @Component
 class IndexBuilder(
     scannerConfig: ScannerProperties,
@@ -28,19 +30,30 @@ class IndexBuilder(
 
     private val logger = LoggerFactory.getLogger(javaClass)
     private val baseUrl: String = scannerConfig.baseUrl.trimEnd('/')
+    private val defaultPageSize: Int = scannerConfig.pageSize
+    private val pageSizes: Map<String, Int> = scannerConfig.pageSizes.mapKeys { it.key.lowercase() }
+    private val maxConcurrentFetches: Int = httpConfig.maxConcurrentFetches
 
     // Caps the number of in-flight HTTP fetches across the whole scan.
     // limitedParallelism wraps Dispatchers.IO so coroutines beyond the cap suspend
     // (they don't block IO threads) until a permit frees up.
     private val fetchDispatcher: CoroutineDispatcher =
-        Dispatchers.IO.limitedParallelism(httpConfig.maxConcurrentFetches)
+        Dispatchers.IO.limitedParallelism(maxConcurrentFetches)
 
     suspend fun buildIndex(components: List<String>, bearer: String): TenantIndex = coroutineScope {
-        resolveTargets(components)
-            .map { async(fetchDispatcher) { fetchAndExtract(it, bearer) } }
+        val targets = resolveTargets(components)
+        logger.info(
+            "Indexing {} resources from {} components, {} at a time",
+            targets.size, components.size, maxConcurrentFetches,
+        )
+        val records = targets
+            .mapIndexed { i, target ->
+                async(fetchDispatcher) { fetchAndExtract(target, "${i + 1}/${targets.size}", bearer) }
+            }
             .awaitAll()
             .flatten()
-            .toTenantIndex()
+        logger.info("Index built: {} records from {} resources", records.size, targets.size)
+        records.toTenantIndex()
     }
 
     private fun resolveTargets(components: List<String>): List<FetchTarget> =
@@ -48,7 +61,7 @@ class IndexBuilder(
 
     private fun targetsFor(component: String): List<FetchTarget> {
         val id = ComponentId.parse(component) ?: run {
-            logger.warn("Component '{}' is not in 'domain_pkg' form — skipping", component)
+            logger.warn("Component '{}' is not in 'domain_pkg' form, skipping", component)
             return emptyList()
         }
         val resources = metamodelService.getResources(id.domain, id.pkg)
@@ -56,8 +69,13 @@ class IndexBuilder(
             logger.warn("No resources in metamodel for {}/{}", id.domain, id.pkg)
             return emptyList()
         }
-        return resources.map { FetchTarget(component, "${id.domain}/${id.pkg}/${it.name}", it.name) }
+        return resources.map {
+            FetchTarget(component, "${id.domain}/${id.pkg}/${it.name}", it.name, pageSizeFor(it.name))
+        }
     }
+
+    private fun pageSizeFor(resourceName: String): Int =
+        pageSizes[resourceName.lowercase()] ?: defaultPageSize
 
     private fun List<MinimalRecord>.toTenantIndex(): TenantIndex {
         val byKey = HashMap<String, MinimalRecord>(size * 2)
@@ -65,74 +83,62 @@ class IndexBuilder(
         return TenantIndex(records = this, byKey = byKey)
     }
 
-    // Returns empty for "this resource doesn't apply to this tenant" cases
-    // (route absent / cache empty). A real fetch failure aborts the whole scan
-    // (coroutineScope cancels siblings, buildIndex fails) — a report is either
-    // complete or not published at all.
-    private suspend fun fetchAndExtract(target: FetchTarget, bearer: String): List<MinimalRecord> =
+    private suspend fun fetchAndExtract(
+        target: FetchTarget,
+        position: String,
+        bearer: String,
+    ): List<MinimalRecord> =
         try {
-            val first = fetchPage(target, offset = 0L, bearer)
-            first.records + fetchTail(target, first, bearer)
+            followPages(target, position, bearer)
         } catch (ex: NoRouteException) {
-            logger.info("No route for {} — {}", target.label, ex.message)
+            logger.info("[{}] {}: no route, skipping ({})", position, target.label, ex.message)
             emptyList()
         } catch (ex: NoDataException) {
-            logger.info("No data for {} — {}", target.label, ex.message)
+            logger.info("[{}] {}: no data, skipping ({})", position, target.label, ex.message)
             emptyList()
         }
 
-    private suspend fun fetchTail(
+    private suspend fun followPages(
         target: FetchTarget,
-        first: PageExtraction,
-        bearer: String,
-    ): List<MinimalRecord> = coroutineScope {
-        val total = first.totalItems
-        when {
-            total == null -> drainSequentially(target, first.records.size, bearer)
-            total <= PAGE_SIZE -> emptyList()
-            else -> tailOffsets(total)
-                .map { offset -> async(fetchDispatcher) { fetchPage(target, offset, bearer).records } }
-                .awaitAll()
-                .flatten()
-        }
-    }
-
-    private fun tailOffsets(total: Long): List<Long> =
-        generateSequence(PAGE_SIZE) { it + PAGE_SIZE }.takeWhile { it < total }.toList()
-
-    // Fallback for endpoints that don't surface total_items: walk offsets in series
-    // until a short page signals the end.
-    private suspend fun drainSequentially(
-        target: FetchTarget,
-        firstPageSize: Int,
+        position: String,
         bearer: String,
     ): List<MinimalRecord> {
-        if (firstPageSize.toLong() < PAGE_SIZE) return emptyList()
+        logger.info("[{}] {}: fetching with page size {}", position, target.label, target.pageSize)
         val records = mutableListOf<MinimalRecord>()
-        var offset = PAGE_SIZE
-        while (true) {
-            val page = fetchPage(target, offset, bearer)
+        val visited = HashSet<String>()
+        var entries = 0L
+        var pages = 0
+        var totalItems: Long? = null
+        var url: String? = firstPageUrl(target)
+        while (url != null) {
+            if (!visited.add(url)) {
+                throw IncompleteIndexException("Paging loop for ${target.label}: $url was already fetched")
+            }
+            val page = fetchPage(target, url, bearer)
+            pages++
             records += page.records
-            if (page.records.size.toLong() < PAGE_SIZE) break
-            offset += PAGE_SIZE
+            entries += page.entryCount
+            totalItems = page.totalItems ?: totalItems
+            url = page.nextHref?.let { resolve(it) }
+            logger.info(
+                "[{}] {}: page {} had {} entries, {} of {} fetched, more={}",
+                position, target.label, pages, page.entryCount, entries, totalItems ?: "?", url != null,
+            )
         }
+        if (totalItems != null && entries < totalItems) {
+            throw IncompleteIndexException(
+                "Paging for ${target.label} ended after $entries of $totalItems entries with no next link"
+            )
+        }
+        logger.info("[{}] {}: done, {} pages, {} records", position, target.label, pages, records.size)
         return records
     }
 
-    // Runs on whatever dispatcher the caller is on — callers reach this via
-    // async(fetchDispatcher), so the parallelism cap applies. Don't withContext
-    // here: switching to plain Dispatchers.IO would defeat the cap.
-    private suspend fun fetchPage(
-        target: FetchTarget,
-        offset: Long,
-        bearer: String,
-    ): PageExtraction {
-        // IDE flags createTempFile as blocking, but we're already on Dispatchers.IO
-        // via the caller's async(fetchDispatcher) — no thread starvation risk.
+    private suspend fun fetchPage(target: FetchTarget, url: String, bearer: String): PageExtraction {
         @Suppress("BlockingMethodInNonBlockingContext")
         val tempFile: Path = Files.createTempFile("link-walker-", "-${target.resourceName}.json")
         return try {
-            fintClient.streamToFile(pageUrl(target, offset), bearer, tempFile)
+            fintClient.streamToFile(url, bearer, tempFile)
             extractor.extractFromFile(tempFile, target.component, target.resourceName)
         } finally {
             runCatching { tempFile.deleteIfExists() }
@@ -140,18 +146,19 @@ class IndexBuilder(
         }
     }
 
-    private fun pageUrl(target: FetchTarget, offset: Long): String =
-        "$baseUrl/${target.path}?size=$PAGE_SIZE&offset=$offset"
+    private fun firstPageUrl(target: FetchTarget): String =
+        "$baseUrl/${target.path}?size=${target.pageSize}"
+
+    private fun resolve(href: String): String =
+        if (href.startsWith("http://") || href.startsWith("https://")) href
+        else "$baseUrl/${href.trimStart('/')}"
 
     private data class FetchTarget(
         val component: String,
         val path: String,
         val resourceName: String,
+        val pageSize: Int,
     ) {
         val label: String get() = "$component/$resourceName"
-    }
-
-    private companion object {
-        const val PAGE_SIZE = 100_000L
     }
 }

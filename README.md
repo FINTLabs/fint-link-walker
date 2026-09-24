@@ -87,12 +87,14 @@ Key properties under `link-walker`:
 |---------------------------------|----------------------------------------|------------------------------------------------------------------------|
 | `org-id`                        | _required_ (scanner only)              | E.g. `afk-no`. Tags every persisted scan and metric. Reader is multi-org. |
 | `base-url`                      | `https://api.felleskomponent.no`       | FINT API root.                                                         |
+| `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
+| `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
 | `auto-relation-components`      | empty                                  | Subset of `components` where autorelation back-links are required for the tenant. |
 | `pii-identifiers`               | `fodselsnummer, feidenavn`             | Identifier types to mask in emitted reports.                           |
 | `exclude-relations`             | `vigoreferanse, grepreferanse`         | Relations to ignore during `unknown-link` classification.              |
 | `max-attempts`                  | `5`                                    | Retry attempts for 5xx / network errors. 4xx is terminal.              |
-| `fetch-concurrency`             | `10`                                   | Parallel resource fetches per scan.                                    |
+| `max-concurrent-fetches`        | `1`                                    | Resources fetched in parallel. `1` walks one resource at a time.       |
 | `read-timeout`                  | `10m`                                  | Per-resource HTTP read timeout.                                        |
 
 Datasource via Spring properties (env-var overridable):

@@ -23,6 +23,8 @@ class RecordExtractor(
     fun extractFromFile(path: Path, component: String, resourceName: String): PageExtraction {
         val records = mutableListOf<MinimalRecord>()
         var totalItems: Long? = null
+        var nextHref: String? = null
+        var entryCount = 0
         path.inputStream().use { input ->
             mapper.createParser(input).use { parser ->
                 if (parser.nextToken() != JsonToken.START_OBJECT) {
@@ -35,13 +37,37 @@ class RecordExtractor(
                         "total_items" -> if (parser.currentToken() == JsonToken.VALUE_NUMBER_INT) {
                             totalItems = parser.longValue
                         }
-                        "_embedded" -> readEntries(parser, records, component, resourceName)
+                        "_links" -> nextHref = readNextHref(parser)
+                        "_embedded" -> entryCount = readEntries(parser, records, component, resourceName)
                         else -> parser.skipChildren()
                     }
                 }
             }
         }
-        return PageExtraction(records, totalItems)
+        return PageExtraction(records, totalItems, nextHref, entryCount)
+    }
+
+    private fun readNextHref(parser: JsonParser): String? {
+        if (parser.currentToken() != JsonToken.START_OBJECT) {
+            parser.skipChildren()
+            return null
+        }
+        var next: String? = null
+        while (parser.nextToken() != JsonToken.END_OBJECT) {
+            val rel = parser.currentName() ?: return next
+            parser.nextToken()
+            if (rel == "next") {
+                next = hrefOf(parser.readValueAsTree())
+            } else {
+                parser.skipChildren()
+            }
+        }
+        return next
+    }
+
+    private fun hrefOf(node: JsonNode): String? {
+        val link = if (node.isArray) node.firstOrNull() else node
+        return link?.get("href")?.asString()?.takeIf { it.isNotBlank() }
     }
 
     private fun readEntries(
@@ -49,24 +75,23 @@ class RecordExtractor(
         records: MutableList<MinimalRecord>,
         component: String,
         resourceName: String,
-    ) {
-        if (parser.currentToken() != JsonToken.START_OBJECT) return
+    ): Int {
+        if (parser.currentToken() != JsonToken.START_OBJECT) return 0
+        var count = 0
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            val embName = parser.currentName() ?: return
+            val embName = parser.currentName() ?: return count
             parser.nextToken()
             if (embName == "_entries" && parser.currentToken() == JsonToken.START_ARRAY) {
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
-                    // parser.readValueAsTree() reads a single value bound to the
-                    // parser's current position; mapper.readTree(parser) in Jackson 3
-                    // additionally enforces FAIL_ON_TRAILING_TOKENS, which trips on
-                    // the next array element while iterating.
                     val node: JsonNode = parser.readValueAsTree()
+                    count++
                     extract(node, component, resourceName)?.let { records += it }
                 }
             } else {
                 parser.skipChildren()
             }
         }
+        return count
     }
 
     /**
