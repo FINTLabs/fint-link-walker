@@ -28,6 +28,21 @@ class ScannerPropertiesBindingTest {
         assertEquals(21, props.components.size)
     }
 
+    @Test
+    fun `binds service routing`() {
+        val props = bind(
+            "fint.link-walker.scanner.org-id" to "mrfylke_no",
+            "fint.link-walker.scanner.service-routing.enabled" to "true",
+            "fint.link-walker.scanner.service-routing.client-api-domains[0]" to "utdanning",
+            "fint.link-walker.scanner.service-routing.client-api-domains[1]" to "administrasjon",
+        )
+
+        assertEquals(true, props.serviceRouting.enabled)
+        assertEquals(listOf("utdanning", "administrasjon"), props.serviceRouting.clientApiDomains)
+        assertEquals("fint-core-client-api", props.serviceRouting.clientApiService)
+        assertEquals(null, props.serviceRouting.namespace)
+    }
+
     private fun bind(vararg entries: Pair<String, String>): ScannerProperties =
         Binder(MapConfigurationPropertySource(mapOf(*entries)))
             .bind("fint.link-walker.scanner", ScannerProperties::class.java)
