@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: link-walker-org
+  annotations:
+    config.kubernetes.io/local-config: "true"
+data:
+  id-dashed: bfk-no
+  id-underscore: bfk_no
+  base-url: https://beta.felleskomponent.no
+  onepassword-itempath: vaults/aks-beta-vault/items/link-walker-bfk-client

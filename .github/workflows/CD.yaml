@@ -2,26 +2,68 @@ name: CD
 
 on:
   push:
+    branches: [main]
     tags:
       - 'v*'
+
+concurrency:
+  group: cd-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
-  build-and-push:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      overlays: ${{ steps.overlays.outputs.overlays }}
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Map ref to environment
+        id: env
+        run: |
+          case "$GITHUB_REF" in
+            refs/heads/main) echo "environment=beta" >> "$GITHUB_OUTPUT" ;;
+            refs/tags/v*)    echo "environment="     >> "$GITHUB_OUTPUT" ;;
+            *) echo "no deployment for $GITHUB_REF"; exit 1 ;;
+          esac
+
+      - name: Short sha
+        id: sha
+        run: echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Discover overlays
+        id: overlays
+        env:
+          ENVIRONMENT: ${{ steps.env.outputs.environment }}
+        run: |
+          if [ -z "$ENVIRONMENT" ]; then
+            echo "overlays=[]" >> "$GITHUB_OUTPUT"
+            echo "tag build only, nothing to deploy"
+            exit 0
+          fi
+          overlays=$(find "kustomize/overlays/$ENVIRONMENT" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -Rsc 'split("\n") | map(select(length > 0))')
+          echo "overlays=$overlays" >> "$GITHUB_OUTPUT"
+          echo "targets in $ENVIRONMENT: $overlays"
+
+  build:
     name: Build and push ${{ matrix.module }}
+    needs: setup
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
+      fail-fast: false
       matrix:
         module: [scanner, reader]
+    env:
+      IMAGE: ghcr.io/fintlabs/fint-link-walker-${{ matrix.module }}:sha-${{ needs.setup.outputs.sha }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -29,7 +71,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check whether ${{ env.IMAGE }} already exists
+        id: exists
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "branch" ] && docker manifest inspect "$IMAGE" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$IMAGE already in registry, skipping build"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.exists.outputs.exists == 'false'
+        uses: actions/checkout@v4
+
       - name: Extract metadata (tags, labels) for Docker
+        if: steps.exists.outputs.exists == 'false'
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -37,9 +94,10 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=sha,prefix=sha-,format=short
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push ${{ matrix.module }} image
+        if: steps.exists.outputs.exists == 'false'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -47,3 +105,71 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Deploy ${{ matrix.overlay }} to ${{ needs.setup.outputs.environment }}
+    needs: [setup, build]
+    if: needs.setup.outputs.overlays != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        overlay: ${{ fromJson(needs.setup.outputs.overlays) }}
+    environment: ${{ needs.setup.outputs.environment }}
+    env:
+      ENVIRONMENT: ${{ needs.setup.outputs.environment }}
+      IMAGES: |
+        ghcr.io/fintlabs/fint-link-walker-scanner:sha-${{ needs.setup.outputs.sha }}
+        ghcr.io/fintlabs/fint-link-walker-reader:sha-${{ needs.setup.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve cluster + resource group
+        id: aks
+        run: |
+          case "$ENVIRONMENT" in
+            beta) echo "cluster=aks-beta-fint-2021-11-23" >> "$GITHUB_OUTPUT" ;;
+            *) echo "unknown environment $ENVIRONMENT"; exit 1 ;;
+          esac
+          echo "resource-group=rg-aks-$ENVIRONMENT" >> "$GITHUB_OUTPUT"
+
+      - name: Bake manifests with Kustomize
+        id: bake
+        uses: azure/k8s-bake@v4.0.0
+        with:
+          renderEngine: "kustomize"
+          kustomizationPath: "kustomize/overlays/${{ env.ENVIRONMENT }}/${{ matrix.overlay }}"
+
+      - name: Substitute images into baked YAML
+        id: substitute
+        uses: azure/k8s-artifact-substitute@v2.0.0
+        with:
+          manifests: ${{ steps.bake.outputs.manifestsBundle }}
+          images: ${{ env.IMAGES }}
+
+      - uses: azure/login@v3.0.0
+        with:
+          creds: "${{ secrets[format('AKS_{0}_FINT_GITHUB', needs.setup.outputs.environment)] }}"
+
+      - uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: "v0.0.26"
+
+      - name: Set the target cluster
+        uses: azure/aks-set-context@v5.0.0
+        with:
+          cluster-name: "${{ steps.aks.outputs.cluster }}"
+          resource-group: "${{ steps.aks.outputs.resource-group }}"
+          admin: "true"
+          use-kubelogin: "true"
+
+      - name: Deploy
+        uses: azure/k8s-deploy@v6.0.0
+        with:
+          action: deploy
+          manifests: ${{ steps.substitute.outputs.manifests }}
+          images: ${{ env.IMAGES }}
+          pull-images: false
+          namespace: fint-core

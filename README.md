@@ -162,7 +162,42 @@ The test strategy mixes pure unit tests with three kinds of integration tests, p
 
 ## Deployment
 
-- **Scanner** runs as a Kubernetes `CronJob` per tenant. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction — partial scans are not visible to the reader.
-- **Reader** runs as a `Deployment` with a `Service` exposing `:8080`. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
+Manifests live in `kustomize/` and are applied by the CD workflow. Nothing is applied by hand.
 
-The Postgres connection is an Aiven managed instance in production, configured per-environment via `FINT_DATABASE_*` env vars (typically sourced from a Kubernetes secret).
+```
+kustomize/
+  base/reader/        Application for the reader (one per environment, org fintlabs.no)
+  base/scanner/       CronJob + OnePasswordItem for one scanner, with ORG placeholders
+  components/org/     kustomize replacements that fill the placeholders from org-values.yaml
+  overlays/beta/
+    reader/           the beta reader
+    <org-id>/         one folder per scanner: kustomization.yaml + org-values.yaml
+```
+
+- **Scanner** runs as a `CronJob` per org in namespace `fint-core`. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction, so partial scans are not visible to the reader. Credentials come from a `Secret` that the 1Password operator creates from the `OnePasswordItem` in the same overlay. The vault item must exist before the first run.
+- **Reader** runs as a FLAIS `Application` in namespace `fint-core`. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
+
+### Adding an org on beta
+
+Copy any folder under `kustomize/overlays/beta/`, rename it to the dashed org id, and edit `org-values.yaml`:
+
+```yaml
+data:
+  id-dashed: rogfk-no
+  id-underscore: rogfk_no
+  base-url: https://beta.felleskomponent.no
+  onepassword-itempath: vaults/aks-beta-vault/items/link-walker-rogfk-client
+```
+
+Create the 1Password item first. Check the render with `kustomize build kustomize/overlays/beta/rogfk-no`, then merge. Removing a folder does not delete the CronJob from the cluster.
+
+### CD
+
+`.github/workflows/CD.yaml` runs on every push to `main` and on `v*` tags.
+
+| Trigger        | Images pushed to ghcr                    | Deploy                                                  |
+|----------------|------------------------------------------|---------------------------------------------------------|
+| push to `main` | `sha-<7 chars>` for scanner and reader   | every folder under `kustomize/overlays/beta/`, one job each, into `aks-beta-fint-2021-11-23` |
+| tag `v*`       | `<version>`, `sha-<7 chars>`, `latest`   | none                                                    |
+
+Each deploy job bakes its overlay with kustomize, swaps the `REPLACE` image tag for the commit's `sha-` tag, logs in with the org secret `AKS_BETA_FINT_GITHUB` and applies into `fint-core`. Rolling back is re-running the workflow from an earlier commit.

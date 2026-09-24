@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: link-walker-org
+  annotations:
+    config.kubernetes.io/local-config: "true"
+data:
+  id-dashed: novari-no
+  id-underscore: novari_no
+  base-url: https://beta.felleskomponent.no
+  onepassword-itempath: vaults/aks-beta-vault/items/link-walker-novari-client

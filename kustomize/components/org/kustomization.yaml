@@ -1,0 +1,69 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+replacements:
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.id-dashed
+    targets:
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - metadata.name
+          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].envFrom.0.secretRef.name
+        options:
+          delimiter: "-"
+          index: 4
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - metadata.labels.tenant
+          - metadata.labels.[fintlabs.no/org-id]
+          - spec.jobTemplate.metadata.labels.tenant
+          - spec.jobTemplate.metadata.labels.[fintlabs.no/org-id]
+          - spec.jobTemplate.spec.template.metadata.labels.tenant
+          - spec.jobTemplate.spec.template.metadata.labels.[fintlabs.no/org-id]
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - metadata.name
+        options:
+          delimiter: "-"
+          index: 4
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - metadata.labels.[fintlabs.no/org-id]
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.id-underscore
+    targets:
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].args.0
+        options:
+          delimiter: "="
+          index: 1
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.base-url
+    targets:
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].args.1
+        options:
+          delimiter: "="
+          index: 1
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.onepassword-itempath
+    targets:
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - spec.itemPath
