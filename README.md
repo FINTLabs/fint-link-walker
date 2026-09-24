@@ -200,4 +200,10 @@ Create the 1Password item first. Check the render with `kustomize build kustomiz
 | push to `develop` | `sha-<7 chars>` for scanner and reader, after `./gradlew build` passes | every folder under `kustomize/overlays/beta/`, one job each, into `aks-beta-fint-2021-11-23` |
 | tag `v*`       | `<version>`, `sha-<7 chars>`, `latest`   | none                                                    |
 
+Promoting to `main`: open a pull request from `develop` to `main` and squash-merge it. Merge commits are disabled on the repo, so afterwards bring the squash commit back into `develop` to keep the branches aligned:
+
+```
+git checkout develop && git pull && git merge origin/main -m "Merge main back into develop [skip ci]" && git push
+```
+
 Each deploy job bakes its overlay with kustomize, swaps the `REPLACE` image tag for the commit's `sha-` tag, logs in with the org secret `AKS_BETA_FINT_GITHUB` and applies into `fint-core`. Rolling back is re-running the workflow from an earlier commit.
