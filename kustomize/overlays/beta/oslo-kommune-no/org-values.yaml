@@ -8,4 +8,4 @@ data:
   id-dashed: oslo-kommune-no
   id-underscore: oslo_kommune_no
   base-url: https://beta.felleskomponent.no
-  onepassword-itempath: vaults/aks-beta-vault/items/link-walker-oslo-kommune-client
+  onepassword-itempath: vaults/aks-beta-vault/items/link-walker-oslo-client
