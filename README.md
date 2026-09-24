@@ -93,7 +93,7 @@ Key properties under `link-walker`:
 | `auto-relation-components`      | empty                                  | Subset of `components` where autorelation back-links are required for the tenant. |
 | `pii-identifiers`               | `fodselsnummer, feidenavn`             | Identifier types to mask in emitted reports.                           |
 | `exclude-relations`             | `vigoreferanse, grepreferanse`         | Relations to ignore during `unknown-link` classification.              |
-| `max-attempts`                  | `5`                                    | Retry attempts for 5xx / network errors. 4xx is terminal.              |
+| `max-attempts`                  | `5`                                    | Retry attempts for 5xx / network errors, and re-fetches of a page whose body fails to parse. 4xx is terminal. |
 | `max-concurrent-fetches`        | `1`                                    | Resources fetched in parallel. `1` walks one resource at a time.       |
 | `read-timeout`                  | `10m`                                  | Per-resource HTTP read timeout.                                        |
 

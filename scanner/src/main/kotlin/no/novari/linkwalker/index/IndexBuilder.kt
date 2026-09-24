@@ -13,11 +13,13 @@ import no.novari.linkwalker.config.ScannerProperties
 import no.novari.metamodel.MetamodelService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import tools.jackson.core.JacksonException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
 
 class IncompleteIndexException(message: String) : RuntimeException(message)
+class PageParseException(message: String, cause: Throwable) : RuntimeException(message, cause)
 
 @Component
 class IndexBuilder(
@@ -33,6 +35,7 @@ class IndexBuilder(
     private val defaultPageSize: Int = scannerConfig.pageSize
     private val pageSizes: Map<String, Int> = scannerConfig.pageSizes.mapKeys { it.key.lowercase() }
     private val maxConcurrentFetches: Int = httpConfig.maxConcurrentFetches
+    private val maxAttempts: Int = httpConfig.maxAttempts
 
     // Caps the number of in-flight HTTP fetches across the whole scan.
     // limitedParallelism wraps Dispatchers.IO so coroutines beyond the cap suspend
@@ -114,7 +117,7 @@ class IndexBuilder(
             if (!visited.add(url)) {
                 throw IncompleteIndexException("Paging loop for ${target.label}: $url was already fetched")
             }
-            val page = fetchPage(target, url, bearer)
+            val page = fetchPage(target, position, url, bearer)
             pages++
             records += page.records
             entries += page.entryCount
@@ -134,15 +137,35 @@ class IndexBuilder(
         return records
     }
 
-    private suspend fun fetchPage(target: FetchTarget, url: String, bearer: String): PageExtraction {
-        @Suppress("BlockingMethodInNonBlockingContext")
-        val tempFile: Path = Files.createTempFile("link-walker-", "-${target.resourceName}.json")
-        return try {
-            fintClient.streamToFile(url, bearer, tempFile)
-            extractor.extractFromFile(tempFile, target.component, target.resourceName)
-        } finally {
-            runCatching { tempFile.deleteIfExists() }
-                .onFailure { logger.warn("Failed to delete {}: {}", tempFile, it.message) }
+    private suspend fun fetchPage(
+        target: FetchTarget,
+        position: String,
+        url: String,
+        bearer: String,
+    ): PageExtraction {
+        var attempt = 0
+        while (true) {
+            attempt++
+            @Suppress("BlockingMethodInNonBlockingContext")
+            val tempFile: Path = Files.createTempFile("link-walker-", "-${target.resourceName}.json")
+            try {
+                fintClient.streamToFile(url, bearer, tempFile)
+                return extractor.extractFromFile(tempFile, target.component, target.resourceName)
+            } catch (ex: JacksonException) {
+                val diagnostic = PageDiagnostics.describe(tempFile, ex)
+                if (attempt >= maxAttempts) {
+                    throw PageParseException(
+                        "Page $url for ${target.label} failed to parse on $attempt attempts, $diagnostic", ex
+                    )
+                }
+                logger.warn(
+                    "[{}] {}: page failed to parse on attempt {}, re-fetching {} ({})",
+                    position, target.label, attempt, url, diagnostic,
+                )
+            } finally {
+                runCatching { tempFile.deleteIfExists() }
+                    .onFailure { logger.warn("Failed to delete {}: {}", tempFile, it.message) }
+            }
         }
     }
 
