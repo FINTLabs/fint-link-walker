@@ -156,7 +156,7 @@ The test strategy mixes pure unit tests with three kinds of integration tests, p
 |------------------------------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | **MockK**                    | Index/validator/extractor/controller logic.    | Pure logic; HTTP and storage are mocked behind interfaces.                                                                         |
 | **MockWebServer** (OkHttp)   | `FintClient`.                                  | Real local HTTP socket; exercises the actual JDK `HttpClient` transport. The bugs we've hit here (200+HTML routed via `NoRouteException`, 503+`CacheNotFoundException` body matching, retry-after-`PrematureClose`) are wire-level — content type, status+body interaction, body streaming. `MockRestServiceServer` intercepts above the transport, so it can't reproduce them. |
-| **Live Postgres**            | `JpaReportStoreIntegrationTest`, `ReaderContextSmokeTest`. | Boots the reader Spring context against the running `docker compose` Postgres and exercises publish → query through the actual `@Transactional` proxy + Hibernate batched inserts. Catches schema/mapping/SQL drift the way prod will see it. |
+| **Live Postgres**            | `JpaReportStoreIntegrationTest`, `ReaderContextSmokeTest`. | Boots the Spring context against a Testcontainers `postgres:16-alpine` (Docker must be running; no compose step needed) and exercises publish → query through the actual `@Transactional` proxy + Hibernate batched inserts. Catches schema/mapping/SQL drift the way prod will see it. |
 
 `JpaReportStoreIntegrationTest` and the smoke test both require `docker compose up -d postgres`. The integration test cleans both tables in `@BeforeEach`, so it's safe to re-run.
 
@@ -193,11 +193,11 @@ Create the 1Password item first. Check the render with `kustomize build kustomiz
 
 ### CD
 
-`.github/workflows/CD.yaml` runs on every push to `main` and on `v*` tags.
+`.github/workflows/CD.yaml` runs on every push to `develop` and on `v*` tags. Pushes to `main` only run CI. `develop` takes direct pushes; `main` takes pull requests.
 
 | Trigger        | Images pushed to ghcr                    | Deploy                                                  |
 |----------------|------------------------------------------|---------------------------------------------------------|
-| push to `main` | `sha-<7 chars>` for scanner and reader   | every folder under `kustomize/overlays/beta/`, one job each, into `aks-beta-fint-2021-11-23` |
+| push to `develop` | `sha-<7 chars>` for scanner and reader, after `./gradlew build` passes | every folder under `kustomize/overlays/beta/`, one job each, into `aks-beta-fint-2021-11-23` |
 | tag `v*`       | `<version>`, `sha-<7 chars>`, `latest`   | none                                                    |
 
 Each deploy job bakes its overlay with kustomize, swaps the `REPLACE` image tag for the commit's `sha-` tag, logs in with the org secret `AKS_BETA_FINT_GITHUB` and applies into `fint-core`. Rolling back is re-running the workflow from an earlier commit.

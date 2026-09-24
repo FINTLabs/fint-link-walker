@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
     tags:
       - 'v*'
 
@@ -27,7 +27,7 @@ jobs:
         id: env
         run: |
           case "$GITHUB_REF" in
-            refs/heads/main) echo "environment=beta" >> "$GITHUB_OUTPUT" ;;
+            refs/heads/develop) echo "environment=beta" >> "$GITHUB_OUTPUT" ;;
             refs/tags/v*)    echo "environment="     >> "$GITHUB_OUTPUT" ;;
             *) echo "no deployment for $GITHUB_REF"; exit 1 ;;
           esac
@@ -50,9 +50,23 @@ jobs:
           echo "overlays=$overlays" >> "$GITHUB_OUTPUT"
           echo "targets in $ENVIRONMENT: $overlays"
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: ./gradlew build
+
   build:
     name: Build and push ${{ matrix.module }}
-    needs: setup
+    needs: [setup, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read

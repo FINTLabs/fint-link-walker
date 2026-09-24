@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -23,12 +24,10 @@ import kotlin.test.assertNotNull
     webEnvironment = SpringBootTest.WebEnvironment.NONE,
     properties = [
         "link-walker.storage.type=jpa",
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/linkwalker",
-        "spring.datasource.username=linkwalker",
-        "spring.datasource.password=linkwalker",
         "spring.jpa.hibernate.ddl-auto=update",
     ],
 )
+@Import(PostgresTestConfig::class)
 class JpaReportRetentionIntegrationTest @Autowired constructor(
     private val reportStore: ReportStore,
     private val reportRetention: ReportRetention,
