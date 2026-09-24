@@ -3,17 +3,16 @@ package no.novari.linkwalker.scanner
 import com.ninjasquad.springmockk.MockkBean
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.TestPropertySource
 
 @SpringBootTest
 @TestPropertySource(
     properties = [
         "fint.link-walker.scanner.org-id=test",
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/linkwalker",
-        "spring.datasource.username=linkwalker",
-        "spring.datasource.password=linkwalker",
     ],
 )
+@Import(PostgresTestConfig::class)
 class ScannerContextSmokeTest {
 
     @MockkBean(relaxed = true)

@@ -4,15 +4,10 @@ import com.ninjasquad.springmockk.MockkBean
 import no.novari.linkwalker.report.ReportStore
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-    properties = [
-        "spring.datasource.url=jdbc:postgresql://localhost:5432/linkwalker",
-        "spring.datasource.username=linkwalker",
-        "spring.datasource.password=linkwalker",
-    ],
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@Import(PostgresTestConfig::class)
 class ReaderContextSmokeTest {
 
     @MockkBean(relaxed = true)
