@@ -13,6 +13,7 @@ import kotlin.system.exitProcess
 class ScannerApp
 
 fun main(args: Array<String>) {
+    System.setProperty("jdk.httpclient.allowRestrictedHeaders", "host")
     val context = runApplication<ScannerApp>(*args)
     exitProcess(SpringApplication.exit(context))
 }

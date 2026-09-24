@@ -8,6 +8,7 @@ import no.novari.linkwalker.config.ScannerProperties
 import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
+import no.novari.linkwalker.report.GatewayCanaryResult
 import no.novari.linkwalker.report.LatestReport
 import no.novari.linkwalker.report.ReportProblem
 import no.novari.linkwalker.report.ReportRetention
@@ -32,6 +33,7 @@ class ScanRunner(
     private val summaryBuilder: SummaryBuilder,
     private val reportStore: ReportStore,
     private val reportRetention: ReportRetention,
+    private val gatewayCanary: GatewayCanary,
 ) : ApplicationRunner {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -53,7 +55,7 @@ class ScanRunner(
         val started = Instant.now()
         val result = scan(orgId)
         val completedAt = Instant.now()
-        val summary = summaryBuilder.build(result.index, result.problems)
+        val summary = summaryBuilder.build(result.index, result.problems).copy(gatewayCanary = result.canary)
         publish(orgId, summary, result.problems, completedAt)
         purgeOldScans(orgId)
         logFinished(summary, result.problems, started, completedAt)
@@ -66,7 +68,8 @@ class ScanRunner(
         val index = indexBuilder.buildIndex(components = config.components, bearer = bearer)
         val problems = indexValidator.validate(orgId, index)
         logger.info("Indexed records={} broken-link problems={}", index.records.size, problems.size)
-        return ScanResult(index, problems)
+        val canary = gatewayCanary.probe(bearer)
+        return ScanResult(index, problems, canary)
     }
 
     private fun publish(orgId: OrgId, summary: ScanSummary, problems: List<ReportProblem>, completedAt: Instant) {
@@ -94,5 +97,5 @@ class ScanRunner(
         )
     }
 
-    private data class ScanResult(val index: TenantIndex, val problems: List<ReportProblem>)
+    private data class ScanResult(val index: TenantIndex, val problems: List<ReportProblem>, val canary: GatewayCanaryResult?)
 }

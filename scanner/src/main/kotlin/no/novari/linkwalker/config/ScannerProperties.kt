@@ -9,6 +9,8 @@ data class ScannerProperties(
     val pageSize: Int = 10_000,
     val pageSizes: Map<String, Int> = emptyMap(),
     val components: List<String> = ALL_FINT_COMPONENTS,
+    val fetchBaseUrl: String? = null,
+    val canaryPath: String = "utdanning/elev/elevforhold?size=2000",
 ) {
     private companion object {
         val ALL_FINT_COMPONENTS = listOf(

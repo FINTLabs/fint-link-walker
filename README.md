@@ -87,6 +87,8 @@ Key properties under `link-walker`:
 |---------------------------------|----------------------------------------|------------------------------------------------------------------------|
 | `org-id`                        | _required_ (scanner only)              | E.g. `afk-no`. Tags every persisted scan and metric. Reader is multi-org. |
 | `base-url`                      | `https://api.felleskomponent.no`       | FINT API root.                                                         |
+| `fetch-base-url`                | unset                                  | When set, every page is fetched from this base instead of `base-url`, with the public host in the `Host` header. Used in the cluster to reach Traefik directly and skip the Access Gateway, which damages large bodies. A page that answers 401, 403 or 404 there, or cannot be connected to, is fetched from `base-url` instead. |
+| `canary-path`                   | `utdanning/elev/elevforhold?size=2000` | One page fetched through `base-url` per scan when `fetch-base-url` is set, checked for damage and stored in the summary as `gatewayCanary`. |
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
 | `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
@@ -104,6 +106,32 @@ Datasource via Spring properties (env-var overridable):
 | `spring.datasource.url`   | `jdbc:postgresql://localhost:5432/linkwalker`  | `FINT_DATABASE_URL`                 |
 | `spring.datasource.username` | `linkwalker`                                | `FINT_DATABASE_USERNAME`            |
 | `spring.datasource.password` | `linkwalker`                                | `FINT_DATABASE_PASSWORD`            |
+
+## Fetching around the Access Gateway
+
+The public hostnames (`beta.felleskomponent.no`, `api.felleskomponent.no`) are fronted by a NetIQ
+Access Gateway. It rewrites URLs inside response bodies and, on large pages, sometimes damages them:
+a link comes back as `https:https://beta.felleskomponent.noonent.no/...`, a run of NUL bytes
+appears, or the body is cut short. The scanner runs in the same cluster as the FINT services, so
+in beta it fetches pages from Traefik directly (`fetch-base-url`), with the public host in the
+`Host` header and `x-org-id` set from `org-id`. The links inside the bodies still carry the public
+host, so validation is unchanged.
+
+Every downloaded page is checked before it is parsed. A page with a NUL byte, a doubled scheme,
+`httphttp`, a `${` placeholder in a link, or a link that is only the public host is fetched again,
+up to `max-attempts`, and then fails the scan for that resource with `PageCorruptException`. An
+entry whose self href is not a FINT resource href is not indexed and is counted in the page log
+line.
+
+Because the scan no longer passes the gateway, one page per scan is fetched through the public host
+(`canary-path`) and checked the same way. The result is logged and stored in the scan summary as
+`gatewayCanary`, with the gateway node id from the `Via` header, so a damaged gateway still shows
+up in the report.
+
+`Host` is a restricted header in the JDK HTTP client. The scanner sets
+`jdk.httpclient.allowRestrictedHeaders=host` in `main` and in the image's `JAVA_TOOL_OPTIONS`.
+Without it the header is dropped silently, Traefik answers 404, and every page falls back to the
+gateway.
 
 ## Running locally
 

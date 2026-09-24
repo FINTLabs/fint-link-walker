@@ -25,6 +25,7 @@ class RecordExtractor(
         var totalItems: Long? = null
         var nextHref: String? = null
         var entryCount = 0
+        var malformedSelfCount = 0
         path.inputStream().use { input ->
             mapper.createParser(input).use { parser ->
                 if (parser.nextToken() != JsonToken.START_OBJECT) {
@@ -38,13 +39,17 @@ class RecordExtractor(
                             totalItems = parser.longValue
                         }
                         "_links" -> nextHref = readNextHref(parser)
-                        "_embedded" -> entryCount = readEntries(parser, records, component, resourceName)
+                        "_embedded" -> {
+                            val counts = readEntries(parser, records, component, resourceName)
+                            entryCount = counts.entries
+                            malformedSelfCount = counts.malformedSelf
+                        }
                         else -> parser.skipChildren()
                     }
                 }
             }
         }
-        return PageExtraction(records, totalItems, nextHref, entryCount)
+        return PageExtraction(records, totalItems, nextHref, entryCount, malformedSelfCount)
     }
 
     private fun readNextHref(parser: JsonParser): String? {
@@ -75,36 +80,49 @@ class RecordExtractor(
         records: MutableList<MinimalRecord>,
         component: String,
         resourceName: String,
-    ): Int {
-        if (parser.currentToken() != JsonToken.START_OBJECT) return 0
+    ): EntryCounts {
+        if (parser.currentToken() != JsonToken.START_OBJECT) return EntryCounts(0, 0)
         var count = 0
+        var malformedSelf = 0
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            val embName = parser.currentName() ?: return count
+            val embName = parser.currentName() ?: return EntryCounts(count, malformedSelf)
             parser.nextToken()
             if (embName == "_entries" && parser.currentToken() == JsonToken.START_ARRAY) {
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
                     val node: JsonNode = parser.readValueAsTree()
                     count++
-                    extract(node, component, resourceName)?.let { records += it }
+                    when (val outcome = extractEntry(node, component, resourceName)) {
+                        is EntryOutcome.Indexed -> {
+                            records += outcome.record
+                            if (outcome.selfDropped) malformedSelf++
+                        }
+                        EntryOutcome.MalformedSelf -> malformedSelf++
+                        EntryOutcome.NoSelf -> Unit
+                    }
                 }
             } else {
                 parser.skipChildren()
             }
         }
-        return count
+        return EntryCounts(count, malformedSelf)
     }
 
     /**
-     * Returns null when the entry has no usable `_links.self` href. Those records
-     * can't anchor back-link validation and are dropped at extraction.
+     * Returns null when the entry has no self href that can anchor back-link validation: either
+     * `_links.self` is missing, or every self href is malformed. Malformed self hrefs are damage or
+     * garbage and never become canonical keys.
      */
-    fun extract(node: JsonNode, component: String, resourceName: String): MinimalRecord? {
-        val links = node["_links"]
-        if (links == null || !links.isObject) return null
+    fun extract(node: JsonNode, component: String, resourceName: String): MinimalRecord? =
+        (extractEntry(node, component, resourceName) as? EntryOutcome.Indexed)?.record
 
-        val canonicalKeys = links["self"]?.mapNotNull { it["href"]?.asString()?.let(::canonicalize) }
-            ?: emptyList()
-        if (canonicalKeys.isEmpty()) return null
+    private fun extractEntry(node: JsonNode, component: String, resourceName: String): EntryOutcome {
+        val links = node["_links"]
+        if (links == null || !links.isObject) return EntryOutcome.NoSelf
+
+        val selfHrefs = links["self"]?.mapNotNull { it["href"]?.asString() }.orEmpty()
+        if (selfHrefs.isEmpty()) return EntryOutcome.NoSelf
+        val canonicalKeys = selfHrefs.mapNotNull(::canonicalSelf)
+        if (canonicalKeys.isEmpty()) return EntryOutcome.MalformedSelf
 
         val outboundRefs = mutableListOf<OutboundRef>()
         val malformedHrefs = mutableListOf<String>()
@@ -122,14 +140,18 @@ class RecordExtractor(
             }
         }
 
-        return MinimalRecord(
+        val record = MinimalRecord(
             component = component,
             resourceName = resourceName,
             canonicalKeys = canonicalKeys,
             outboundRefs = outboundRefs,
             malformedHrefs = malformedHrefs,
         )
+        return EntryOutcome.Indexed(record, selfDropped = canonicalKeys.size < selfHrefs.size)
     }
+
+    private fun canonicalSelf(href: String): String? =
+        canonicalize(href).takeIf { HREF_REGEX.matches(it) }
 
     fun canonicalize(href: String): String {
         val trimmed = href.trim().trimEnd('/')
@@ -147,5 +169,16 @@ class RecordExtractor(
     private fun isExcluded(relationName: String): Boolean {
         val lower = relationName.lowercase()
         return excludedRelations.any { lower.contains(it) }
+    }
+
+    private data class EntryCounts(
+        val entries: Int,
+        val malformedSelf: Int,
+    )
+
+    private sealed interface EntryOutcome {
+        data class Indexed(val record: MinimalRecord, val selfDropped: Boolean) : EntryOutcome
+        data object MalformedSelf : EntryOutcome
+        data object NoSelf : EntryOutcome
     }
 }
