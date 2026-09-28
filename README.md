@@ -24,7 +24,7 @@ Three Gradle modules:
 |-----------|-----------------------------------------------------------------------------------------------------|----------------------------------|
 | `core`    | Shared types, index/validator, JPA entities/repos and the `ReportStore` they back, HTTP client (`FintClient`). | Library                       |
 | `scanner` | One-shot `ApplicationRunner` that builds the index, validates, persists the scan, then exits.       | Kubernetes `CronJob`             |
-| `reader`  | Always-on Spring Boot service exposing `/actuator/prometheus`, `/report/{orgId}/summary` and `/report/{orgId}/rows`. | Kubernetes `Deployment`/`Service`|
+| `reader`  | Always-on Spring Boot service exposing `/actuator/prometheus`, `/report/{orgId}/summary` and `/report/{orgId}/problems`. | Kubernetes `Deployment`/`Service`|
 
 The split lets the scanner run heavy, memory-hungry work on a schedule and tear down, while the reader stays cheap and serves Prometheus scrapes plus paginated JSON queries from the shared Postgres database.
 
@@ -43,7 +43,7 @@ report_row(id, scan_id, org_id, scan_completed_at,
   index: (org_id, scan_id, component, resource, problem_type)
 ```
 
-`scan_id` ties summary and rows for one scan together. Each scan produces one `report_summary` row and N `report_row` rows. The reader's `/rows` endpoint resolves the latest scan per org, then runs a real `WHERE … LIMIT … OFFSET …` against the indexed columns — pagination and filtering happen in SQL, not in memory.
+`scan_id` ties summary and rows for one scan together. Each scan produces one `report_summary` row and N `report_row` rows. The reader's `/problems` endpoint resolves the latest scan per org, then runs a real `WHERE … LIMIT … OFFSET …` against the indexed columns — pagination and filtering happen in SQL, not in memory.
 
 The summary aggregate (nested by component → resource → problem-type) is stored as JSON in `summary_json` because we never query its internals; queryable fields (org_id, completed-at) are proper columns.
 
@@ -76,7 +76,7 @@ When row growth eventually becomes a real concern (watch DB size on the Aiven da
 - Configured via `application.yaml` and per-environment overrides (`--link-walker.org-id=…`).
 
 ### `reader`
-- `ReportController` — `GET /report/{orgId}/summary` (nested aggregate) and `GET /report/{orgId}/rows` (paginated, filterable broken-link list, max page size 1000). Pagination and filtering are pushed down to SQL via `ReportStore.findRows`.
+- `ReportController` — `GET /report/{orgId}/summary` (nested aggregate) and `GET /report/{orgId}/problems` (paginated, filterable broken-link list, max page size 1000). Pagination and filtering are pushed down to SQL via `ReportStore.findRows`.
 - `SummaryMetrics` — `@Scheduled` Micrometer `MultiGauge` publisher; refreshes every 60 s by querying the latest summary per org.
 
 ## Configuration
@@ -89,6 +89,9 @@ Key properties under `link-walker`:
 | `base-url`                      | `https://api.felleskomponent.no`       | FINT API root.                                                         |
 | `fetch-base-url`                | unset                                  | When set, every page is fetched from this base instead of `base-url`, with the public host in the `Host` header. Used in the cluster to reach Traefik directly and skip the Access Gateway, which damages large bodies. A page that answers 401, 403 or 404 there, or cannot be connected to, is fetched from `base-url` instead. |
 | `canary-path`                   | `utdanning/elev/elevforhold?size=2000` | One page fetched through `base-url` per scan when `fetch-base-url` is set, checked for damage and stored in the summary as `gatewayCanary`. |
+| `service-routing.enabled`       | `false`                                | Fetch pages straight from the org's Kubernetes Services, tried before `fetch-base-url` and `base-url`. |
+| `service-routing.client-api-domains` | `utdanning`                       | Domains served by `service-routing.client-api-service` (`fint-core-client-api`). Every other domain is fetched from `fint-core-consumer-{domain}-{package}`. |
+| `service-routing.host-pattern`  | `{service}.{namespace}.svc.cluster.local:8080` | How the Service host is built. The namespace is `org-id` with underscores turned into dashes unless `service-routing.namespace` is set. |
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
 | `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
@@ -113,9 +116,19 @@ The public hostnames (`beta.felleskomponent.no`, `api.felleskomponent.no`) are f
 Access Gateway. It rewrites URLs inside response bodies and, on large pages, sometimes damages them:
 a link comes back as `https:https://beta.felleskomponent.noonent.no/...`, a run of NUL bytes
 appears, or the body is cut short. The scanner runs in the same cluster as the FINT services, so
-in beta it fetches pages from Traefik directly (`fetch-base-url`), with the public host in the
-`Host` header and `x-org-id` set from `org-id`. The links inside the bodies still carry the public
-host, so validation is unchanged.
+it does not need the public host at all. For every page it tries these routes in order and moves
+on when a route answers 401, 403 or 404 or cannot be connected to:
+
+1. The org's own Kubernetes Service (`service-routing`): `fint-core-client-api` in the org's
+   namespace for the domains it serves, the legacy `fint-core-consumer-<domain>-<package>` for the
+   rest. No gateway, no Traefik, plain HTTP inside the cluster.
+2. Traefik (`fetch-base-url`) with the public host in the `Host` header, which is how the gateway
+   itself reaches the services.
+3. The public URL (`base-url`), through the gateway.
+
+A host that cannot be connected to is skipped for the rest of the scan. Each page log line says
+which route served it (`route=service|traefik|gateway`). The links inside the bodies still carry
+the public host, so validation is unchanged.
 
 Every downloaded page is checked before it is parsed. A page with a NUL byte, a doubled scheme,
 `httphttp`, a `${` placeholder in a link, or a link that is only the public host is fetched again,
@@ -128,10 +141,9 @@ Because the scan no longer passes the gateway, one page per scan is fetched thro
 `gatewayCanary`, with the gateway node id from the `Via` header, so a damaged gateway still shows
 up in the report.
 
-`Host` is a restricted header in the JDK HTTP client. The scanner sets
-`jdk.httpclient.allowRestrictedHeaders=host` in `main` and in the image's `JAVA_TOOL_OPTIONS`.
-Without it the header is dropped silently, Traefik answers 404, and every page falls back to the
-gateway.
+`Host` is a restricted header in the JDK HTTP client, needed only for the Traefik route. The
+scanner sets `jdk.httpclient.allowRestrictedHeaders=host` in `main` and in the image's
+`JAVA_TOOL_OPTIONS`. Without it the header is dropped silently and Traefik answers 404.
 
 ## Running locally
 
@@ -160,7 +172,7 @@ The `local` profile (`application-local.yaml`) points the FLAIS gateway at `http
 The `local` profile pins the reader to `8081` to avoid clashing with anything else on `8080` during dev. Production uses `8080` (default).
 
 - `http://localhost:8081/link-walker/report/{orgId}/summary` — nested `LatestReportSummary` (tenant aggregate + per-component + per-resource integrity). Drives the dashboard's overview and drill-down views.
-- `http://localhost:8081/link-walker/report/{orgId}/rows?component=…&resource=…&problemType=…&page=0&size=100` — paginated `ReportRow`s for the broken-link list. All filters AND-combined and pushed down to SQL; max page size 1000.
+- `http://localhost:8081/link-walker/report/{orgId}/problems?component=…&resource=…&problemType=…&page=0&size=100` — paginated `ReportRow`s for the broken-link list. All filters AND-combined and pushed down to SQL; max page size 1000.
 - `http://localhost:8081/link-walker/actuator/prometheus` — `link_walker_*` metrics.
 
 ### Monitoring stack

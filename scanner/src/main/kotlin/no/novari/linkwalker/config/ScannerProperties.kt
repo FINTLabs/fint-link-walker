@@ -11,6 +11,7 @@ data class ScannerProperties(
     val components: List<String> = ALL_FINT_COMPONENTS,
     val fetchBaseUrl: String? = null,
     val canaryPath: String = "utdanning/elev/elevforhold?size=2000",
+    val serviceRouting: ServiceRoutingProperties = ServiceRoutingProperties(),
 ) {
     private companion object {
         val ALL_FINT_COMPONENTS = listOf(
@@ -38,3 +39,18 @@ data class ScannerProperties(
         )
     }
 }
+
+/**
+ * Fetching straight from the org's Kubernetes Services instead of through the public host.
+ * The namespace is the org id with underscores turned into dashes unless [namespace] says
+ * otherwise. Domains in [clientApiDomains] are served by [clientApiService]; every other domain
+ * is served by the legacy consumer named by [legacyServicePattern].
+ */
+data class ServiceRoutingProperties(
+    val enabled: Boolean = false,
+    val clientApiService: String = "fint-core-client-api",
+    val clientApiDomains: List<String> = listOf("utdanning"),
+    val legacyServicePattern: String = "fint-core-consumer-{domain}-{package}",
+    val hostPattern: String = "{service}.{namespace}.svc.cluster.local:8080",
+    val namespace: String? = null,
+)

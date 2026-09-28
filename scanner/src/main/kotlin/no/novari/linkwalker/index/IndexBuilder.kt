@@ -157,9 +157,9 @@ class IndexBuilder(
                 val finding = report.finding
                 if (finding != null) {
                     logger.warn(
-                        "[{}] {}: page is damaged ({} at byte {}) on attempt {}, bytes={} sha256={} via={}, re-fetching {}",
+                        "[{}] {}: page is damaged ({} at byte {}) on attempt {}, bytes={} sha256={} route={} via={}, re-fetching {}",
                         position, target.label, finding.signature, finding.offset, attempt,
-                        report.bytes, report.sha256, fetched.via, url,
+                        report.bytes, report.sha256, fetched.route, fetched.via, url,
                     )
                     if (attempt >= maxAttempts) {
                         throw PageCorruptException(
@@ -171,9 +171,9 @@ class IndexBuilder(
                 }
                 val page = extractor.extractFromFile(tempFile, target.component, target.resourceName)
                 logger.info(
-                    "[{}] {}: page fetched, bytes={} sha256={} attempt={} elapsed={}ms via={} entries={} malformedSelf={}",
+                    "[{}] {}: page fetched, bytes={} sha256={} attempt={} elapsed={}ms route={} via={} entries={} malformedSelf={}",
                     position, target.label, report.bytes, report.sha256, attempt,
-                    (System.nanoTime() - started) / 1_000_000, fetched.via, page.entryCount, page.malformedSelfCount,
+                    (System.nanoTime() - started) / 1_000_000, fetched.route, fetched.via, page.entryCount, page.malformedSelfCount,
                 )
                 if (page.malformedSelfCount > 0) {
                     logger.warn(

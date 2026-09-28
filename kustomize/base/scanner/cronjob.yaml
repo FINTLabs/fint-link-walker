@@ -48,6 +48,7 @@ spec:
                 - "--fint.link-walker.scanner.org-id=ORG"
                 - "--fint.link-walker.scanner.base-url=BASE_URL"
                 - "--fint.link-walker.scanner.fetch-base-url=http://flais-ingress-traefik.flais-system.svc.cluster.local"
+                - "--fint.link-walker.scanner.service-routing.enabled=true"
               envFrom:
                 - secretRef:
                     name: fint-link-walker-client-ORG

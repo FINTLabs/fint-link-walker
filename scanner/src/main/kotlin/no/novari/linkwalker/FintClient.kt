@@ -20,6 +20,7 @@ class NoDataException(message: String) : RuntimeException(message)
 data class FetchResult(
     val bytes: Long,
     val via: String?,
+    val route: String,
 )
 
 @Component
@@ -32,21 +33,23 @@ class FintClient(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
-     * Downloads the page at the public [url] into [destination], going around the Access Gateway
-     * when a fetch base is configured. If the bypass route answers 401, 403 or 404, or cannot be
-     * connected to, the same page is fetched from the public URL instead and a warning is logged.
+     * Downloads the page at the public [url] into [destination], trying the routes from
+     * [FetchRouting.routes] in order: the org's own Service, then Traefik, then the public URL.
+     * A route that answers 401, 403 or 404, or cannot be connected to, hands over to the next one
+     * with a warning. Failures on the public URL are thrown.
      */
     suspend fun streamToFile(url: String, bearer: String, destination: Path): FetchResult {
-        val routed = routing.route(url)
-        if (routed.bypassesGateway) {
+        val routes = routing.routes(url)
+        routes.forEachIndexed { index, request ->
             try {
-                return withRetry(url) { fetchAndCopy(routed, bearer, destination) }
+                return withRetry(url) { fetchAndCopy(request, bearer, destination) }
             } catch (ex: Exception) {
-                if (!routing.fallsBackToGateway(ex)) throw ex
-                logger.warn("Bypass route failed for {} ({}), fetching through the gateway instead", url, ex.message)
+                val next = routes.getOrNull(index + 1)
+                if (next == null || !routing.fallsThrough(request, ex)) throw ex
+                logger.warn("Route {} failed for {} ({}), trying {} instead", request.route, url, ex.message, next.route)
             }
         }
-        return withRetry(url) { fetchAndCopy(routing.direct(url), bearer, destination) }
+        error("No route produced a result for $url")
     }
 
     /** Downloads [url] through the public host, whatever fetch base is configured. */
@@ -72,7 +75,7 @@ class FintClient(
                             destination,
                             StandardCopyOption.REPLACE_EXISTING,
                         )
-                        FetchResult(bytes = bytes, via = response.headers.getFirst("Via"))
+                        FetchResult(bytes = bytes, via = response.headers.getFirst("Via"), route = request.route)
                     }
 
                     status.is2xxSuccessful ->

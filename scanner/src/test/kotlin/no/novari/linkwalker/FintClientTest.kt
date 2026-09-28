@@ -3,6 +3,7 @@ package no.novari.linkwalker
 import kotlinx.coroutines.runBlocking
 import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
+import no.novari.linkwalker.config.ServiceRoutingProperties
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -247,7 +248,7 @@ class FintClientTest {
         bypassing.streamToFile(url, "t", tempDir.resolve("two.json"))
 
         assertEquals(2, server.requestCount)
-        assertEquals(false, routing.route(url).bypassesGateway)
+        assertEquals(listOf("gateway"), routing.routes(url).map { it.route })
         assertEquals("""{"n":2}""", Files.readString(tempDir.resolve("two.json")))
     }
 
@@ -265,6 +266,59 @@ class FintClientTest {
             assertEquals(1, server.requestCount)
         } finally {
             internal.shutdown()
+        }
+    }
+
+
+    @Test
+    fun `a page is fetched from the org's Service before anything else`() = runBlocking {
+        server.enqueue(jsonResponse("""{"svc":1}"""))
+        val routing = FetchRouting(
+            ScannerProperties(
+                orgId = "mrfylke_no",
+                baseUrl = "https://beta.example",
+                fetchBaseUrl = "http://127.0.0.1:1",
+                serviceRouting = ServiceRoutingProperties(enabled = true, hostPattern = server.url("/").toString().removePrefix("http://").trimEnd('/')),
+            ),
+        )
+        val client = FintClient(restClient, HttpProperties(maxAttempts = 0), routing)
+        val dest = tempDir.resolve("svc.json")
+
+        val result = client.streamToFile("https://beta.example/utdanning/elev/elev?size=10", "t", dest)
+
+        val recorded = server.takeRequest()
+        assertEquals("/utdanning/elev/elev?size=10", recorded.path)
+        assertEquals("mrfylke.no", recorded.getHeader("x-org-id"))
+        assertEquals("service", result.route)
+        assertEquals("""{"svc":1}""", Files.readString(dest))
+    }
+
+    @Test
+    fun `a 404 from the Service falls through to Traefik`() = runBlocking {
+        val service = MockWebServer().apply { start() }
+        try {
+            service.enqueue(MockResponse().setResponseCode(404).setHeader("Content-Type", "text/plain").setBody("404 page not found"))
+            server.enqueue(jsonResponse("""{"from":"traefik"}"""))
+            val routing = FetchRouting(
+                ScannerProperties(
+                    orgId = "mrfylke_no",
+                    baseUrl = "https://beta.example",
+                    fetchBaseUrl = server.url("/").toString().trimEnd('/'),
+                    serviceRouting = ServiceRoutingProperties(enabled = true, hostPattern = service.url("/").toString().removePrefix("http://").trimEnd('/')),
+                ),
+            )
+            val client = FintClient(restClient, HttpProperties(maxAttempts = 0), routing)
+            val dest = tempDir.resolve("chain.json")
+
+            val result = client.streamToFile("https://beta.example/utdanning/elev/elev?size=10", "t", dest)
+
+            assertEquals(1, service.requestCount)
+            assertEquals(1, server.requestCount)
+            assertEquals("beta.example", server.takeRequest().getHeader("Host"))
+            assertEquals("traefik", result.route)
+            assertEquals("""{"from":"traefik"}""", Files.readString(dest))
+        } finally {
+            service.shutdown()
         }
     }
 

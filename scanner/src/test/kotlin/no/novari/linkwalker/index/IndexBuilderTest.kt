@@ -34,7 +34,7 @@ class IndexBuilderTest {
     private val scannerConfig = ScannerProperties(orgId = "test", baseUrl = "https://api.test")
     private val httpConfig = HttpProperties(maxConcurrentFetches = 4)
 
-    private val fetched = FetchResult(bytes = 0, via = null)
+    private val fetched = FetchResult(bytes = 0, via = null, route = "gateway")
 
     private val builder = IndexBuilder(scannerConfig, httpConfig, fintClient, metamodel, extractor)
 
@@ -341,7 +341,7 @@ class IndexBuilderTest {
         every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
         coEvery { fintClient.streamToFile(any(), any(), any()) } coAnswers {
             thirdArg<Path>().writeBytes("""{"a":"x""".toByteArray() + byteArrayOf(0) + """"}""".toByteArray())
-            FetchResult(bytes = 10, via = "1.1 gw (Access Gateway-ag-9)")
+            FetchResult(bytes = 10, via = "1.1 gw (Access Gateway-ag-9)", route = "gateway")
         }
 
         val ex = assertThrows(PageCorruptException::class.java) {
