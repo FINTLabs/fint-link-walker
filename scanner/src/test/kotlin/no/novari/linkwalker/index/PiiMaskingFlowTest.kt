@@ -32,7 +32,7 @@ class PiiMaskingFlowTest {
             outboundRefs = listOf(OutboundRef(relationName = "person", targetCanonical = targetFnrHref)),
             malformedHrefs = emptyList(),
         )
-        val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceFnrHref to source))
+        val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceFnrHref to source), fetchedResources = fetched(targetFnrHref))
 
         val problems = validator.validate(OrgId("afk_no"), index)
 
@@ -58,7 +58,7 @@ class PiiMaskingFlowTest {
             outboundRefs = listOf(OutboundRef(relationName = "person", targetCanonical = targetHref)),
             malformedHrefs = emptyList(),
         )
-        val index = TenantIndex(records = listOf(source), byKey = mapOf(systemIdHref to source))
+        val index = TenantIndex(records = listOf(source), byKey = mapOf(systemIdHref to source), fetchedResources = fetched(targetHref))
 
         val problems = validator.validate(OrgId("afk_no"), index)
 
@@ -78,7 +78,7 @@ class PiiMaskingFlowTest {
             outboundRefs = emptyList(),
             malformedHrefs = listOf(malformedFnrHref),
         )
-        val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceHref to source))
+        val index = TenantIndex(records = listOf(source), byKey = mapOf(sourceHref to source), fetchedResources = emptySet())
 
         val problems = validator.validate(OrgId("afk_no"), index)
 
@@ -100,7 +100,7 @@ class PiiMaskingFlowTest {
             outboundRefs = listOf(OutboundRef(relationName = "elev", targetCanonical = targetHref)),
             malformedHrefs = emptyList(),
         )
-        val index = TenantIndex(records = listOf(source), byKey = mapOf(feideHref to source))
+        val index = TenantIndex(records = listOf(source), byKey = mapOf(feideHref to source), fetchedResources = fetched(targetHref))
 
         val problems = validator.validate(OrgId("afk_no"), index)
 
@@ -133,6 +133,7 @@ class PiiMaskingFlowTest {
                 fnrHref to target,
                 "https://api/administrasjon/personal/personalressurs/systemid/abc" to source,
             ),
+            fetchedResources = fetched(fnrHref),
         )
 
         val problems = validator.validate(OrgId("afk_no"), index)
@@ -143,4 +144,6 @@ class PiiMaskingFlowTest {
             "Index lookup must use unmasked canonical keys; got problems: $problems",
         )
     }
+
+    private fun fetched(vararg hrefs: String): Set<ResourceKey> = hrefs.mapNotNull(ResourceKey::ofHref).toSet()
 }

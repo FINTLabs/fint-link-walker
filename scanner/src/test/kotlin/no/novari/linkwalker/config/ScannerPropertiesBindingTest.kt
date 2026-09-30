@@ -43,6 +43,18 @@ class ScannerPropertiesBindingTest {
         assertEquals(null, props.serviceRouting.namespace)
     }
 
+    @Test
+    fun `extra resources default to the ISO code lists and can be overridden`() {
+        val defaults = bind("fint.link-walker.scanner.org-id" to "fintlabs_no")
+        val overridden = bind(
+            "fint.link-walker.scanner.org-id" to "fintlabs_no",
+            "fint.link-walker.scanner.extra-resources[felles_kodeverk][0]" to "iso/kjonn",
+        )
+
+        assertEquals(listOf("iso/kjonn", "iso/landkode", "iso/spraak"), defaults.extraResources["felles_kodeverk"])
+        assertEquals(mapOf("felles_kodeverk" to listOf("iso/kjonn")), overridden.extraResources)
+    }
+
     private fun bind(vararg entries: Pair<String, String>): ScannerProperties =
         Binder(MapConfigurationPropertySource(mapOf(*entries)))
             .bind("fint.link-walker.scanner", ScannerProperties::class.java)

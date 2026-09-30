@@ -113,7 +113,7 @@ class ScanRunnerTest {
             gatewayCanary = gatewayCanary,
         ).also { coEvery { gatewayCanary.probe(any()) } returns null }
 
-    private fun emptyIndex(): TenantIndex = TenantIndex(records = emptyList(), byKey = emptyMap())
+    private fun emptyIndex(): TenantIndex = TenantIndex(records = emptyList(), byKey = emptyMap(), fetchedResources = emptySet())
 
     private fun summary(integrity: Double) = ScanSummary(
         totalRecords = 0,

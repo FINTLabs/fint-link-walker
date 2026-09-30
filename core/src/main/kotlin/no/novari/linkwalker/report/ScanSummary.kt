@@ -35,6 +35,11 @@ data class ComponentSummary(
     val resources: List<ResourceSummary>,
 )
 
+/**
+ * [totalRefs] and [integrityPercent] only count links that were checked: [LinkScope.NotCovered]
+ * links are left out of both. [links] breaks every link down by scope and target component, and
+ * is empty for summaries written before it existed.
+ */
 data class ResourceSummary(
     val resource: String,
     val totalRecords: Long,
@@ -42,4 +47,21 @@ data class ResourceSummary(
     val brokenLinkCount: Long,
     val integrityPercent: Double?,
     val byProblemType: Map<String, Long>,
+    val links: List<LinkGroup> = emptyList(),
 )
+
+/**
+ * The links from one resource that share a [scope] and a [targetComponent]. [errors] counts
+ * them per problem type and is always empty for [LinkScope.NotCovered]. Hrefs with the wrong
+ * format have [targetComponent] [UNKNOWN_TARGET].
+ */
+data class LinkGroup(
+    val scope: LinkScope,
+    val targetComponent: String,
+    val links: Long,
+    val errors: Map<String, Long> = emptyMap(),
+) {
+    companion object {
+        const val UNKNOWN_TARGET = "unknown"
+    }
+}

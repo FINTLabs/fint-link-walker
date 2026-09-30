@@ -12,7 +12,9 @@ import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
 import no.novari.metamodel.MetamodelService
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import org.springframework.web.client.HttpClientErrorException
 import tools.jackson.core.JacksonException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -35,6 +37,7 @@ class IndexBuilder(
     private val baseUrl: String = scannerConfig.baseUrl.trimEnd('/')
     private val defaultPageSize: Int = scannerConfig.pageSize
     private val pageSizes: Map<String, Int> = scannerConfig.pageSizes.mapKeys { it.key.lowercase() }
+    private val extraResources: Map<String, List<String>> = scannerConfig.extraResources.mapKeys { it.key.lowercase() }
     private val maxConcurrentFetches: Int = httpConfig.maxConcurrentFetches
     private val maxAttempts: Int = httpConfig.maxAttempts
     private val integrity = PageIntegrity(baseUrl)
@@ -51,14 +54,18 @@ class IndexBuilder(
             "Indexing {} resources from {} components, {} at a time",
             targets.size, components.size, maxConcurrentFetches,
         )
-        val records = targets
+        val outcomes = targets
             .mapIndexed { i, target ->
                 async(fetchDispatcher) { fetchAndExtract(target, "${i + 1}/${targets.size}", bearer) }
             }
             .awaitAll()
-            .flatten()
-        logger.info("Index built: {} records from {} resources", records.size, targets.size)
-        records.toTenantIndex()
+        val records = outcomes.flatMap { it.records }
+        val fetched = outcomes.filter { it.fetched }.map { ResourceKey.of(it.target.component, it.target.resourceName) }
+        logger.info(
+            "Index built: {} records from {} of {} resources",
+            records.size, fetched.size, targets.size,
+        )
+        records.toTenantIndex(fetched.toSet())
     }
 
     private fun resolveTargets(components: List<String>): List<FetchTarget> =
@@ -69,38 +76,48 @@ class IndexBuilder(
             logger.warn("Component '{}' is not in 'domain_pkg' form, skipping", component)
             return emptyList()
         }
-        val resources = metamodelService.getResources(id.domain, id.pkg)
-        if (resources.isEmpty()) {
+        val resources = metamodelService.getResources(id.domain, id.pkg).map { it.name }
+        val extras = extraResources[component.lowercase()].orEmpty()
+        if (resources.isEmpty() && extras.isEmpty()) {
             logger.warn("No resources in metamodel for {}/{}", id.domain, id.pkg)
             return emptyList()
         }
-        return resources.map {
-            FetchTarget(component, "${id.domain}/${id.pkg}/${it.name}", it.name, pageSizeFor(it.name))
+        return (resources + extras).map { path ->
+            val name = path.substringAfterLast('/')
+            FetchTarget(component, "${id.domain}/${id.pkg}/$path", name, pageSizeFor(name))
         }
     }
 
     private fun pageSizeFor(resourceName: String): Int =
         pageSizes[resourceName.lowercase()] ?: defaultPageSize
 
-    private fun List<MinimalRecord>.toTenantIndex(): TenantIndex {
+    private fun List<MinimalRecord>.toTenantIndex(fetched: Set<ResourceKey>): TenantIndex {
         val byKey = HashMap<String, MinimalRecord>(size * 2)
         forEach { r -> r.canonicalKeys.forEach { key -> byKey[key] = r } }
-        return TenantIndex(records = this, byKey = byKey)
+        return TenantIndex(records = this, byKey = byKey, fetchedResources = fetched)
     }
 
+    /**
+     * A resource that has no route, no data, or answers 403 or 404 is skipped: its links show up
+     * as not covered instead of failing the scan. Anything else, 401 included, still fails it.
+     */
     private suspend fun fetchAndExtract(
         target: FetchTarget,
         position: String,
         bearer: String,
-    ): List<MinimalRecord> =
+    ): FetchOutcome =
         try {
-            followPages(target, position, bearer)
+            FetchOutcome(target, followPages(target, position, bearer), fetched = true)
         } catch (ex: NoRouteException) {
             logger.info("[{}] {}: no route, skipping ({})", position, target.label, ex.message)
-            emptyList()
+            FetchOutcome(target, emptyList(), fetched = false)
         } catch (ex: NoDataException) {
             logger.info("[{}] {}: no data, skipping ({})", position, target.label, ex.message)
-            emptyList()
+            FetchOutcome(target, emptyList(), fetched = false)
+        } catch (ex: HttpClientErrorException) {
+            if (ex.statusCode != HttpStatus.FORBIDDEN && ex.statusCode != HttpStatus.NOT_FOUND) throw ex
+            logger.warn("[{}] {}: {}, skipping", position, target.label, ex.statusCode)
+            FetchOutcome(target, emptyList(), fetched = false)
         }
 
     private suspend fun followPages(
@@ -206,6 +223,12 @@ class IndexBuilder(
     private fun resolve(href: String): String =
         if (href.startsWith("http://") || href.startsWith("https://")) href
         else "$baseUrl/${href.trimStart('/')}"
+
+    private data class FetchOutcome(
+        val target: FetchTarget,
+        val records: List<MinimalRecord>,
+        val fetched: Boolean,
+    )
 
     private data class FetchTarget(
         val component: String,

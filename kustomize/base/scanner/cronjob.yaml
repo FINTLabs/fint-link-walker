@@ -82,6 +82,8 @@ spec:
                   value: "utdanning_utdanningsprogram"
                 - name: FINT_LINKWALKER_SCANNER_COMPONENTS_6
                   value: "utdanning_vurdering"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_7
+                  value: "felles_kodeverk"
               resources:
                 requests:
                   memory: "4Gi"

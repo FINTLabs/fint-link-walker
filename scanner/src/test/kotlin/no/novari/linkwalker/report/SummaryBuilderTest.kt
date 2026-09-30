@@ -3,6 +3,7 @@ package no.novari.linkwalker.report
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.index.MinimalRecord
 import no.novari.linkwalker.index.OutboundRef
+import no.novari.linkwalker.index.ResourceKey
 import no.novari.linkwalker.index.TenantIndex
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -72,6 +73,74 @@ class SummaryBuilderTest {
     }
 
     @Test
+    fun `links to resources that were not fetched are left out of integrity`() {
+        val record = MinimalRecord(
+            component = "utdanning_elev",
+            resourceName = "person",
+            canonicalKeys = listOf("https://host/utdanning/elev/person/systemid/p-1"),
+            outboundRefs = listOf(
+                OutboundRef("elev", "$TARGET/e-1"),
+                OutboundRef("kjonn", "https://host/felles/kodeverk/iso/kjonn/systemid/1"),
+                OutboundRef("personalressurs", "https://host/administrasjon/personal/personalressurs/ansattnummer/9"),
+            ),
+            malformedHrefs = emptyList(),
+        )
+
+        val summary = builder.build(indexOf(listOf(record)), emptyList())
+        val person = summary.components.single().resources.single()
+
+        assertEquals(1L, summary.totalRefs)
+        assertEquals(100.0, summary.integrityPercent)
+        assertEquals(
+            listOf(
+                LinkGroup(LinkScope.WithinDomain, "utdanning_elev", 1),
+                LinkGroup(LinkScope.NotCovered, "administrasjon_personal", 1),
+                LinkGroup(LinkScope.NotCovered, "felles_kodeverk", 1),
+            ),
+            person.links,
+        )
+    }
+
+    @Test
+    fun `links and errors are grouped by scope and target component`() {
+        val record = MinimalRecord(
+            component = "utdanning_elev",
+            resourceName = "person",
+            canonicalKeys = listOf("https://host/utdanning/elev/person/systemid/p-1"),
+            outboundRefs = listOf(
+                OutboundRef("elev", "$TARGET/e-1"),
+                OutboundRef("elev", "$TARGET/e-2"),
+                OutboundRef("kjonn", "https://host/felles/kodeverk/iso/kjonn/systemid/1"),
+            ),
+            malformedHrefs = listOf("garbage"),
+        )
+        val problems = listOf(
+            problem("utdanning_elev", "person", "missing-resource"),
+            problem("utdanning_elev", "person", "unknown-link").copy(targetHref = "garbage"),
+            problem("utdanning_elev", "person", "missing-resource")
+                .copy(targetHref = "https://host/felles/kodeverk/iso/kjonn/systemid/1"),
+        )
+        val fetched = setOf(
+            ResourceKey.of("utdanning_elev", "elev"),
+            ResourceKey.of("felles_kodeverk", "kjonn"),
+        )
+
+        val person = builder.build(indexOf(listOf(record), fetched), problems)
+            .components.single().resources.single()
+
+        assertEquals(
+            listOf(
+                LinkGroup(LinkScope.WithinDomain, "unknown", 1, mapOf("unknown-link" to 1L)),
+                LinkGroup(LinkScope.WithinDomain, "utdanning_elev", 2, mapOf("missing-resource" to 1L)),
+                LinkGroup(LinkScope.CrossDomain, "felles_kodeverk", 1, mapOf("missing-resource" to 1L)),
+            ),
+            person.links,
+        )
+        assertEquals(4L, person.totalRefs)
+        assertEquals(25.0, person.integrityPercent)
+    }
+
+    @Test
     fun `components sorted by brokenLinkCount descending`() {
         val records = listOf(
             recordOf("low", "r", refs = 1),
@@ -103,7 +172,7 @@ class SummaryBuilderTest {
         component = component,
         resourceName = resource,
         canonicalKeys = listOf("https://host/$component/$resource/systemid/r-${idCounter++}"),
-        outboundRefs = (1..refs).map { OutboundRef("rel-$it", "https://host/target/systemid/v-$it") },
+        outboundRefs = (1..refs).map { OutboundRef("rel-$it", "$TARGET/v-$it") },
         malformedHrefs = (1..malformed).map { "garbage-$it" },
     )
 
@@ -113,9 +182,15 @@ class SummaryBuilderTest {
         resource = resource,
         problemType = ProblemType.parseOrNull(problemType) ?: error("unknown wire: $problemType"),
         sourceSelf = "https://host/$component/$resource/systemid/x",
-        targetHref = "https://host/target/systemid/y",
+        targetHref = "$TARGET/y",
     )
 
-    private fun indexOf(records: List<MinimalRecord>) =
-        TenantIndex(records = records, byKey = emptyMap())
+    private fun indexOf(
+        records: List<MinimalRecord>,
+        fetched: Set<ResourceKey> = setOf(ResourceKey.of("utdanning_elev", "elev")),
+    ) = TenantIndex(records = records, byKey = emptyMap(), fetchedResources = fetched)
+
+    private companion object {
+        const val TARGET = "https://host/utdanning/elev/elev/systemid"
+    }
 }

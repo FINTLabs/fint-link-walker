@@ -13,8 +13,12 @@ import no.novari.linkwalker.NoDataException
 import no.novari.linkwalker.NoRouteException
 import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
+import no.novari.linkwalker.report.LinkScope
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Resource
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
 import tools.jackson.core.JacksonException
 import tools.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -236,6 +240,61 @@ class IndexBuilderTest {
         val index = builder.buildIndex(listOf("foo_bar"), "bearer")
 
         assertTrue(index.records.isEmpty())
+    }
+
+    @Test
+    fun `403 and 404 skip the resource and leave it not covered`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("denied"), fakeResource("gone"))
+        coEvery { fintClient.streamToFile(match { it.contains("/denied?") }, any(), any()) } throws
+            HttpClientErrorException.create(HttpStatus.FORBIDDEN, "403", HttpHeaders.EMPTY, ByteArray(0), null)
+        coEvery { fintClient.streamToFile(match { it.contains("/gone?") }, any(), any()) } throws
+            HttpClientErrorException.create(HttpStatus.NOT_FOUND, "404", HttpHeaders.EMPTY, ByteArray(0), null)
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertTrue(index.records.isEmpty())
+        assertEquals(LinkScope.NotCovered, index.linkTarget("foo_bar", "https://api.test/foo/bar/denied/systemid/x").scope)
+        assertEquals(LinkScope.NotCovered, index.linkTarget("foo_bar", "https://api.test/foo/bar/gone/systemid/x").scope)
+    }
+
+    @Test
+    fun `401 still fails the whole scan`() {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } throws
+            HttpClientErrorException.create(HttpStatus.UNAUTHORIZED, "401", HttpHeaders.EMPTY, ByteArray(0), null)
+
+        assertThrows(HttpClientErrorException::class.java) {
+            runBlocking { builder.buildIndex(listOf("foo_bar"), "bearer") }
+        }
+    }
+
+    @Test
+    fun `a resource that was fetched but came back empty is covered`() = runBlocking {
+        every { metamodel.getResources("foo", "bar") } returns listOf(fakeResource("baz"))
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
+        every { extractor.extractFromFile(any(), "foo_bar", "baz") } returns PageExtraction(emptyList(), totalItems = 0)
+
+        val index = builder.buildIndex(listOf("foo_bar"), "bearer")
+
+        assertEquals(LinkScope.WithinDomain, index.linkTarget("foo_bar", "https://api.test/foo/bar/baz/systemid/x").scope)
+    }
+
+    @Test
+    fun `extra resources are fetched at their sub-path and named by the last segment`() = runBlocking {
+        val extraBuilder = IndexBuilder(
+            ScannerProperties(orgId = "test", baseUrl = "https://api.test", extraResources = mapOf("foo_bar" to listOf("iso/kjonn"))),
+            httpConfig, fintClient, metamodel, extractor,
+        )
+        every { metamodel.getResources("foo", "bar") } returns emptyList()
+        coEvery { fintClient.streamToFile(any(), any(), any()) } returns fetched
+        every { extractor.extractFromFile(any(), "foo_bar", "kjonn") } returns
+            PageExtraction(listOf(record("https://api.test/foo/bar/iso/kjonn/systemid/1")), totalItems = 1)
+
+        val index = extraBuilder.buildIndex(listOf("foo_bar"), "bearer")
+
+        coVerify { fintClient.streamToFile("https://api.test/foo/bar/iso/kjonn?size=10000", any(), any()) }
+        assertEquals(1, index.records.size)
+        assertEquals(LinkScope.WithinDomain, index.linkTarget("foo_bar", "https://api.test/foo/bar/iso/kjonn/systemid/1").scope)
     }
 
     @Test

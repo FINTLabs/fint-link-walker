@@ -7,6 +7,8 @@ import io.mockk.mockk
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.report.ComponentSummary
 import no.novari.linkwalker.report.LatestReportSummary
+import no.novari.linkwalker.report.LinkGroup
+import no.novari.linkwalker.report.LinkScope
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
 import no.novari.linkwalker.report.ScanSummary
@@ -174,6 +176,52 @@ class SummaryMetricsTest {
     }
 
     @Test
+    fun `link groups are published with scope and target_component`() {
+        val report = report(
+            orgId = "ude_oslo_kommune_no",
+            integrity = 99.0,
+            components = listOf(
+                componentSummary(
+                    "utdanning_elev",
+                    resources = listOf(
+                        resourceSummary(
+                            "person",
+                            integrity = 99.0,
+                            links = listOf(
+                                LinkGroup(LinkScope.WithinDomain, "utdanning_elev", 100, mapOf("missing-resource" to 2L)),
+                                LinkGroup(LinkScope.NotCovered, "administrasjon_personal", 40),
+                            ),
+                        )
+                    ),
+                ),
+            ),
+        )
+        every { store.listSummaries() } returns listOf(report)
+
+        metrics.refresh()
+
+        val within = registry.find("link_walker_links_count")
+            .tag("orgId", "ude_oslo_kommune_no")
+            .tag("component", "utdanning_elev")
+            .tag("resource", "person")
+            .tag("scope", "within_domain")
+            .tag("target_component", "utdanning_elev")
+            .gauge()
+        assertEquals(100.0, within?.value())
+
+        val notCovered = registry.find("link_walker_links_count")
+            .tag("scope", "not_covered")
+            .tag("target_component", "administrasjon_personal")
+            .gauge()
+        assertEquals(40.0, notCovered?.value())
+
+        val errors = registry.find("link_walker_link_errors").gauges()
+        assertEquals(1, errors.size, "not_covered groups have no errors to publish")
+        assertEquals("missing-resource", errors.single().id.getTag("problem_type"))
+        assertEquals(2.0, errors.single().value())
+    }
+
+    @Test
     fun `metric tenant label uses the report's orgId verbatim`() {
         every { store.listSummaries() } returns listOf(report("agderfk_no", integrity = 99.0))
 
@@ -220,6 +268,7 @@ class SummaryMetricsTest {
         records: Long = 0,
         refs: Long = 0,
         byProblemType: Map<String, Long> = emptyMap(),
+        links: List<LinkGroup> = emptyList(),
     ) = ResourceSummary(
         resource = resource,
         totalRecords = records,
@@ -227,5 +276,6 @@ class SummaryMetricsTest {
         brokenLinkCount = byProblemType.values.sum(),
         integrityPercent = integrity,
         byProblemType = byProblemType,
+        links = links,
     )
 }

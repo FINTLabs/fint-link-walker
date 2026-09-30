@@ -8,11 +8,15 @@ For each configured FINT component (e.g. `utdanning_elev`, `arkiv_noark`, `admin
 
 1. Asks FLAIS for the link-walker-managed FINT client for the tenant — creating one with the configured components if it doesn't already exist — then exchanges its credentials at the FINT IDP for a bearer token.
 2. Streams every resource page to disk and indexes the canonical `self` href plus all outbound `_links` references.
-3. Validates each reference against the in-memory index and classifies failures into:
-   - `missing-resource` — referenced resource not found in the index.
-   - `missing-back-link-adapter` / `missing-back-link-autorelation` — adapter or autorelation expected a back-reference that wasn't there.
-   - `unknown-link` — reference points outside the indexed component set.
-4. Persists the scan to Postgres: one row in `report_summary` (aggregate JSON) plus one row per broken-link finding in `report_row`. The reader serves these via HTTP and exposes per-tenant `link_walker_*` Prometheus metrics.
+3. Sorts every link by where it points:
+   - `within_domain`: the target is in the same domain as the source (utdanning to utdanning). The domain's own adapter is responsible.
+   - `cross_domain`: the target is in another domain (utdanning to felles). Two source systems have to agree on ids.
+   - `not_covered`: the target resource was not fetched (not in `components`, no route, no data, 403 or 404). These links are counted but never checked, and they are left out of integrity.
+4. Validates each checked reference against the in-memory index and classifies failures into:
+   - `missing-resource`: the target resource was fetched, but the referenced record is not in it.
+   - `missing-back-link-adapter` / `missing-back-link-autorelation`: adapter or autorelation expected a back-reference that wasn't there.
+   - `unknown-link`: the href does not have the `{domain}/{package}/{resource}/{field}/{value}` shape.
+5. Persists the scan to Postgres: one row in `report_summary` (aggregate JSON) plus one row per broken-link finding in `report_row`. The reader serves these via HTTP and exposes per-tenant `link_walker_*` Prometheus metrics.
 
 PII identifiers (`fodselsnummer`, `feidenavn` by default) are masked at report-emit time so reports are safe to share. Validation itself runs against the unmasked index, so accuracy is preserved.
 
@@ -95,6 +99,7 @@ Key properties under `link-walker`:
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
 | `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
+| `extra-resources`               | `felles_kodeverk: iso/kjonn, iso/landkode, iso/spraak` | Resource paths per component that fint-core-metamodel does not list. The resource is named by the last path segment. |
 | `auto-relation-components`      | empty                                  | Subset of `components` where autorelation back-links are required for the tenant. |
 | `pii-identifiers`               | `fodselsnummer, feidenavn`             | Identifier types to mask in emitted reports.                           |
 | `exclude-relations`             | `vigoreferanse, grepreferanse`         | Relations to ignore during `unknown-link` classification.              |
@@ -173,7 +178,7 @@ The `local` profile pins the reader to `8081` to avoid clashing with anything el
 
 - `http://localhost:8081/link-walker/report/{orgId}/summary` — nested `LatestReportSummary` (tenant aggregate + per-component + per-resource integrity). Drives the dashboard's overview and drill-down views.
 - `http://localhost:8081/link-walker/report/{orgId}/problems?component=…&resource=…&problemType=…&page=0&size=100` — paginated `ReportRow`s for the broken-link list. All filters AND-combined and pushed down to SQL; max page size 1000.
-- `http://localhost:8081/link-walker/actuator/prometheus` — `link_walker_*` metrics.
+- `http://localhost:8081/link-walker/actuator/prometheus` — `link_walker_*` metrics. `link_walker_links_count` and `link_walker_link_errors` carry `scope` and `target_component` labels, and drive the Domain Integrity dashboard.
 
 ### Monitoring stack
 
