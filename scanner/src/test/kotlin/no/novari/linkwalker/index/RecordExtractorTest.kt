@@ -78,14 +78,12 @@ class RecordExtractorTest {
     }
 
     @Test
-    fun `canonicalize handles 6-segment URLs (sub-namespaced resources)`() {
-        val canonical = extractor().canonicalize(
-            "https://api.f.no/felles/kodeverk/iso/kjonn/systemid/2"
-        )
-        assertEquals(
-            "https://api.f.no/felles/kodeverk/iso/kjonn/systemid/2",
-            canonical,
-        )
+    fun `canonicalize drops sub-paths so core 1 and core 2 hrefs for the same record match`() {
+        val core2 = extractor().canonicalize("https://api.f.no/felles/kodeverk/iso/kjonn/systemid/2")
+        val core1 = extractor().canonicalize("https://api.f.no/felles/kodeverk/kjonn/systemid/2")
+
+        assertEquals("https://api.f.no/felles/kodeverk/kjonn/systemid/2", core2)
+        assertEquals(core1, core2)
     }
 
     @Test

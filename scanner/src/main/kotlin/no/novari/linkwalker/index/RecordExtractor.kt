@@ -160,10 +160,21 @@ class RecordExtractor(
         val match = HREF_REGEX.matchEntire(decoded)
         return if (match != null) {
             val (prefix, field, value) = match.destructured
-            "${prefix.lowercase()}/${field.lowercase()}/$value"
+            "${withoutSubPath(prefix.lowercase())}/${field.lowercase()}/$value"
         } else {
             decoded.lowercase()
         }
+    }
+
+    /**
+     * Keeps `{domain}/{package}/{resource}` and drops anything between package and resource.
+     * Core 2 links to `felles/kodeverk/iso/kjonn/...` while core 1 names the same record
+     * `felles/kodeverk/kjonn/...` in its self link, and both URLs work.
+     */
+    private fun withoutSubPath(prefix: String): String {
+        val host = prefix.substringBefore("://") + "://" + prefix.substringAfter("://").substringBefore('/')
+        val segments = prefix.substringAfter("://").split('/').drop(1)
+        return "$host/${segments[0]}/${segments[1]}/${segments.last()}"
     }
 
     private fun isExcluded(relationName: String): Boolean {

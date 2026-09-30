@@ -51,7 +51,7 @@ class ScannerPropertiesBindingTest {
             "fint.link-walker.scanner.extra-resources[felles_kodeverk][0]" to "iso/kjonn",
         )
 
-        assertEquals(listOf("iso/kjonn", "iso/landkode", "iso/spraak"), defaults.extraResources["felles_kodeverk"])
+        assertEquals(listOf("iso/kjonn", "iso/landkode", "iso/sprak"), defaults.extraResources["felles_kodeverk"])
         assertEquals(mapOf("felles_kodeverk" to listOf("iso/kjonn")), overridden.extraResources)
     }
 

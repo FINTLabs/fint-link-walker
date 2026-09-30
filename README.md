@@ -99,7 +99,7 @@ Key properties under `link-walker`:
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
 | `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
-| `extra-resources`               | `felles_kodeverk: iso/kjonn, iso/landkode, iso/spraak` | Resource paths per component that fint-core-metamodel does not list. The resource is named by the last path segment. |
+| `extra-resources`               | `felles_kodeverk: iso/kjonn, iso/landkode, iso/sprak` | Resource paths per component that fint-core-metamodel does not list. The resource is named by the last path segment. |
 | `auto-relation-components`      | empty                                  | Subset of `components` where autorelation back-links are required for the tenant. |
 | `pii-identifiers`               | `fodselsnummer, feidenavn`             | Identifier types to mask in emitted reports.                           |
 | `exclude-relations`             | `vigoreferanse, grepreferanse`         | Relations to ignore during `unknown-link` classification.              |

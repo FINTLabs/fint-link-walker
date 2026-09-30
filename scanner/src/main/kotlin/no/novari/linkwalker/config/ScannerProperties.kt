@@ -21,7 +21,7 @@ data class ScannerProperties(
 ) {
     private companion object {
         val EXTRA_RESOURCES = mapOf(
-            "felles_kodeverk" to listOf("iso/kjonn", "iso/landkode", "iso/spraak"),
+            "felles_kodeverk" to listOf("iso/kjonn", "iso/landkode", "iso/sprak"),
         )
 
         val ALL_FINT_COMPONENTS = listOf(
