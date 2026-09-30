@@ -87,6 +87,16 @@ class FetchRoutingTest {
     }
 
     @Test
+    fun `an HTML answer falls through to the next route, but not on the public route`() {
+        val routing = routing(serviceEnabled = true)
+        val service = routing.routes("$publicBase/felles/kodeverk/iso/kjonn?size=10").first()
+        val gateway = routing.routes("$publicBase/felles/kodeverk/iso/kjonn?size=10").last()
+
+        assertTrue(routing.fallsThrough(service, NoRouteException("Non-JSON response")))
+        assertFalse(routing.fallsThrough(gateway, NoRouteException("Non-JSON response")))
+    }
+
+    @Test
     fun `a 500 or the public route never fall through`() {
         val routing = routing(serviceEnabled = true)
         val service = routing.routes("$publicBase/utdanning/elev/elev?size=10").first()

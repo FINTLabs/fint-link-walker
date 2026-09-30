@@ -45,13 +45,16 @@ class FetchRouting(properties: ScannerProperties) {
         RoutedRequest(URI.create(url), mapOf(ORG_HEADER to orgHeader), route = GATEWAY, hostKey = GATEWAY)
 
     /**
-     * Tells whether a failure on [request] means the next route should be tried. A connection
+     * Tells whether a failure on [request] means the next route should be tried. An HTML answer
+     * means the route does not serve that path, which is how Traefik answers for core 1 components
+     * like felles_kodeverk. A connection
      * failure also takes that host out of the running for the rest of the scan, since every later
      * fetch from it would fail the same way. The public URL never falls through.
      */
     fun fallsThrough(request: RoutedRequest, failure: Throwable): Boolean {
         if (request.route == GATEWAY) return false
         if (failure is HttpClientErrorException && failure.statusCode.value() in FALLBACK_STATUSES) return true
+        if (failure is NoRouteException) return true
         if (failure is ResourceAccessException && failure.isConnectionFailure()) {
             disabledHosts += request.hostKey
             return true
