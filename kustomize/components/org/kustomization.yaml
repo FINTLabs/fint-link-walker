@@ -10,7 +10,6 @@ replacements:
           kind: CronJob
         fieldPaths:
           - metadata.name
-          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].envFrom.0.secretRef.name
         options:
           delimiter: "-"
           index: 4
@@ -23,17 +22,6 @@ replacements:
           - spec.jobTemplate.metadata.labels.[fintlabs.no/org-id]
           - spec.jobTemplate.spec.template.metadata.labels.tenant
           - spec.jobTemplate.spec.template.metadata.labels.[fintlabs.no/org-id]
-      - select:
-          kind: OnePasswordItem
-        fieldPaths:
-          - metadata.name
-        options:
-          delimiter: "-"
-          index: 4
-      - select:
-          kind: OnePasswordItem
-        fieldPaths:
-          - metadata.labels.[fintlabs.no/org-id]
   - source:
       kind: ConfigMap
       name: link-walker-org
@@ -61,9 +49,12 @@ replacements:
   - source:
       kind: ConfigMap
       name: link-walker-org
-      fieldPath: data.onepassword-itempath
+      fieldPath: data.fetch-base-url
     targets:
       - select:
-          kind: OnePasswordItem
+          kind: CronJob
         fieldPaths:
-          - spec.itemPath
+          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].args.2
+        options:
+          delimiter: "="
+          index: 1

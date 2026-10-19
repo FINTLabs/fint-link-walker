@@ -3,7 +3,10 @@ package no.novari.linkwalker.config
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.boot.context.properties.bind.Binder
+import org.springframework.boot.context.properties.source.ConfigurationPropertySource
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource
+import org.springframework.core.env.StandardEnvironment
+import org.springframework.core.env.SystemEnvironmentPropertySource
 
 class ScannerPropertiesBindingTest {
 
@@ -41,6 +44,23 @@ class ScannerPropertiesBindingTest {
         assertEquals(listOf("utdanning", "administrasjon"), props.serviceRouting.clientApiDomains)
         assertEquals("fint-core-client-api", props.serviceRouting.clientApiService)
         assertEquals(null, props.serviceRouting.namespace)
+    }
+
+    @Test
+    fun `binds the service routing namespace from the env var the api overlays set`() {
+        val env = SystemEnvironmentPropertySource(
+            StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME,
+            mapOf<String, Any>(
+                "FINT_LINKWALKER_SCANNER_ORGID" to "ude_oslo_kommune_no",
+                "FINT_LINKWALKER_SCANNER_SERVICEROUTING_NAMESPACE" to "oslo-kommune-no",
+            ),
+        )
+
+        val props = Binder(ConfigurationPropertySource.from(env)!!)
+            .bind("fint.link-walker.scanner", ScannerProperties::class.java)
+            .get()
+
+        assertEquals("oslo-kommune-no", props.serviceRouting.namespace)
     }
 
     @Test

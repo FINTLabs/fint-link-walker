@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - onepassword-item.yaml
+patches:
+  - path: client-secret.yaml
+    target:
+      kind: CronJob
+replacements:
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.id-dashed
+    targets:
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].envFrom.0.secretRef.name
+        options:
+          delimiter: "-"
+          index: 4
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - metadata.name
+        options:
+          delimiter: "-"
+          index: 4
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - metadata.labels.[fintlabs.no/org-id]
+  - source:
+      kind: ConfigMap
+      name: link-walker-org
+      fieldPath: data.onepassword-itempath
+    targets:
+      - select:
+          kind: OnePasswordItem
+        fieldPaths:
+          - spec.itemPath
