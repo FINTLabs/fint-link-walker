@@ -8,4 +8,5 @@ data:
   id-dashed: novari-no
   id-underscore: novari_no
   base-url: https://beta.felleskomponent.no
+  fetch-base-url: http://flais-ingress-traefik.flais-system.svc.cluster.local
   onepassword-itempath: vaults/aks-beta-vault/items/link-walker-novari-client

@@ -211,44 +211,69 @@ Manifests live in `kustomize/` and are applied by the CD workflow. Nothing is ap
 
 ```
 kustomize/
-  base/reader/        Application for the reader (one per environment, org fintlabs.no)
-  base/scanner/       CronJob + OnePasswordItem for one scanner, with ORG placeholders
-  components/org/     kustomize replacements that fill the placeholders from org-values.yaml
+  base/reader/               Application for the reader (one per environment, org fintlabs.no)
+  base/scanner/              CronJob for one scanner, with ORG placeholders
+  components/org/            kustomize replacements that fill the placeholders from org-values.yaml
+  components/onepassword/    beta: OnePasswordItem and envFrom for the scanner's FINT client
+  components/org-namespace/  api: the reader's DB secret replicated in, service routing to the pod's namespace
   overlays/beta/
-    reader/           the beta reader
-    <org-id>/         one folder per scanner: kustomization.yaml + org-values.yaml
+    reader/                  the beta reader
+    <org-id>/                one folder per scanner, all in namespace fint-core
+  overlays/api/
+    reader/                  the api reader
+    <org-id>/                one folder per county, each in its own namespace
 ```
 
-- **Scanner** runs as a `CronJob` per org in namespace `fint-core`. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction, so partial scans are not visible to the reader. Credentials come from a `Secret` that the 1Password operator creates from the `OnePasswordItem` in the same overlay. The vault item must exist before the first run.
-- **Reader** runs as a FLAIS `Application` in namespace `fint-core`. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
+- **Scanner** runs as a `CronJob` per org. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction, so partial scans are not visible to the reader.
+  - On beta the scanners run in `fint-core`. Credentials come from a `Secret` that the 1Password operator creates from the `OnePasswordItem` in the same overlay. The vault item must exist before the first run.
+  - On api each scanner runs in its county's namespace; Oslo runs as `ude-oslo-kommune-no` in `oslo-kommune-no`. There is no client secret, so the scanner gets its FINT client from `fint-customer-objects-gateway` in `flais-io`, which creates it on the first run. Service routing looks for the org's Services in the pod's own namespace.
+  - On api the scanner writes with the reader's DB credentials. pgerator gives every `PGUser` a schema of its own, so a scanner with its own user would write where the reader never reads. kubernetes-replicator copies `fint-core/fint-link-walker-reader-db` into each county namespace under the same name; the CD job that deploys the reader allows the replication on the source secret.
+- **Reader** runs as a FLAIS `Application` in namespace `fint-core` on both. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
 
-### Adding an org on beta
+### Adding an org
 
-Copy any folder under `kustomize/overlays/beta/`, rename it to the dashed org id, and edit `org-values.yaml`:
+On beta, copy any folder under `kustomize/overlays/beta/`, rename it to the dashed org id, and edit `org-values.yaml`. Create the 1Password item first.
 
 ```yaml
 data:
   id-dashed: rogfk-no
   id-underscore: rogfk_no
   base-url: https://beta.felleskomponent.no
+  fetch-base-url: http://flais-ingress-traefik.flais-system.svc.cluster.local
   onepassword-itempath: vaults/aks-beta-vault/items/link-walker-rogfk-client
 ```
 
-Create the 1Password item first. Check the render with `kustomize build kustomize/overlays/beta/rogfk-no`, then merge. Removing a folder does not delete the CronJob from the cluster.
+On api, copy any folder under `kustomize/overlays/api/`, set `namespace:` in `kustomization.yaml` to the org's namespace, and edit `org-values.yaml`:
+
+```yaml
+data:
+  id-dashed: rogfk-no
+  id-underscore: rogfk_no
+  base-url: https://api.felleskomponent.no
+  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local
+```
+
+Check the render with `kubectl kustomize kustomize/overlays/<env>/<org-id>`, then merge. CD skips folders whose name ends in `.disabled`. Removing a folder does not delete the CronJob from the cluster.
+
+### CI
+
+`.github/workflows/CI.yaml` runs on pull requests and on pushes to `main` and `develop`. It diffs against the pull request's base, or the previous push, and runs `./gradlew :scanner:check` and `./gradlew :reader:check` only for the modules whose paths changed. `core` and the root Gradle files count for both; the lists are in `.github/scripts/paths.sh`. `ci-ok` fails if either check failed.
 
 ### CD
 
-`.github/workflows/CD.yaml` runs on every push to `develop` and on `v*` tags. Pushes to `main` only run CI. `develop` takes direct pushes; `main` takes pull requests.
+`.github/workflows/CD.yaml` runs on every push to `develop` and `main`. `develop` takes direct pushes; `main` takes pull requests.
 
-| Trigger        | Images pushed to ghcr                    | Deploy                                                  |
-|----------------|------------------------------------------|---------------------------------------------------------|
-| push to `develop` | `sha-<7 chars>` for scanner and reader, after `./gradlew build` passes | every folder under `kustomize/overlays/beta/`, one job each, into `aks-beta-fint-2021-11-23` |
-| tag `v*`       | `<version>`, `sha-<7 chars>`, `latest`   | none                                                    |
+| Branch    | Environment | Cluster                    | Deploys                                       |
+|-----------|-------------|----------------------------|-----------------------------------------------|
+| `develop` | beta        | `aks-beta-fint-2021-11-23` | every folder under `kustomize/overlays/beta/` |
+| `main`    | api         | `aks-api-fint-2022-02-08`  | every folder under `kustomize/overlays/api/`  |
+
+Images are tagged `src-<hash>`, a hash of the git trees the image is built from (`.github/scripts/image-tags.sh`). When that tag is already in ghcr the build is skipped; otherwise the job runs `./gradlew :<module>:check`, then builds and pushes. A commit that only touches kustomize, docs or the other module redeploys with the image that is already there, and the squash commit on `main` gets the same tags as the `develop` commit it came from, so api runs the image beta ran. The commit an image was built from is in its `org.opencontainers.image.revision` label.
+
+Each deploy job bakes its overlay with kustomize, swaps the `REPLACE` image tag for the `src-` tags, logs in with the org secret `AKS_<ENV>_FINT_GITHUB` and applies into the namespace the overlay renders into. Rolling back is re-running the workflow from an earlier commit.
 
 Promoting to `main`: open a pull request from `develop` to `main` and squash-merge it. Merge commits are disabled on the repo, so afterwards bring the squash commit back into `develop` to keep the branches aligned:
 
 ```
 git checkout develop && git pull && git merge origin/main -m "Merge main back into develop [skip ci]" && git push
 ```
-
-Each deploy job bakes its overlay with kustomize, swaps the `REPLACE` image tag for the commit's `sha-` tag, logs in with the org secret `AKS_BETA_FINT_GITHUB` and applies into `fint-core`. Rolling back is re-running the workflow from an earlier commit.

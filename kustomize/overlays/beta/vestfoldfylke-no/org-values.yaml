@@ -8,4 +8,5 @@ data:
   id-dashed: vestfoldfylke-no
   id-underscore: vestfoldfylke_no
   base-url: https://beta.felleskomponent.no
+  fetch-base-url: http://flais-ingress-traefik.flais-system.svc.cluster.local
   onepassword-itempath: vaults/aks-beta-vault/items/link-walker-vestfoldfylke-client
