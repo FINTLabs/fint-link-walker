@@ -47,9 +47,8 @@ spec:
               args:
                 - "--fint.link-walker.scanner.org-id=ORG"
                 - "--fint.link-walker.scanner.base-url=BASE_URL"
-              envFrom:
-                - secretRef:
-                    name: fint-link-walker-client-ORG
+                - "--fint.link-walker.scanner.fetch-base-url=FETCH_BASE_URL"
+                - "--fint.link-walker.scanner.service-routing.enabled=true"
               env:
                 - name: FINT_DATABASE_URL
                   valueFrom:
@@ -80,6 +79,8 @@ spec:
                   value: "utdanning_utdanningsprogram"
                 - name: FINT_LINKWALKER_SCANNER_COMPONENTS_6
                   value: "utdanning_vurdering"
+                - name: FINT_LINKWALKER_SCANNER_COMPONENTS_7
+                  value: "felles_kodeverk"
               resources:
                 requests:
                   memory: "4Gi"

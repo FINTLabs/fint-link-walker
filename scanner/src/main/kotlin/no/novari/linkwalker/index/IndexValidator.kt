@@ -2,6 +2,7 @@ package no.novari.linkwalker.index
 
 import no.novari.fint.model.FintRelation
 import no.novari.linkwalker.OrgId
+import no.novari.linkwalker.report.LinkScope
 import no.novari.linkwalker.report.ProblemType
 import no.novari.linkwalker.report.ReportProblem
 import no.novari.metamodel.MetamodelService
@@ -53,7 +54,8 @@ class IndexValidator(
         ref: OutboundRef,
     ): ReportProblem? {
         val target = index.recordAt(ref.targetCanonical)
-            ?: return missingResourceProblem(orgId, record, ref)
+            ?: return if (index.linkTarget(record.component, ref.targetCanonical).scope == LinkScope.NotCovered) null
+            else missingResourceProblem(orgId, record, ref)
 
         val inverseName = info?.relationsByName?.get(ref.relationName.lowercase())?.inverseName
             ?: return null

@@ -1,0 +1,11 @@
+# Filled by kubernetes-replicator from the reader's PGUser secret, so the scanner writes to the
+# reader's schema. CD allows the replication on the source secret after deploying the reader.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fint-link-walker-reader-db
+  labels:
+    fintlabs.no/team: core
+  annotations:
+    replicator.v1.mittwald.de/replicate-from: fint-core/fint-link-walker-reader-db
+type: Opaque

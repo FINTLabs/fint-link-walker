@@ -177,6 +177,50 @@ class IndexValidatorTest {
         assertEquals(ProblemType.MissingResource, rows.single().problemType)
     }
 
+    @Test
+    fun `outbound ref to a resource that was not fetched → no row`() {
+        val source = recordOf(
+            component = "utdanning_elev",
+            resource = "person",
+            self = "https://host/utdanning/elev/person/systemid/p-1",
+            outboundRelation = "kjonn",
+            outboundHref = "https://host/felles/kodeverk/iso/kjonn/systemid/1",
+        )
+        val index = indexOf(source, fetched = setOf(ResourceKey.of("utdanning_elev", "person")))
+        val metamodel = metamodelWith(
+            "utdanning" to "elev" to "person" via "kjonn" inverse null,
+        )
+
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
+
+        assertTrue(rows.isEmpty(), "A link to a resource that was not fetched is not checked, got: $rows")
+    }
+
+    @Test
+    fun `outbound ref to a fetched but empty resource → missing-resource`() {
+        val source = recordOf(
+            component = "utdanning_larling",
+            resource = "virksomhet",
+            self = "https://host/utdanning/larling/virksomhet/virksomhetsid/1",
+            outboundRelation = "larling",
+            outboundHref = "https://host/utdanning/larling/larling/systemid/abc",
+        )
+        val index = indexOf(
+            source,
+            fetched = setOf(
+                ResourceKey.of("utdanning_larling", "virksomhet"),
+                ResourceKey.of("utdanning_larling", "larling"),
+            ),
+        )
+        val metamodel = metamodelWith(
+            "utdanning" to "larling" to "virksomhet" via "larling" inverse null,
+        )
+
+        val rows = validator(metamodel).validate(OrgId("afk_no"), index)
+
+        assertEquals(ProblemType.MissingResource, rows.single().problemType)
+    }
+
     private fun validator(
         metamodel: MetamodelService,
         autoRelations: List<AutoRelationRule> = emptyList(),
@@ -191,10 +235,18 @@ class IndexValidatorTest {
         return IndexValidator(metamodel, AutoRelationRules(config), HrefSanitizer(config))
     }
 
-    private fun indexOf(vararg records: MinimalRecord): TenantIndex {
+    private fun indexOf(
+        vararg records: MinimalRecord,
+        fetched: Set<ResourceKey> = resourcesTouchedBy(records.toList()),
+    ): TenantIndex {
         val byKey = records.flatMap { rec -> rec.canonicalKeys.map { it to rec } }.toMap()
-        return TenantIndex(records = records.toList(), byKey = byKey)
+        return TenantIndex(records = records.toList(), byKey = byKey, fetchedResources = fetched)
     }
+
+    private fun resourcesTouchedBy(records: List<MinimalRecord>): Set<ResourceKey> =
+        records.flatMap { rec -> rec.canonicalKeys + rec.outboundRefs.map { it.targetCanonical } }
+            .mapNotNull(ResourceKey::ofHref)
+            .toSet()
 
     private fun recordOf(
         component: String,

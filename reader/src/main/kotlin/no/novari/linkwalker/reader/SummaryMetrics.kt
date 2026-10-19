@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.MultiGauge
 import io.micrometer.core.instrument.Tags
 import no.novari.linkwalker.report.LatestReportSummary
+import no.novari.linkwalker.report.LinkGroup
 import no.novari.linkwalker.report.ReportStore
 import no.novari.linkwalker.report.ResourceSummary
 import no.novari.linkwalker.report.ScanSummary
@@ -32,6 +33,12 @@ class SummaryMetrics(
 
     private val orgIntegrity: MultiGauge = gauge(registry, "link_walker_org_integrity_percent",
         "Overall integrity percent per orgId")
+
+    private val links: MultiGauge = gauge(registry, "link_walker_links_count",
+        "Links per (orgId, component, resource, scope, target_component)")
+
+    private val linkErrors: MultiGauge = gauge(registry, "link_walker_link_errors",
+        "Link errors per (orgId, component, resource, scope, target_component, problem_type)")
 
     private val lastScanTimestamp: MultiGauge = gauge(registry, "link_walker_last_scan_timestamp_seconds",
         "Epoch seconds of the last successful scan per orgId")
@@ -62,6 +69,8 @@ class SummaryMetrics(
         recordsTotal.register(perOrg.flatMap { (org, s) -> resourceRows(org, s) { it.totalRecords.toDouble() } }, true)
         refsTotal.register(perOrg.flatMap { (org, s) -> resourceRows(org, s) { it.totalRefs.toDouble() } }, true)
         brokenLinks.register(perOrg.flatMap { (org, s) -> brokenRows(org, s) }, true)
+        links.register(perOrg.flatMap { (org, s) -> linkRows(org, s) }, true)
+        linkErrors.register(perOrg.flatMap { (org, s) -> linkErrorRows(org, s) }, true)
 
         logger.debug(
             "Refreshed metrics across {} orgs: {}",
@@ -103,6 +112,34 @@ class SummaryMetrics(
                 }
             }
         }
+
+    private fun linkRows(orgId: String, summary: ScanSummary): List<MultiGauge.Row<Number>> =
+        summary.components.flatMap { comp ->
+            comp.resources.flatMap { res ->
+                res.links.map { group ->
+                    MultiGauge.Row.of(linkTags(orgId, comp.component, res.resource, group), group.links.toDouble())
+                }
+            }
+        }
+
+    private fun linkErrorRows(orgId: String, summary: ScanSummary): List<MultiGauge.Row<Number>> =
+        summary.components.flatMap { comp ->
+            comp.resources.flatMap { res ->
+                res.links.flatMap { group ->
+                    group.errors.map { (problemType, count) ->
+                        MultiGauge.Row.of(
+                            linkTags(orgId, comp.component, res.resource, group).and("problem_type", problemType),
+                            count.toDouble(),
+                        )
+                    }
+                }
+            }
+        }
+
+    private fun linkTags(orgId: String, component: String, resource: String, group: LinkGroup): Tags =
+        resourceTags(orgId, component, resource)
+            .and("scope", group.scope.wire)
+            .and("target_component", group.targetComponent)
 
     private fun resourceTags(orgId: String, component: String, resource: String): Tags =
         Tags.of("orgId", orgId, "component", component, "resource", resource)

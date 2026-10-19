@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: link-walker-org
+  annotations:
+    config.kubernetes.io/local-config: "true"
+data:
+  id-dashed: ude-oslo-kommune-no
+  id-underscore: ude_oslo_kommune_no
+  base-url: https://api.felleskomponent.no
+  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local

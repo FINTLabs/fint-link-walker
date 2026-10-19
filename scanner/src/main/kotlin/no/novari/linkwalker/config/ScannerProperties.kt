@@ -2,6 +2,11 @@ package no.novari.linkwalker.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 
+/**
+ * [extraResources] lists resource paths per component that the metamodel does not know about,
+ * relative to the component path. The ISO code lists under `felles/kodeverk/iso` are the case
+ * today: fint-core-metamodel only lists valuta, fylke and kommune for felles_kodeverk.
+ */
 @ConfigurationProperties("fint.link-walker.scanner")
 data class ScannerProperties(
     val orgId: String,
@@ -9,8 +14,16 @@ data class ScannerProperties(
     val pageSize: Int = 10_000,
     val pageSizes: Map<String, Int> = emptyMap(),
     val components: List<String> = ALL_FINT_COMPONENTS,
+    val extraResources: Map<String, List<String>> = EXTRA_RESOURCES,
+    val fetchBaseUrl: String? = null,
+    val canaryPath: String = "utdanning/elev/elevforhold?size=2000",
+    val serviceRouting: ServiceRoutingProperties = ServiceRoutingProperties(),
 ) {
     private companion object {
+        val EXTRA_RESOURCES = mapOf(
+            "felles_kodeverk" to listOf("iso/kjonn", "iso/landkode", "iso/sprak"),
+        )
+
         val ALL_FINT_COMPONENTS = listOf(
             "administrasjon_fullmakt",
             "administrasjon_kodeverk",
@@ -36,3 +49,18 @@ data class ScannerProperties(
         )
     }
 }
+
+/**
+ * Fetching straight from the org's Kubernetes Services instead of through the public host.
+ * The namespace is the org id with underscores turned into dashes unless [namespace] says
+ * otherwise. Domains in [clientApiDomains] are served by [clientApiService]; every other domain
+ * is served by the legacy consumer named by [legacyServicePattern].
+ */
+data class ServiceRoutingProperties(
+    val enabled: Boolean = false,
+    val clientApiService: String = "fint-core-client-api",
+    val clientApiDomains: List<String> = listOf("utdanning"),
+    val legacyServicePattern: String = "fint-core-consumer-{domain}-{package}",
+    val hostPattern: String = "{service}.{namespace}.svc.cluster.local:8080",
+    val namespace: String? = null,
+)
