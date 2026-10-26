@@ -18,8 +18,10 @@ class HrefSanitizer(config: IndexProperties) {
      * [MinimalRecord] guarantees at least one canonical key.
      */
     fun safeHref(record: MinimalRecord): String =
-        record.canonicalKeys.firstOrNull { !isPii(it) }
-            ?: mask(record.canonicalKeys.first())
+        nonPiiKey(record) ?: mask(record.canonicalKeys.first())
+
+    /** The first canonical key whose identifier is not personal, or null when every key is. */
+    fun nonPiiKey(record: MinimalRecord): String? = record.canonicalKeys.firstOrNull { !isPii(it) }
 
     /**
      * Replaces the value portion of the href with `***` when its identifier type is in the PII list.
