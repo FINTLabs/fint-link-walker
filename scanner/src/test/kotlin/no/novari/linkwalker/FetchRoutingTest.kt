@@ -4,6 +4,7 @@ import no.novari.linkwalker.config.ScannerProperties
 import no.novari.linkwalker.config.ServiceRoutingProperties
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
@@ -107,6 +108,33 @@ class FetchRoutingTest {
     }
 
     @Test
+    fun `with client-api only the client-api Service is the one route`() {
+        val routing = routing(serviceEnabled = true, traefikBase = "http://traefik.flais-system", service = clientApiOnly())
+
+        val routes = routing.routes("$publicBase/utdanning/elev/elev?size=10")
+
+        assertEquals(listOf("service"), routes.map { it.route })
+        assertEquals("http://fint-core-client-api.mrfylke-no.svc.cluster.local:8080/utdanning/elev/elev?size=10", routes.single().uri.toString())
+        assertFalse(routing.gatewayAllowed)
+    }
+
+    @Test
+    fun `with client-api only a page outside the client-api domains or on another host has no route`() {
+        val routing = routing(serviceEnabled = true, traefikBase = "http://traefik.flais-system", service = clientApiOnly())
+
+        assertThrows(NoRouteException::class.java) { routing.routes("$publicBase/felles/kodeverk/iso/kjonn?size=10") }
+        assertThrows(NoRouteException::class.java) { routing.routes("https://data.udir.no/kl06/x") }
+    }
+
+    @Test
+    fun `client-api only does nothing while service routing is off`() {
+        val routing = routing(serviceEnabled = false, service = ServiceRoutingProperties(enabled = false, clientApiOnly = true))
+
+        assertEquals(listOf("gateway"), routing.routes("$publicBase/utdanning/elev/elev?size=10").map { it.route })
+        assertTrue(routing.gatewayAllowed)
+    }
+
+    @Test
     fun `namespace and host pattern can be overridden`() {
         val routing = routing(
             serviceEnabled = true,
@@ -125,6 +153,8 @@ class FetchRoutingTest {
     ): FetchRouting = FetchRouting(
         ScannerProperties(orgId = "mrfylke_no", baseUrl = publicBase, fetchBaseUrl = traefikBase, serviceRouting = service),
     )
+
+    private fun clientApiOnly() = ServiceRoutingProperties(enabled = true, clientApiOnly = true)
 
     private fun connectionRefused() = ResourceAccessException("I/O error", IOException(ConnectException("Connection refused")))
 }

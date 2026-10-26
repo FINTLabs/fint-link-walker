@@ -8,5 +8,4 @@ data:
   id-dashed: tromsfylke-no
   id-underscore: tromsfylke_no
   base-url: https://beta.felleskomponent.no
-  fetch-base-url: http://flais-ingress-traefik.flais-system.svc.cluster.local
   onepassword-itempath: vaults/aks-beta-vault/items/link-walker-tromsfylke-client

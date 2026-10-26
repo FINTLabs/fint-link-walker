@@ -54,10 +54,13 @@ data class ScannerProperties(
  * Fetching straight from the org's Kubernetes Services instead of through the public host.
  * The namespace is the org id with underscores turned into dashes unless [namespace] says
  * otherwise. Domains in [clientApiDomains] are served by [clientApiService]; every other domain
- * is served by the legacy consumer named by [legacyServicePattern].
+ * is served by the legacy consumer named by [legacyServicePattern]. With [clientApiOnly], the
+ * client-api Service is the only route: no legacy consumers, no Traefik and no public host, so
+ * a page outside [clientApiDomains] has no route at all.
  */
 data class ServiceRoutingProperties(
     val enabled: Boolean = false,
+    val clientApiOnly: Boolean = false,
     val clientApiService: String = "fint-core-client-api",
     val clientApiDomains: List<String> = listOf("utdanning"),
     val legacyServicePattern: String = "fint-core-consumer-{domain}-{package}",

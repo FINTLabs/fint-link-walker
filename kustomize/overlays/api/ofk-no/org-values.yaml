@@ -8,4 +8,3 @@ data:
   id-dashed: ofk-no
   id-underscore: ofk_no
   base-url: https://api.felleskomponent.no
-  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local

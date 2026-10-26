@@ -1,0 +1,15 @@
+# The org id is ude_oslo_kommune_no, but Oslo's client-api runs in oslo-kommune-no.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fint-link-walker-scanner
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: scanner
+              env:
+                - name: FINT_LINKWALKER_SCANNER_SERVICEROUTING_NAMESPACE
+                  value: oslo-kommune-no

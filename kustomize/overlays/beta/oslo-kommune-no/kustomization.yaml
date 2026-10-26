@@ -6,3 +6,7 @@ resources:
 components:
   - ../../../components/org
   - ../../../components/onepassword
+patches:
+  - path: service-routing-namespace.yaml
+    target:
+      kind: CronJob

@@ -5,6 +5,7 @@ import no.novari.linkwalker.FetchRouting
 import no.novari.linkwalker.FintClient
 import no.novari.linkwalker.config.HttpProperties
 import no.novari.linkwalker.config.ScannerProperties
+import no.novari.linkwalker.config.ServiceRoutingProperties
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
@@ -77,10 +78,18 @@ class GatewayCanaryTest {
         assertEquals(0, server.requestCount)
     }
 
+    @Test
+    fun `no canary runs when only the client-api Service is used`() = runBlocking {
+        val canary = canary(fetchBase = null, service = ServiceRoutingProperties(enabled = true, clientApiOnly = true))
+
+        assertNull(canary.probe("t"))
+        assertEquals(0, server.requestCount)
+    }
+
     private fun publicBase(): String = server.url("/").toString().trimEnd('/')
 
-    private fun canary(fetchBase: String?): GatewayCanary {
-        val properties = ScannerProperties(orgId = "test_org", baseUrl = publicBase(), fetchBaseUrl = fetchBase)
+    private fun canary(fetchBase: String?, service: ServiceRoutingProperties = ServiceRoutingProperties()): GatewayCanary {
+        val properties = ScannerProperties(orgId = "test_org", baseUrl = publicBase(), fetchBaseUrl = fetchBase, serviceRouting = service)
         val routing = FetchRouting(properties)
         val client = FintClient(RestClient.builder().build(), HttpProperties(maxAttempts = 0), routing)
         return GatewayCanary(properties, client, routing)

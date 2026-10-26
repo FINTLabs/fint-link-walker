@@ -14,6 +14,7 @@ import kotlin.io.path.deleteIfExists
 /**
  * Fetches one page through the public host and checks it for damage. Runs only when pages are
  * otherwise fetched around the Access Gateway, so a scan still notices when the gateway misbehaves.
+ * With client-api only routing the scan never touches the public host, so no canary runs either.
  * A failing canary never fails the scan.
  */
 @Component
@@ -27,7 +28,7 @@ class GatewayCanary(
     private val integrity = PageIntegrity(properties.baseUrl)
 
     suspend fun probe(bearer: String): GatewayCanaryResult? {
-        if (!routing.bypassConfigured) return null
+        if (!routing.bypassConfigured || !routing.gatewayAllowed) return null
         val url = properties.baseUrl.trimEnd('/') + "/" + properties.canaryPath.trimStart('/')
         val tempFile = Files.createTempFile("link-walker-canary-", ".json")
         try {
