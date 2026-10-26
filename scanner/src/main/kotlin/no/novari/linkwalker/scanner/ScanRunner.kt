@@ -5,6 +5,7 @@ import kotlinx.coroutines.slf4j.MDCContext
 import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.AuthService
 import no.novari.linkwalker.config.ScannerProperties
+import no.novari.linkwalker.index.BackLinkRecheck
 import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
@@ -30,6 +31,7 @@ class ScanRunner(
     private val authService: AuthService,
     private val indexBuilder: IndexBuilder,
     private val indexValidator: IndexValidator,
+    private val backLinkRecheck: BackLinkRecheck,
     private val summaryBuilder: SummaryBuilder,
     private val reportStore: ReportStore,
     private val reportRetention: ReportRetention,
@@ -65,7 +67,8 @@ class ScanRunner(
         val bearer = authService.getBearerToken(orgId)
             ?: error("No bearer token for org-id $orgId — aborting")
 
-        val index = indexBuilder.buildIndex(components = config.components, bearer = bearer)
+        val scanned = indexBuilder.buildIndex(components = config.components, bearer = bearer)
+        val index = backLinkRecheck.refresh(scanned, bearer)
         val problems = indexValidator.validate(orgId, index)
         logger.info("Indexed records={} broken-link problems={}", index.records.size, problems.size)
         val canary = gatewayCanary.probe(bearer)

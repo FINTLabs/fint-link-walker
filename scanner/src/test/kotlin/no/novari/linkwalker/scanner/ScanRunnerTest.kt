@@ -11,6 +11,7 @@ import no.novari.linkwalker.OrgId
 import no.novari.linkwalker.auth.AuthService
 import no.novari.linkwalker.config.ScannerProperties
 import no.novari.linkwalker.report.ProblemType
+import no.novari.linkwalker.index.BackLinkRecheck
 import no.novari.linkwalker.index.IndexBuilder
 import no.novari.linkwalker.index.IndexValidator
 import no.novari.linkwalker.index.TenantIndex
@@ -30,6 +31,7 @@ class ScanRunnerTest {
     private val authService = mockk<AuthService>()
     private val indexBuilder = mockk<IndexBuilder>()
     private val indexValidator = mockk<IndexValidator>()
+    private val backLinkRecheck = mockk<BackLinkRecheck>()
     private val summaryBuilder = mockk<SummaryBuilder>()
     private val reportStore = mockk<ReportStore>(relaxed = true)
     private val reportRetention = mockk<ReportRetention>(relaxed = true)
@@ -53,6 +55,7 @@ class ScanRunnerTest {
 
         runner.run(args)
 
+        coVerify { backLinkRecheck.refresh(index, "bearer-x") }
         verifyOrder {
             reportStore.publish(any())
             reportRetention.purgeOldScans(OrgId("afk_no"))
@@ -107,11 +110,15 @@ class ScanRunnerTest {
             authService = authService,
             indexBuilder = indexBuilder,
             indexValidator = indexValidator,
+            backLinkRecheck = backLinkRecheck,
             summaryBuilder = summaryBuilder,
             reportStore = reportStore,
             reportRetention = reportRetention,
             gatewayCanary = gatewayCanary,
-        ).also { coEvery { gatewayCanary.probe(any()) } returns null }
+        ).also {
+            coEvery { gatewayCanary.probe(any()) } returns null
+            coEvery { backLinkRecheck.refresh(any(), any()) } answers { firstArg() }
+        }
 
     private fun emptyIndex(): TenantIndex = TenantIndex(records = emptyList(), byKey = emptyMap(), fetchedResources = emptySet())
 
