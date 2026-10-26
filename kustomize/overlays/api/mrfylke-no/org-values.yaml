@@ -8,4 +8,3 @@ data:
   id-dashed: mrfylke-no
   id-underscore: mrfylke_no
   base-url: https://api.felleskomponent.no
-  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local

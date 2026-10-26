@@ -8,4 +8,3 @@ data:
   id-dashed: trondelagfylke-no
   id-underscore: trondelagfylke_no
   base-url: https://api.felleskomponent.no
-  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local

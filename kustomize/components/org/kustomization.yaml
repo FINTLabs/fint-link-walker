@@ -46,15 +46,3 @@ replacements:
         options:
           delimiter: "="
           index: 1
-  - source:
-      kind: ConfigMap
-      name: link-walker-org
-      fieldPath: data.fetch-base-url
-    targets:
-      - select:
-          kind: CronJob
-        fieldPaths:
-          - spec.jobTemplate.spec.template.spec.containers.[name=scanner].args.2
-        options:
-          delimiter: "="
-          index: 1
