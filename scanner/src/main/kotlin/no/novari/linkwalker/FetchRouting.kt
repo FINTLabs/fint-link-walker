@@ -20,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap
  * the org's own Kubernetes Service, or from Traefik with the public host in the `Host` header.
  * Both skip the Access Gateway that fronts the public host. [routes] lists the places to try, in
  * order, and the public URL itself is always the last one. Every request carries `x-org-id`,
- * which the gateway otherwise adds on the way in.
+ * which the gateway otherwise adds on the way in. With client-api only routing, the org's
+ * client-api Service is the one route and nothing falls through.
  */
 @Component
 class FetchRouting(properties: ScannerProperties) {
@@ -33,10 +34,18 @@ class FetchRouting(properties: ScannerProperties) {
     private val orgHeader: String = properties.orgId.replace('_', '.')
     private val clientApiDomains: Set<String> = service.clientApiDomains.map { it.lowercase() }.toSet()
     private val disabledHosts: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    private val clientApiOnly: Boolean = service.enabled && service.clientApiOnly
 
     val bypassConfigured: Boolean get() = service.enabled || traefikBase != null
 
+    /** False when every page comes from the client-api Service and the public host is never used. */
+    val gatewayAllowed: Boolean get() = !clientApiOnly
+
     fun routes(url: String): List<RoutedRequest> {
+        if (clientApiOnly) {
+            val route = if (onPublicHost(url)) serviceRoute(url) else null
+            return listOf(route ?: throw NoRouteException("No client-api Service serves $url"))
+        }
         val inCluster = if (onPublicHost(url)) listOfNotNull(serviceRoute(url), traefikRoute(url)) else emptyList()
         return inCluster.filterNot { it.hostKey in disabledHosts } + direct(url)
     }
@@ -70,10 +79,10 @@ class FetchRouting(properties: ScannerProperties) {
         val domain = segments[0]
         val pkg = segments[1]
         val serviceName =
-            if (domain.lowercase() in clientApiDomains) {
-                service.clientApiService
-            } else {
-                service.legacyServicePattern.replace("{domain}", domain.lowercase()).replace("{package}", pkg.lowercase())
+            when {
+                domain.lowercase() in clientApiDomains -> service.clientApiService
+                clientApiOnly -> return null
+                else -> service.legacyServicePattern.replace("{domain}", domain.lowercase()).replace("{package}", pkg.lowercase())
             }
         val host = service.hostPattern.replace("{service}", serviceName).replace("{namespace}", namespace)
         return RoutedRequest(URI.create("http://$host$pathAndQuery"), mapOf(ORG_HEADER to orgHeader), route = SERVICE, hostKey = host)

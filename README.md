@@ -94,6 +94,7 @@ Key properties under `link-walker`:
 | `fetch-base-url`                | unset                                  | When set, every page is fetched from this base instead of `base-url`, with the public host in the `Host` header. Used in the cluster to reach Traefik directly and skip the Access Gateway, which damages large bodies. A page that answers 401, 403 or 404 there, or cannot be connected to, is fetched from `base-url` instead. |
 | `canary-path`                   | `utdanning/elev/elevforhold?size=2000` | One page fetched through `base-url` per scan when `fetch-base-url` is set, checked for damage and stored in the summary as `gatewayCanary`. |
 | `service-routing.enabled`       | `false`                                | Fetch pages straight from the org's Kubernetes Services, tried before `fetch-base-url` and `base-url`. |
+| `service-routing.client-api-only` | `false`                              | With `service-routing.enabled`, fetch from `fint-core-client-api` and nowhere else: no legacy consumers, no Traefik, no `base-url`, no canary. A resource outside `client-api-domains` is skipped as having no route. The CronJobs set it. |
 | `service-routing.client-api-domains` | `utdanning`                       | Domains served by `service-routing.client-api-service` (`fint-core-client-api`). Every other domain is fetched from `fint-core-consumer-{domain}-{package}`. |
 | `service-routing.host-pattern`  | `{service}.{namespace}.svc.cluster.local:8080` | How the Service host is built. The namespace is `org-id` with underscores turned into dashes unless `service-routing.namespace` is set. |
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
@@ -134,6 +135,11 @@ on when a route answers 401, 403 or 404 or cannot be connected to:
 A host that cannot be connected to is skipped for the rest of the scan. Each page log line says
 which route served it (`route=service|traefik|gateway`). The links inside the bodies still carry
 the public host, so validation is unchanged.
+
+The deployed scanners only scan core 2 and run with `service-routing.client-api-only`, so route 1
+with `fint-core-client-api` is the only route. Nothing falls through, the gateway canary below does
+not run, and `felles_kodeverk`, which core 2 does not serve, is not scanned. Links into it count
+as not checked.
 
 Every downloaded page is checked before it is parsed. A page with a NUL byte, a doubled scheme,
 `httphttp`, a `${` placeholder in a link, or a link that is only the public host is fetched again,
@@ -222,10 +228,15 @@ kustomize/
   overlays/api/
     reader/                  the api reader
     <org-id>/                one folder per county, each in its own namespace
+    <org-id>.disabled/       a county with no core 2 client-api on api yet
 ```
 
+Every scanner fetches from `fint-core-client-api` in the org's namespace and nothing else (see
+[Fetching around the Access Gateway](#fetching-around-the-access-gateway)), so an org needs core 2
+in its namespace before its scanner can run.
+
 - **Scanner** runs as a `CronJob` per org. The pod exits zero on success; the JVM uses `-XX:+ExitOnOutOfMemoryError` (set in `Dockerfile`) so OOMs fail the job rather than hang. The scan persists to Postgres in one transaction, so partial scans are not visible to the reader.
-  - On beta the scanners run in `fint-core`. Credentials come from a `Secret` that the 1Password operator creates from the `OnePasswordItem` in the same overlay. The vault item must exist before the first run.
+  - On beta the scanners run in `fint-core`. Credentials come from a `Secret` that the 1Password operator creates from the `OnePasswordItem` in the same overlay. The vault item must exist before the first run. Service routing looks for the org's Services in the namespace named after the org id; Oslo's overlay points it at `oslo-kommune-no`, since its org id is `ude_oslo_kommune_no`.
   - On api each scanner runs in its county's namespace; Oslo runs as `ude-oslo-kommune-no` in `oslo-kommune-no`. There is no client secret, so the scanner gets its FINT client from `fint-customer-objects-gateway` in `flais-io`, which creates it on the first run. Service routing looks for the org's Services in the pod's own namespace.
   - On api the scanner writes with the reader's DB credentials. pgerator gives every `PGUser` a schema of its own, so a scanner with its own user would write where the reader never reads. kubernetes-replicator copies `fint-core/fint-link-walker-reader-db` into each county namespace under the same name; the CD job that deploys the reader allows the replication on the source secret.
 - **Reader** runs as a FLAIS `Application` in namespace `fint-core` on both. Prometheus scrapes `/link-walker/actuator/prometheus`; report queries hit Postgres.
@@ -239,7 +250,6 @@ data:
   id-dashed: rogfk-no
   id-underscore: rogfk_no
   base-url: https://beta.felleskomponent.no
-  fetch-base-url: http://flais-ingress-traefik.flais-system.svc.cluster.local
   onepassword-itempath: vaults/aks-beta-vault/items/link-walker-rogfk-client
 ```
 
@@ -250,8 +260,9 @@ data:
   id-dashed: rogfk-no
   id-underscore: rogfk_no
   base-url: https://api.felleskomponent.no
-  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local
 ```
+
+To enable a county that has a `.disabled` folder, rename the folder once core 2 runs in its namespace.
 
 Check the render with `kubectl kustomize kustomize/overlays/<env>/<org-id>`, then merge. CD skips folders whose name ends in `.disabled`. Removing a folder does not delete the CronJob from the cluster.
 

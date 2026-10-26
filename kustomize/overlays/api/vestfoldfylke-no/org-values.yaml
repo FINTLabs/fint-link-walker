@@ -8,4 +8,3 @@ data:
   id-dashed: vestfoldfylke-no
   id-underscore: vestfoldfylke_no
   base-url: https://api.felleskomponent.no
-  fetch-base-url: http://traefik.traefik-v2.svc.cluster.local
