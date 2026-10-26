@@ -8,6 +8,8 @@ import no.novari.linkwalker.report.ReportProblem
 import no.novari.metamodel.MetamodelService
 import no.novari.metamodel.model.Resource
 import org.springframework.stereotype.Component
+import java.util.Collections
+import java.util.IdentityHashMap
 
 @Component
 class IndexValidator(
@@ -21,13 +23,31 @@ class IndexValidator(
         val resourceCache = mutableMapOf<Pair<String, String>, ResourceInfo?>()
 
         index.records.forEach { record ->
-            val info = resourceCache.getOrPut(record.component to record.resourceName) {
-                buildResourceInfo(record.component, record.resourceName)
-            }
-            validateRecord(orgId, record, info, index, problems)
+            validateRecord(orgId, record, resourceCache.infoFor(record), index, problems)
         }
         return problems
     }
+
+    /** Records that a link points to but that do not point back through the inverse relation. */
+    fun backLinkTargets(index: TenantIndex): Set<MinimalRecord> {
+        val targets = Collections.newSetFromMap(IdentityHashMap<MinimalRecord, Boolean>())
+        val resourceCache = mutableMapOf<Pair<String, String>, ResourceInfo?>()
+
+        index.records.forEach { record ->
+            val info = resourceCache.infoFor(record) ?: return@forEach
+            val sourceCanonical = record.canonicalKeys.toSet()
+            record.outboundRefs.forEach { ref ->
+                val target = index.recordAt(ref.targetCanonical) ?: return@forEach
+                if (missingInverse(info, target, sourceCanonical, ref) != null) targets += target
+            }
+        }
+        return targets
+    }
+
+    private fun MutableMap<Pair<String, String>, ResourceInfo?>.infoFor(record: MinimalRecord): ResourceInfo? =
+        getOrPut(record.component to record.resourceName) {
+            buildResourceInfo(record.component, record.resourceName)
+        }
 
     private fun validateRecord(
         orgId: OrgId,
@@ -57,6 +77,17 @@ class IndexValidator(
             ?: return if (index.linkTarget(record.component, ref.targetCanonical).scope == LinkScope.NotCovered) null
             else missingResourceProblem(orgId, record, ref)
 
+        val inverseName = missingInverse(info, target, sourceCanonical, ref) ?: return null
+        return missingBackLinkProblem(orgId, record, target, ref, inverseName)
+    }
+
+    /** The inverse relation [target] should point back through, or null when it does or the relation has none. */
+    private fun missingInverse(
+        info: ResourceInfo?,
+        target: MinimalRecord,
+        sourceCanonical: Set<String>,
+        ref: OutboundRef,
+    ): String? {
         val inverseName = info?.relationsByName?.get(ref.relationName.lowercase())?.inverseName
             ?: return null
 
@@ -64,9 +95,7 @@ class IndexValidator(
             backRef.relationName.equals(inverseName, ignoreCase = true) &&
                 backRef.targetCanonical in sourceCanonical
         }
-        if (pointsBack) return null
-
-        return missingBackLinkProblem(orgId, record, target, ref, inverseName)
+        return inverseName.takeUnless { pointsBack }
     }
 
     private fun missingResourceProblem(orgId: OrgId, record: MinimalRecord, ref: OutboundRef) = ReportProblem(

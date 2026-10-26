@@ -18,6 +18,7 @@ data class ScannerProperties(
     val fetchBaseUrl: String? = null,
     val canaryPath: String = "utdanning/elev/elevforhold?size=2000",
     val serviceRouting: ServiceRoutingProperties = ServiceRoutingProperties(),
+    val backLinkRecheck: BackLinkRecheckProperties = BackLinkRecheckProperties(),
 ) {
     private companion object {
         val EXTRA_RESOURCES = mapOf(
@@ -66,4 +67,13 @@ data class ServiceRoutingProperties(
     val legacyServicePattern: String = "fint-core-consumer-{domain}-{package}",
     val hostPattern: String = "{service}.{namespace}.svc.cluster.local:8080",
     val namespace: String? = null,
+)
+
+/**
+ * Fetching again the records that did not point back when the scan read them. At most
+ * [maxRecords] are fetched, [concurrency] at a time. 0 turns the recheck off.
+ */
+data class BackLinkRecheckProperties(
+    val maxRecords: Int = 5_000,
+    val concurrency: Int = 4,
 )

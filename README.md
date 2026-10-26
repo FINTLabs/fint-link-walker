@@ -15,6 +15,8 @@ For each configured FINT component (e.g. `utdanning_elev`, `arkiv_noark`, `admin
 4. Validates each checked reference against the in-memory index and classifies failures into:
    - `missing-resource`: the target resource was fetched, but the referenced record is not in it.
    - `missing-back-link-adapter` / `missing-back-link-autorelation`: adapter or autorelation expected a back-reference that wasn't there.
+
+   Resources are read minutes apart, so a record created after its target was read looks like a missing back-link. Before validating, the scanner fetches each record that does not point back again by its own `self` link and validates against what it gets now. Records with only personal keys, and records that cannot be fetched, keep the version the scan read.
    - `unknown-link`: the href does not have the `{domain}/{package}/{resource}/{field}/{value}` shape.
 5. Persists the scan to Postgres: one row in `report_summary` (aggregate JSON) plus one row per broken-link finding in `report_row`. The reader serves these via HTTP and exposes per-tenant `link_walker_*` Prometheus metrics.
 
@@ -98,6 +100,8 @@ Key properties under `link-walker`:
 | `service-routing.client-api-domains` | `utdanning`                       | Domains served by `service-routing.client-api-service` (`fint-core-client-api`). Every other domain is fetched from `fint-core-consumer-{domain}-{package}`. |
 | `service-routing.host-pattern`  | `{service}.{namespace}.svc.cluster.local:8080` | How the Service host is built. The namespace is `org-id` with underscores turned into dashes unless `service-routing.namespace` is set. |
 | `page-size`                     | `10000`                                | Entries requested per page. The scanner follows each page's `_links.next` until a page has none. |
+| `back-link-recheck.max-records` | `5000`                                 | Records without a back-link fetched again before validation. `0` turns the recheck off. |
+| `back-link-recheck.concurrency` | `4`                                    | Records fetched at a time in the recheck. |
 | `page-sizes`                    | `skole: 3`                             | Per-resource page size, keyed by resource name (case-insensitive). Use for resources whose entries carry many links. |
 | `components`                    | all FINT components                    | Defaults to the full set across `administrasjon`/`arkiv`/`felles`/`okonomi`/`personvern`/`ressurs`/`utdanning` (see `LinkWalkerConfig.ALL_FINT_COMPONENTS`). Override to narrow scope. |
 | `extra-resources`               | `felles_kodeverk: iso/kjonn, iso/landkode, iso/sprak` | Resource paths per component that fint-core-metamodel does not list. The resource is named by the last path segment. |
