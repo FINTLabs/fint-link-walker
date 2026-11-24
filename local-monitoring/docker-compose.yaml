@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus:v2.55.0
+    image: prom/prometheus:v3.16.0
     container_name: link-walker-prometheus
     ports:
       - "9090:9090"
@@ -10,7 +10,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   grafana:
-    image: grafana/grafana:11.3.0
+    image: grafana/grafana:13.3.1
     container_name: link-walker-grafana
     ports:
       - "3000:3000"
