@@ -22,7 +22,7 @@ dependencyManagement {
 
 dependencies {
     api("org.springframework.boot:spring-boot-starter-data-jpa")
-    api("tools.jackson.module:jackson-module-kotlin:3.1.3")
+    api("tools.jackson.module:jackson-module-kotlin:3.3.0")
     api("org.jetbrains.kotlin:kotlin-reflect")
     runtimeOnly("org.postgresql:postgresql")
 }
