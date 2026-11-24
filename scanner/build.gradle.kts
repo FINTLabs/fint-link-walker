@@ -13,7 +13,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_24
 }
 
-val fintVersion = "4.0.10"
+val fintVersion = "4.1.0"
 
 dependencies {
     implementation(project(":core"))
